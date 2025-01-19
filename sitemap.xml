@@ -1,0 +1,14 @@
+<urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
+<url><loc>https://ui-research.github.io/climateapi/404.html</loc></url>
+<url><loc>https://ui-research.github.io/climateapi/LICENSE-text.html</loc></url>
+<url><loc>https://ui-research.github.io/climateapi/LICENSE.html</loc></url>
+<url><loc>https://ui-research.github.io/climateapi/authors.html</loc></url>
+<url><loc>https://ui-research.github.io/climateapi/index.html</loc></url>
+<url><loc>https://ui-research.github.io/climateapi/reference/get_current_fire_perimeters.html</loc></url>
+<url><loc>https://ui-research.github.io/climateapi/reference/get_fema_disaster_declarations_county.html</loc></url>
+<url><loc>https://ui-research.github.io/climateapi/reference/get_nfip_policies_county.html</loc></url>
+<url><loc>https://ui-research.github.io/climateapi/reference/get_sheldus_county.html</loc></url>
+<url><loc>https://ui-research.github.io/climateapi/reference/index.html</loc></url>
+<url><loc>https://ui-research.github.io/climateapi/reference/raw_nfip_policies_to_parquet.html</loc></url>
+</urlset>
+
