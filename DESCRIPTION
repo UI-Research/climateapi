@@ -1,11 +1,28 @@
 Package: climateapi
-Title: What the Package Does (One Line, Title Case)
+Title: Climate (and adjacent) data and functions for the C&C practice area
 Version: 0.0.0.9000
 Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"))
-Description: What the package does (one paragraph).
-License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
-    license
+    person(family = "Curran-Groome", given = "Will", email = "wcurrangroome@urban.org", role = c("aut", "cre"))
+Description: This packages combines a set of utilities for acquiring and processing climate and climate-adjacent datasets under a consistent API. It takes opinionated stances on how to manipulate raw data in an effort to produce standard workflows that enableproject teams to devote more time to substantive analysis and inference-making.
+License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
+Imports: 
+    arrow,
+    dplyr,
+    esri2sf (>= 0.1.1),
+    janitor,
+    lubridate,
+    magrittr,
+    purrr,
+    readr,
+    sf,
+    stringr,
+    tidycensus,
+    tidyr,
+    tigris,
+    rfema,
+    uuid
+Remotes: 
+    yonghah/esri2sf

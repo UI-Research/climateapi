@@ -1,2 +1,6 @@
+^renv$
+^renv\.lock$
 ^climateapi\.Rproj$
 ^\.Rproj\.user$
+^LICENSE\.md$
+^README\.Rmd$

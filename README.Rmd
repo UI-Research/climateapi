@@ -1,0 +1,68 @@
+---
+output: github_document
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  warning = FALSE,
+  message = FALSE,
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%",
+  dpi = 1000
+)
+```
+
+# climateapi
+
+<!-- badges: start -->
+<!-- badges: end -->
+
+The goal of `library(climateapi)` is to minimize repeated data cleaning and wrangling
+to enable project teams to devote more time to substantive analysis and inference-making.
+The package works toward this goal by creating a unified interface to common datasets
+and data manipulation tasks. Functions (will) support both climate-specific datasets
+as well as those that are climate-adjacent.
+
+## Installation
+
+You can install the development version of climateapi from [GitHub](https://github.com/) with:
+
+``` r
+# install.packages("renv")
+renv::install("UI-Research/climateapi")
+```
+
+## The `climateapi` package at work:
+
+```{r setup}
+library(climateapi)
+#renv::install("UI-Research/urbnindicators")
+#renv::install("UrbanInstitute/urbnthemes")
+library(urbnindicators)
+library(sf)
+library(tidyverse)
+library(ggplot2)
+library(urbnthemes)
+set_urbn_defaults(style = "print")
+
+county_disaster_declarations = get_fema_disaster_declarations_county(api = TRUE)
+```
+
+```{r example}
+county_disaster_declarations %>%
+  filter(stringr::str_detect(GEOID, "^01")) %>% ## Alabama
+  group_by(year_declared) %>%
+    summarize(annual_incidents = sum(incidents_all, na.rm = TRUE)) %>%
+  ggplot() +
+    geom_col(aes(x = year_declared, y = annual_incidents)) +
+    labs(
+      title = "COVID Results in a Spike of Counties with Disaster Declarations in 2020",
+      subtitle = "Sum of major disaster declarations per Alabama county, by year",
+      x = "",
+      y = "") +
+    theme_urbn_print()
+```
