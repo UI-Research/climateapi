@@ -24,4 +24,7 @@ Imports:
     tidyr,
     tigris,
     uuid
+Remotes:
+    ropensci/rfema,
+    yonghah/esri2sf
 URL: https://ui-research.github.io/climateapi/
