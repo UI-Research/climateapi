@@ -17,13 +17,11 @@ Imports:
     magrittr,
     purrr,
     readr,
+    rfema (>= 1.0.0),
     sf,
     stringr,
     tidycensus,
     tidyr,
     tigris,
-    rfema,
     uuid
-Remotes: 
-    yonghah/esri2sf
 URL: https://ui-research.github.io/climateapi/
