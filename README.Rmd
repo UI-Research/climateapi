@@ -66,3 +66,14 @@ county_disaster_declarations %>%
       y = "") +
     theme_urbn_print()
 ```
+```{r}
+wildfires_la = get_current_fire_perimeters(
+  bbox = tigris::counties(cb = TRUE, state = "CA") %>%
+    dplyr::filter(stringr::str_detect(NAMELSAD, "Angeles")) %>%
+    sf::st_bbox())
+
+la_impacted_structues = estimate_impacted_structures(
+  boundaries = wildfires_la,
+  geography = "tract")
+```
+

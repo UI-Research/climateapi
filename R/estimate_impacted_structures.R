@@ -18,16 +18,16 @@ estimate_impacted_structures = function(
     geography = "county") {
 
   if (! geography %in% c("county", "tract")) {
-    stop("`geography` must be one of 'county' or 'tract'.")
-  }
+    stop("`geography` must be one of 'county' or 'tract'.") }
 
-  if (is.na(boundaries) | boundaries %>% st_crs() %>% is.na(.)) {
-    stop("You must specify a spatial vector object with a defined CRS or a bbox from sf::st_bbox().")
-  }
+  if ( boundaries %>% sf::st_crs() %>% is.na(.) ) {
+    stop("You must specify a spatial vector object with a defined CRS or a bbox from sf::st_bbox().")}
 
   projection = 5070
+
   boundaries = boundaries %>%
-    sf::st_transform(boundaries)
+    sf::st_transform(projection) %>%
+    dplyr::mutate(boundaries_area = sf::st_area(.) %>% as.numeric)
   states_sf = tigris::states(cb = TRUE, year = 2023) %>%
     sf::st_transform(projection)
 
@@ -39,16 +39,16 @@ estimate_impacted_structures = function(
     sf::st_intersection(boundaries) %>%
     dplyr::mutate(
       intersection_area = sf::st_area(.) %>% as.numeric,
-      intersection_share_state_area = intersection_area / state_area) %>%
-    dplyr::filter(intersection_share_state_area > .001) %>%
-    dplyr::pull(STUSPS)
+      intersection_share_boundary_area = intersection_area / boundaries_area) %>%
+    dplyr::filter(intersection_share_boundary_area > .01) %>%
+    dplyr::pull(STUSPS) %>%
+    unique()
 
-  if (length(structure_data_states < 1) | !(structure_data_states %in% tidycensus::fips_codes$state %>% unique())) {
+  if ( (length(structure_data_states) < 1) | !(structure_data_states %in% tidycensus::fips_codes$state %>% unique())) {
     stop("The provided `boundaries` object does not appear to overlap with any of the
          states or territories for which building footprint data area available. Please
          ensure that the `boundaries` object is a valid `library(sf)` enabled vector
-         object that is properly projected.")
-  }
+         object that is properly projected.") }
 
   box_path = file.path(
     path.expand("~"), "Box", "METRO Climate and Communities Practice Area",
@@ -66,7 +66,8 @@ estimate_impacted_structures = function(
         purrr::keep(~ stringr::str_detect(.x, state_name))
 
       if (length(existing_files) == 1) {
-        result = readr::read_csv(existing_files)
+        structures1 = readr::read_csv(existing_files)
+        warning("Data are being read from Box and reflect a cached version of these data.")
       } else {
         url = stringr::str_c(
           "https://fema-femadata.s3.amazonaws.com/Partners/ORNL/USA_Structures/",
@@ -74,59 +75,63 @@ estimate_impacted_structures = function(
 
         outpath = file.path(box_path, stringr::str_c(state_name, ".zip"))
 
-        download.file(
+        utils::download.file(
           url = url,
           destfile = outpath)
 
-        unzip(
+        utils::unzip(
           zip = outpath,
           exdir = box_path)
 
-        structures1 = st_read(
+        structures1 = sf::st_read(
           file.path(
             box_path,
             stringr::str_c("Deliverable20230526", state_abbreviation),
-            stringr::str_c(state_abbreviation, "_Structures.gdb")))
+            stringr::str_c(state_abbreviation, "_Structures.gdb"))) }
 
-        structures2 = structures %>%
-          janitor::clean_names() %>%
+      structures2 = structures1 %>%
+        janitor::clean_names() %>%
+        sf::st_drop_geometry() %>%
+        sf::st_as_sf(coords = c("longitude", "latitude"), crs = 4326) %>%
+        sf::st_transform(projection) %>%
+        sf::st_filter(boundaries) %>%
+        dplyr::select(
+          unique_id = build_id,
+          occupancy_class = occ_cls,
+          primary_occupancy = prim_occ,
+          county_fips = fips)
+
+      if (geography == "county") {
+        structures3 = structures2 %>%
           sf::st_drop_geometry() %>%
-          sf::st_as_sf(coords = c("longitude", "latitude"), crs = 4326) %>%
+          dplyr::group_by(county_fips, primary_occupancy) %>%
+          dplyr::summarize(
+            occupancy_class = dplyr::first(occupancy_class),
+            count = n()) %>%
+          dplyr::ungroup() %>%
+          dplyr::arrange(county_fips, dplyr::desc(count)) %>%
+          dplyr::rename(GEOID = county_fips) }
+
+      if (geography == "tract") {
+        tracts_sf = tigris::tracts(cb = TRUE, year = 2023, state = state_abbreviation) %>%
           sf::st_transform(projection) %>%
-          sf::st_filter(boundaries) %>%
-          dplyr::select(
-            unique_id = build_id,
-            occupancy_class = occ_cls,
-            primary_occupancy = prim_occ,
-            county_fips = fips)
+          dplyr::select(GEOID)
 
-        if (geography == "county") {
-          structures3 = structures2 %>%
-            sf::st_drop_geometry() %>%
-            dplyr::group_by(county_fips, primary_occupancy) %>%
-            dplyr::summarize(
-              occupancy_class = first(occupancy_class),
-              count = n()) %>%
-            dplyr::ungroup() %>%
-            dplyr::arrange(county_fips, desc(count)) %>%
-            dplyr::rename(GEOID = county_fips)
-        }
-
-        if (geography == "tract") {
-          tracts_sf = tigris::tracts(cb = TRUE, year = 2023, state = state_abbreviation) %>%
-            sf::st_transform(projection) %>%
-            select(GEOID)
-
-          structures3 = structures2 %>%
-            sf::st_join(tracts_sf) %>%
-            sf::st_drop_geometry() %>%
-            dplyr::group_by(GEOID, primary_occupancy) %>%
-            dplyr::summarize(
-              occupancy_class = first(occupancy_class),
-              count = n()) %>%
-            dplyr::ungroup() %>%
-            dplyr::arrange(GEOID, desc(count))
-        }}})
+        structures3 = structures2 %>%
+          sf::st_join(tracts_sf) %>%
+          sf::st_drop_geometry() %>%
+          dplyr::group_by(GEOID, primary_occupancy) %>%
+          dplyr::summarize(
+            occupancy_class = dplyr::first(occupancy_class),
+            count = n()) %>%
+          dplyr::ungroup() %>%
+          dplyr::arrange(GEOID, dplyr::desc(count))}
+      })
 
   return(df1)
 }
+
+utils::globalVariables(
+  c("intersection_area", "state_area", "intersection_share_state_area", "STUSPS",
+    "build_id", "occ_cls", "prim_occ", "fips", "primary_occupancy", "occupancy_class"))
+

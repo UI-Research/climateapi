@@ -40,16 +40,16 @@ get_current_fire_perimeters = function(
 
   url_perimeters = "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/WFIGS_Interagency_Perimeters_Current/FeatureServer/0"
 
-  df_perimeters1 = esri2sf::esri2sf(url = url, bbox = bbox) %>%
+  df_perimeters1 = esri2sf::esri2sf(url = url_perimeters, bbox = bbox) %>%
     janitor::clean_names() %>%
     dplyr::transmute(
       unique_id = uuid::UUIDgenerate(n = nrow(.)),
-      incident_name = attr_incident_name %>% stringr::str_to_title,
+      incident_name = attr_incident_name %>% stringr::str_to_title(),
       incident_size_acres = attr_incident_size,
       incident_short_description = attr_incident_short_description,
       percent_contained = attr_percent_contained,
-      identified_date = attr_fire_discovery_date_time %>% lubridate::as_datetime,
-      updated_date = attr_modified_on_date_time_dt %>% lubridate::as_datetime)
+      identified_date = attr_fire_discovery_date_time %>% lubridate::as_datetime(),
+      updated_date = attr_modified_on_date_time_dt %>% lubridate::as_datetime())
 
   message(stringr::str_c(
     "Each observation represents a distinct wildfire and its perimeters. ",
