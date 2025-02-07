@@ -17,6 +17,8 @@ estimate_impacted_structures = function(
     boundaries,
     geography = "county") {
 
+  options(timeout = 240)
+
   if (! geography %in% c("county", "tract")) {
     stop("`geography` must be one of 'county' or 'tract'.") }
 
@@ -52,7 +54,24 @@ estimate_impacted_structures = function(
 
   box_path = file.path(
     path.expand("~"), "Box", "METRO Climate and Communities Practice Area",
-    "github-repository", "built-environment", "housing-units", "usa-structures", "raw")
+    "github-repository", "built-environment", "housing-units", "usa-structures", "raw") %>%
+    stringr::str_remove_all("\\/Documents")
+
+  ## the file names don't follow a consistent pattern, so we scrape them directly
+  data_urls_html = rvest::read_html("https://disasters.geoplatform.gov/USA_Structures/") %>%
+    rvest::html_nodes("a")
+
+  data_urls = tibble::tibble(
+      url = data_urls_html %>%
+        rvest::html_attr("href"),
+      state_name = data_urls_html %>%
+        rvest::html_text() %>%
+        stringr::str_replace_all("D.C.", "District of Columbia")) %>%
+    dplyr::left_join(
+      tidycensus::fips_codes %>%
+        dplyr::select(state_name, state) %>%
+        dplyr::distinct(),
+      by = "state_name")
 
   df1 = purrr::map_dfr(
     structure_data_states,
@@ -62,6 +81,7 @@ estimate_impacted_structures = function(
         dplyr::pull(state_name) %>%
         unique()
 
+      state_abbreviation = "CA"
       existing_files = list.files(box_path) %>%
         purrr::keep(~ stringr::str_detect(.x, state_name))
 
@@ -69,9 +89,9 @@ estimate_impacted_structures = function(
         structures1 = readr::read_csv(existing_files)
         warning("Data are being read from Box and reflect a cached version of these data.")
       } else {
-        url = stringr::str_c(
-          "https://fema-femadata.s3.amazonaws.com/Partners/ORNL/USA_Structures/",
-          state_name, "/Deliverable20230526", state_abbreviation, ".zip")
+        url = data_urls %>%
+          dplyr::filter(state == !!state_abbreviation) %>%
+          dplyr::pull(url)
 
         outpath = file.path(box_path, stringr::str_c(state_name, ".zip"))
 
@@ -81,13 +101,12 @@ estimate_impacted_structures = function(
 
         utils::unzip(
           zip = outpath,
-          exdir = box_path)
+          exdir = file.path(box_path, state_abbreviation))
 
         structures1 = sf::st_read(
-          file.path(
-            box_path,
-            stringr::str_c("Deliverable20230526", state_abbreviation),
-            stringr::str_c(state_abbreviation, "_Structures.gdb"))) }
+          list.files(file.path(box_path, state_abbreviation), full.names = TRUE) %>%
+            list.files(full.names = TRUE) %>%
+            purrr::keep(~ stringr::str_detect(.x, "gdb"))) }
 
       structures2 = structures1 %>%
         janitor::clean_names() %>%
@@ -133,5 +152,6 @@ estimate_impacted_structures = function(
 
 utils::globalVariables(
   c("intersection_area", "state_area", "intersection_share_state_area", "STUSPS",
-    "build_id", "occ_cls", "prim_occ", "fips", "primary_occupancy", "occupancy_class"))
+    "build_id", "occ_cls", "prim_occ", "fips", "primary_occupancy", "occupancy_class",
+    "boundaries_area", "intersection_share_boundary_area"))
 

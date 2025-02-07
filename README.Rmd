@@ -45,14 +45,13 @@ library(climateapi)
 library(urbnindicators)
 library(sf)
 library(tidyverse)
-library(ggplot2)
 library(urbnthemes)
 set_urbn_defaults(style = "print")
-
-county_disaster_declarations = get_fema_disaster_declarations_county(api = TRUE)
 ```
 
 ```{r example}
+county_disaster_declarations = get_fema_disaster_declarations_county(api = TRUE)
+
 county_disaster_declarations %>%
   filter(stringr::str_detect(GEOID, "^01")) %>% ## Alabama
   group_by(year_declared) %>%
@@ -66,6 +65,7 @@ county_disaster_declarations %>%
       y = "") +
     theme_urbn_print()
 ```
+
 ```{r}
 wildfires_la = get_current_fire_perimeters(
   bbox = tigris::counties(cb = TRUE, state = "CA") %>%
@@ -75,5 +75,13 @@ wildfires_la = get_current_fire_perimeters(
 la_impacted_structues = estimate_impacted_structures(
   boundaries = wildfires_la,
   geography = "tract")
+
+tracts_sf = tigris::tracts(cb = TRUE, year = 2023) %>%
+  sf::st_filter(wildfires_la %>% st_buffer(10000)) %>%
+  dplyr::select(GEOID) %>%
+  dplyr::left_join(la_impacted_structures, by = "GEOID")
+
+ggplot() +
+  geom_sf(data = tracts_sf)
 ```
 
