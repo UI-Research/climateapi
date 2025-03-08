@@ -1,3 +1,7 @@
+## Author: Will Curran-Groome
+
+#' @importFrom magrittr %>%
+
 #' @title Get the user's username
 #'
 #' @return The username of the user running the script

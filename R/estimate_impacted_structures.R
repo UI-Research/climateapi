@@ -5,6 +5,7 @@
 #' @title Estimate counts of hazard-impacted structures by structure type
 #' @param geography The desired geography of the results. One of "tract" or "county".
 #' @param boundaries A POLYGON or MULTIPOLYGON object, or an sf::st_bbox()-style bbox.
+
 #' @returns A dataframe comprising estimated counts of each structure type, at the specified `geography`, for all such geographic units intersecting the `boundaries` object.
 #' @export
 #' @examples
@@ -81,7 +82,6 @@ estimate_impacted_structures = function(
         dplyr::pull(state_name) %>%
         unique()
 
-      state_abbreviation = "CA"
       existing_files = list.files(box_path) %>%
         purrr::keep(~ stringr::str_detect(.x, state_name))
 

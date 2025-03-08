@@ -1,3 +1,8 @@
+## Authors: Original code from Aaron R. Williams, extended by Will Curran-Groome
+## Last Updated: 01/08/2025
+
+#' @importFrom magrittr %>%
+
 ## This script wraps a standard ipumsr::read_ipums_micro() query workflow, addressing
 ## two common challenges:
 ##    (1) the default workflow downloads arbitrarily named raw data files that
@@ -10,10 +15,6 @@
 ## file directory, checking if there is an existing file at that path, and otherwise
 ## downloading the microdata extract (again user-specified) to the given filepath.
 
-## Authors: Original code from Aaron R. Williams, extended by Will Curran-Groome
-## Last Updated: 01/08/2025
-
-#' @importFrom magrittr %>%
 #' @title Read Cached IPUMS Microdata
 #'
 #' @param filename name of the file (not the full path)--do not include a file extension

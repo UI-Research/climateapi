@@ -3,7 +3,7 @@ Title: Climate (and adjacent) data and functions for the C&C practice area
 Version: 0.0.0.9000
 Authors@R: 
     person(family = "Curran-Groome", given = "Will", email = "wcurrangroome@urban.org", role = c("aut", "cre"))
-Description: This packages combines a set of utilities for acquiring and processing climate and climate-adjacent datasets under a consistent API. It takes opinionated stances on how to manipulate raw data in an effort to produce standard workflows that enableproject teams to devote more time to substantive analysis and inference-making.
+Description: This packages combines a set of utilities for acquiring and processing climate and climate-adjacent datasets under a consistent API. It takes opinionated stances on how to manipulate raw data in an effort to produce standard workflows that enable project teams to devote more time to substantive analysis and inference-making.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
@@ -12,6 +12,7 @@ Imports:
     arrow,
     dplyr,
     esri2sf (>= 0.1.1),
+    ggplot2,
     here,
     ipumsr,
     janitor,
@@ -27,8 +28,12 @@ Imports:
     tidycensus,
     tidyr,
     tigris,
-    uuid
+    uuid,
+    urbnindicators,
+    urbnthemes
 Remotes:
     ropensci/rfema,
-    yonghah/esri2sf
+    yonghah/esri2sf,
+    UI-Research/urbnindicators,
+    UrbanInstitute/urbnthemes
 URL: https://ui-research.github.io/climateapi/
