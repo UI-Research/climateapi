@@ -16,8 +16,7 @@
 get_fema_disaster_declarations_county = function(
 	geography = "county",
 	file_path = file.path(
-	  path.expand("~"), "Box", "METRO Climate and Communities Practice Area",
-	  "github-repository", "hazards", "fema", "disaster-declarations",
+	  get_box_path(), "hazards", "fema", "disaster-declarations",
 		"raw", "fema_disaster_declarations_county_2024_10_25.csv"),
 	api = TRUE) {
 

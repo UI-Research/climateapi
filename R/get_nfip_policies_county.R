@@ -2,79 +2,6 @@
 
 #' @importFrom magrittr %>%
 
-#' @title Convert raw data to parquet to conserve memory / speed subsequent operations.
-#' @param inpath The local path to read CSV data from.
-#' @param outpath The local path to write parquet data to.
-#' @param delimit_character The delimiting character of the raw data.
-#' @param subsetted_columns The columns to include in the outputted parquet data.
-#' @returns Nothing. Parquet data are written to local path.
-raw_nfip_policies_to_parquet = function(
-		inpath,
-		outpath = NULL,
-		delimit_character = ",",
-		subsetted_columns = NULL) {
-
-	## write to the same location (but as .parquet), by default
-	if (is.null(outpath)) {
-		outpath = inpath %>% stringr::str_replace("csv", "parquet")
-	}
-
-	if (!file.exists(outpath)) {
-		## get username to configure Box path less rigidly
-		username = getwd() %>% stringr::str_match("Users/.*?/") %>% stringr::str_remove_all("Users|/")
-		box_path = file.path(
-			"C:", "Users", username, "Box", "METRO Climate and Communities Practice Area",
-			"github-repository", "hazards", "fema", "national-flood-insurance-program", "raw")
-
-		inpath = file.path(box_path, "fima_nfip_policies_2024_10_13.csv")
-
-		if (is.null(subsetted_columns)) {
-			#The relevant columns
-			subsetted_columns = c(
-				"id",
-				"longitude",
-				"latitude",
-				"censusTract",
-				"crsClassCode",
-				"ratedFloodZone",
-				"occupancyType",
-				"originalConstructionDate",
-				"policyCost",
-				"policyCount",
-				"policyEffectiveDate",
-				"policyTerminationDate",
-				"primaryResidenceIndicator",
-				"regularEmergencyProgramIndicator",
-				"smallBusinessIndicatorBuilding",
-				"totalInsurancePremiumOfThePolicy",
-				"buildingReplacementCost",
-				"floodproofedIndicator",
-				"rentalPropertyIndicator",
-				"tenantIndicator")
-		}
-
-		## a quick test prior to reading in full file
-		raw_txt_test_delimit_character = tryCatch(
-			{ readr::read_delim(inpath, delim = delimit_character, n_max = 5) },
-			error = function(e) { stop("Error reading inpath file. Did you provide the correct `delimit_character` value for the input file-type?") })
-
-		## a quick test prior to reading in full file
-		raw_txt_test_subsetted_columns = tryCatch(
-			{ readr::read_delim(inpath, delim = delimit_character, col_select = dplyr::all_of(subsetted_columns), n_max = 5) },
-			error = function(e) { stop("Error reading inpath file. The subsetted columns may not be present in the inpath file.")})
-
-		## a callback function to read the full file in chunks
-		read_chunk_callback = function(x, cols) { x %>% dplyr::select(dplyr::all_of(subsetted_columns)) }
-
-		## reading the file in chunks
-		raw_text_subsetted = tryCatch(
-			{ readr::read_delim_chunked(inpath, delim = delimit_character, callback = DataFrameCallback$new(read_chunk_callback), chunk_size = 1000000) },
-			error = function(e) { stop(e)})
-
-		arrow::write_parquet(raw_text_subsetted, sink = outpath)
-	}
-}
-
 #' @title Access county-level data on NFIP policies
 #' @param county_geoids A character vector of five-digit county codes.
 #' @param file_name The name (not the full path) of the Box file containing the raw data.
@@ -94,24 +21,19 @@ get_nfip_policies_county = function(
 	file_name = "fima_nfip_policies_2024_10_13.parquet",
 	api = TRUE) {
 
-  if (!api) {
-  	username = getwd() %>% stringr::str_match("Users/.*?/") %>% stringr::str_remove_all("Users|/")
-  	box_path = file.path(
-  		"C:", "Users", username, "Box", "METRO Climate and Communities Practice Area",
-  		"github-repository", "hazards", "fema", "national-flood-insurance-program", "raw")
+  if (isFALSE(api)) {
+    inpath = file.path(
+      get_box_path, "hazards", "fema", "national-flood-insurance-program", "raw", file_name)
 
-  	inpath = file.path(box_path, file_name)
+    if (! file.exists(inpath)) {
+      stop("The provided `file_name` is invalid.") }
 
-  	stopifnot(file.exists(inpath))
+    if (! (stringr::str_detect(inpath, "parquet"))) {
 
-  	if (stringr::str_detect(inpath, "csv")) {
-  		outpath = inpath %>% stringr::str_replace("csv", "parquet")
-
-  		if (! file.exists(outpath)) {
-  			raw_nfip_policies_to_parquet(inpath = inpath, outpath = outpath)
-  		}
-  		inpath = inpath %>% stringr::str_replace("csv", "parquet")
-  	}
+      convert_delimited_to_parquet(
+        inpath = inpath,
+        delimit_character = ",",
+        dataset = "nfip_policies") }
 
   	df1a = arrow::read_parquet(file = inpath) %>%
   		janitor::clean_names()
@@ -136,7 +58,7 @@ get_nfip_policies_county = function(
 
 	rm(df1a)
 
-	df2 = df1b %>%
+	result = df1b %>%
 		dplyr::select(
 			nfip_policy_id = id,
 			state_fips,
@@ -162,8 +84,6 @@ get_nfip_policies_county = function(
 			building_rental_flag = rental_property_indicator,
 			building_tenant_flag = tenant_indicator,
 			dplyr::everything())
-
-	result = df2
 
 	message("
 These data are from: https://www.fema.gov/openfema-data-page/fima-nfip-redacted-policies-v2.
