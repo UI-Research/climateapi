@@ -108,7 +108,9 @@ qualtrics_plot_question = function(
           .cols = dplyr::everything(),
           .fns = as.numeric)) %>%
       tidyr::pivot_longer(dplyr::everything()) %>%
-      dplyr::filter(!is.na(value)) %>%
+      dplyr::filter(!is.na(value))
+
+    basic_data = basic_data %>%
       dplyr::left_join(
         metadata %>%
           dplyr::filter(question_name %in% basic_data$name),
