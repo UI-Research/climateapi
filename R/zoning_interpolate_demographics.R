@@ -11,22 +11,11 @@
 #'
 #' @return A spatial (sf) dataset comprising one observation for each level of id_column with interpolated values taken from sociodemographic_tracts_sf.
 #' @export
-interpolate_sociodemographics_to_zones = function(
+zoning_interpolate_demographics = function(
     zones_sf,
     sociodemographic_tracts_sf = NULL,
     id_column,
     weights = "population") {
-
-  ## testing only
-  # zones_sf = sf::st_read(file.path(
-  #   "C:", "Users", "wcurrangroome", "programming", "climate-safe-development-index",
-  #   "data", "data-raw", "zoning", "mobile_cbsa_districts.geojson"))
-  # id_column = "abbrvname"
-  # sociodemographic_tracts_sf1 = urbnindicators::compile_acs_data(
-  #   years = 2023, geography = "tract", states = "AL", spatial = TRUE) %>%
-  #   st_as_sf()
-  # sociodemographic_tracts_sf = sociodemographic_tracts_sf1 %>%
-  #   filter(str_detect(GEOID, "^01097"))
 
   ## main function body
   projection = 5070

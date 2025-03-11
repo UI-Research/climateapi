@@ -5,18 +5,21 @@
 #' @title Estimate counts of hazard-impacted structures by structure type
 #' @param geography The desired geography of the results. One of "tract" or "county".
 #' @param boundaries A POLYGON or MULTIPOLYGON object, or an sf::st_bbox()-style bbox.
+#' @param keep_structures Logical. If TRUE, the raw structure data will be returned alongside the summarized data.
 
-#' @returns A dataframe comprising estimated counts of each structure type, at the specified `geography`, for all such geographic units intersecting the `boundaries` object.
+#' @returns A dataframe comprising estimated counts of each structure type, at the specified `geography`, for all such geographic units intersecting the `boundaries` object. If keep_structure = TRUE, returns a list with two elements: the summarized data and the raw structure data.
+
 #' @export
 #' @examples
 #' \dontrun{
-#' estimate_impacted_structures(
+#' get_structures(
 #'   geography = "tract",
 #'   boundaries = tigris::states(cb = TRUE) %>% dplyr::filter(stringr::str_detect(NAME, "District")))
 #'}
-estimate_impacted_structures = function(
+get_structures = function(
     boundaries,
-    geography = "county") {
+    geography = "county",
+    keep_structures = FALSE) {
 
   options(timeout = 240)
 
@@ -54,9 +57,7 @@ estimate_impacted_structures = function(
          object that is properly projected.") }
 
   box_path = file.path(
-    path.expand("~"), "Box", "METRO Climate and Communities Practice Area",
-    "github-repository", "built-environment", "housing-units", "usa-structures", "raw") %>%
-    stringr::str_remove_all("\\/Documents")
+    get_box_path(), "built-environment", "housing-units", "usa-structures", "raw")
 
   ## the file names don't follow a consistent pattern, so we scrape them directly
   data_urls_html = rvest::read_html("https://disasters.geoplatform.gov/USA_Structures/") %>%
@@ -118,36 +119,37 @@ estimate_impacted_structures = function(
           unique_id = build_id,
           occupancy_class = occ_cls,
           primary_occupancy = prim_occ,
-          county_fips = fips)
+          county_fips = fips) })
 
-      if (geography == "county") {
-        structures3 = structures2 %>%
-          sf::st_drop_geometry() %>%
-          dplyr::group_by(county_fips, primary_occupancy) %>%
-          dplyr::summarize(
-            occupancy_class = dplyr::first(occupancy_class),
-            count = n()) %>%
-          dplyr::ungroup() %>%
-          dplyr::arrange(county_fips, dplyr::desc(count)) %>%
-          dplyr::rename(GEOID = county_fips) }
+    if (geography == "county") {
+      df2 = df1 %>%
+        sf::st_drop_geometry() %>%
+        dplyr::group_by(county_fips, primary_occupancy) %>%
+        dplyr::summarize(
+          occupancy_class = dplyr::first(occupancy_class),
+          count = n()) %>%
+        dplyr::ungroup() %>%
+        dplyr::arrange(county_fips, dplyr::desc(count)) %>%
+        dplyr::rename(GEOID = county_fips) }
 
-      if (geography == "tract") {
-        tracts_sf = tigris::tracts(cb = TRUE, year = 2023, state = state_abbreviation) %>%
-          sf::st_transform(projection) %>%
-          dplyr::select(GEOID)
+    if (geography == "tract") {
+      tracts_sf = tigris::tracts(cb = TRUE, year = 2023, state = state_abbreviation) %>%
+        sf::st_transform(projection) %>%
+        dplyr::select(GEOID)
 
-        structures3 = structures2 %>%
-          sf::st_join(tracts_sf) %>%
-          sf::st_drop_geometry() %>%
-          dplyr::group_by(GEOID, primary_occupancy) %>%
-          dplyr::summarize(
-            occupancy_class = dplyr::first(occupancy_class),
-            count = n()) %>%
-          dplyr::ungroup() %>%
-          dplyr::arrange(GEOID, dplyr::desc(count))}
-      })
+      df2 = df1 %>%
+        sf::st_join(tracts_sf) %>%
+        sf::st_drop_geometry() %>%
+        dplyr::group_by(GEOID, primary_occupancy) %>%
+        dplyr::summarize(
+          occupancy_class = dplyr::first(occupancy_class),
+          count = n()) %>%
+        dplyr::ungroup() %>%
+        dplyr::arrange(GEOID, dplyr::desc(count)) }
 
-  return(df1)
+    ## if keep_structures = TRUE, return both the summarized and raw data
+    if (!keep_structures) { return(df2) } else {
+      return(list(structures_summarized = df2, structures_raw = df1)) }
 }
 
 utils::globalVariables(
