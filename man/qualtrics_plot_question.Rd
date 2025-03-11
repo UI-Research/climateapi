@@ -28,7 +28,7 @@ qualtrics_plot_question(
 
 \item{question_code_omit}{A regex that matches the question codes to omit from the plot}
 
-\item{question_type}{one of c("checkbox_single", "checkbox_multi", "checkbox_factor")}
+\item{question_type}{one of c("continuous", "checkbox_single", "checkbox_multi", "checkbox_factor")}
 
 \item{title}{Plot title}
 

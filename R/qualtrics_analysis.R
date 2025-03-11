@@ -65,7 +65,7 @@ qualtrics_get_metadata = function(
 #' @param metadata A dataframe of Qualtrics metadata
 #' @param question_code_include A regex that matches the question codes to include in the plot
 #' @param question_code_omit A regex that matches the question codes to omit from the plot
-#' @param question_type one of c("checkbox_single", "checkbox_multi", "checkbox_factor")
+#' @param question_type one of c("continuous", "checkbox_single", "checkbox_multi", "checkbox_factor")
 #' @param title Plot title
 #' @param subtitle Plot subtitle
 #' @param subtitle_replace A named character vector of regex patterns to replace in the subtitle
@@ -89,28 +89,6 @@ qualtrics_plot_question = function(
     omit_other = TRUE) {
 
   urbnthemes::set_urbn_defaults(style = "print")
-  #
-  # #### TEST
-  # df = tibble::tribble(
-  #   ~QID15_TEXT,
-  #   NA,
-  #   NA,
-  #   15000,
-  #   12500,
-  #   6000,
-  #   326,
-  #   9000,
-  #   1000,
-  #   8500,
-  #   9000)
-  #
-  # question_code_include = "QID15_TEXT"
-  # question_type = "continuous"
-  # metadata = tibble::tribble(
-  #   ~question_number, ~question_name,                                                                    ~text_main, ~text_sub,
-  #   33,   "QID15_TEXT", "How many people live in [Field-community_name]? Your best estimate is fine.",        NA)
-  #
-  # subtitle = NULL
 
   if (is.null(subtitle)) {
     subtitle = qualtrics_get_metadata(
@@ -123,14 +101,31 @@ qualtrics_plot_question = function(
 
   ## Continuous-response questions
   if (question_type == "continuous") {
-    plot = df %>%
-      dplyr::mutate(variable = as.numeric(.data[[question_code_include]])) %>%
+    basic_data = df %>%
+      dplyr::select(dplyr::matches(question_code_include)) %>%
+      dplyr::mutate(
+        dplyr::across(
+          .cols = dplyr::everything(),
+          .fns = as.numeric)) %>%
+      tidyr::pivot_longer(dplyr::everything()) %>%
+      dplyr::filter(!is.na(value)) %>%
+      dplyr::left_join(
+        metadata %>%
+          dplyr::filter(question_name %in% basic_data$name),
+        by = c("name" = "question_name")) %>%
+      dplyr::mutate(text_sub = dplyr::if_else(is.na(text_sub), "", text_sub))
+
+    plot = basic_data %>%
       ggplot2::ggplot() +
-        ggplot2::geom_boxplot(ggplot2::aes(x = variable)) +
+        ggplot2::geom_boxplot(ggplot2::aes(x = value, y = text_sub %>% stringr::str_wrap(40))) +
         urbnthemes::theme_urbn_print() +
         ggplot2::scale_x_continuous(labels = scales::comma_format()) +
-        ggplot2::labs(x = "", title = title, subtitle = subtitle) +
-        ggplot2::theme(axis.text.y = ggplot2::element_blank())
+        ggplot2::labs(x = "", y = "", title = title, subtitle = subtitle)
+
+    ## when there are multiple sub-questions (i.e., a grid of continuous-type questions)
+    ## we want to join and retain sub-question names from the metadata and include these in the plot
+    if (basic_data$name %>% unique %>% length() < 2) {
+      plot = plot + ggplot2::theme(axis.text.y = ggplot2::element_blank()) }
   }
 
   ## Checkbox-type questions
