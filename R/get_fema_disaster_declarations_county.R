@@ -2,7 +2,7 @@
 
 #' @importFrom magrittr %>%
 
-#' @title Get Major Disaster Declarations by County
+#' @title Get major disaster declarations by county
 #' @param geography Included for API consistency only; must be `county`.
 #' @param file_path The path (on Box) to the file containing the raw data.
 #' @param api If TRUE (default), access data from the API. Else, read locally from `file_path`.
