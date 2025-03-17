@@ -40,11 +40,7 @@ qualtrics_format_metadata = function(metadata, sections = c(), text_replace = "z
 #'
 #' @return A character vector of the requested metadata
 #' @export
-qualtrics_get_metadata = function(
-    metadata,
-    question_name = NULL,
-    survey_section = NULL,
-    return_values = "text_sub") {
+qualtrics_get_metadata = function(metadata, question_name = NULL, survey_section = NULL, return_values = "text_sub") {
 
   if (is.null(survey_section) & is.null(question_name)) {
     stop("One of `survey_section` and `question_name` must be supplied.") }
@@ -206,6 +202,97 @@ qualtrics_plot_question = function(
     }
 
   return(plot)
+}
+
+#' Fill in missing and non-missing values across interrelated survey questions
+#'
+#' @param df A dataframe of survey responses
+#' @param question_code_include A regex that matches the columns to include in the missing non-missing value imputation
+#' @param question_code_omit A regex that matches the columns to omit from the missing non-missing value imputation
+#' @param default_values A list of length three, specifying the default, non-missing values to be used for character, numeric, and Date columns, respectively
+#' @param predicate_question Optional. The name of a single column that controls whether columns selected with `question_code_include`
+#' @param predicate_question_negative_value If `predicate_question` is specified, provide the value that indicates a negative response to the predicate question. For responses where the predicate question has this value, this value will be imputed to the specified columns
+#'
+#' @return The inputted `df` object with missing/non-missing values applied to specified columns
+#' @export
+qualtrics_define_missing = function(
+    df,
+    question_code_include,
+    question_code_omit = NULL,
+    default_values = list("No", 0, as.Date(0)),
+    predicate_question = NULL,
+    predicate_question_negative_value = NULL) {
+
+  if (!is.list(default_values) | length(default_values) != 3) {
+    stop("`default_values` must be a list of length 3.") }
+
+  columns = df %>%
+    dplyr::select(
+      c(
+        dplyr::matches(question_code_include),
+        -dplyr::matches(question_code_omit))) %>%
+    colnames()
+
+  column_types = purrr::map_chr(columns, ~ class(df[[.x]]) %>% .[1])
+
+  if (column_types %>% unique() %>% length() > 1) {
+    warning(stringr::str_c("Columns are of different types: ", stringr::str_c(column_types %>% unique, collapse = ", "))) }
+
+  NA_value = as.character(NA)
+  default_value = default_values[[1]]
+
+  if (column_types[1] == "numeric") {
+    NA_value = as.numeric(NA)
+    default_value = default_values[[2]] }
+  if (column_types[1] %in% c("POSIXct", "POSIXt")) {
+    NA_value = as.Date(NA)
+    default_value = default_values[[3]] }
+
+  ## if no predicate question is specified, we apply the default missing values
+  ## to the specified columns, treating any responses with any non-missing value
+  ## in any of the specified columns as being a valid (non-missing) response across
+  ## all specified columns, replacing any missing values with the default values
+  if (is.null(predicate_question)) {
+
+    result = df %>%
+      dplyr::select(dplyr::all_of(columns)) %>%
+      dplyr::mutate(
+        dplyr::across(
+          .cols = dplyr::all_of(columns),
+          .fns = ~ dplyr::case_when(
+            dplyr::if_all(dplyr::all_of(columns), ~ is.na(.x)) ~ NA_value,
+            is.na(.x) ~ default_value,
+            TRUE ~ .x))) }
+
+  ## if a predicate question is specified, we use the value of the response to this
+  ## question to determine whether to apply the default missing values to the specified
+  ## columns
+  if (!is.null(predicate_question)) {
+    if (!predicate_question %in% colnames(df)) {
+      stop("Predicate question not found in `df`. Provide the specific name
+           of one column contained in `df.`") }
+
+    if ((df %>% dplyr::select(predicate_question) %>% colnames() %>% length()) != 1) {
+      stop("Predicate question must be a single column.") }
+
+    if (is.null(predicate_question_negative_value)) {
+      stop("If a predicate question is provided, a negative value must also be provided.") }
+
+    predicate_question_type = class(df[[predicate_question]]) %>% as.character()
+    predicate_question_default_value = default_values[[1]]
+    if (any(predicate_question_type == "numeric")) { predicate_question_default_value = default_values[[2]] }
+    if (any(predicate_question_type %in% c("POSIXct", "POSIXt"))) { predicate_question_default_value = default_values[[3]] }
+
+    result = df %>%
+      dplyr::mutate(
+        dplyr::across(
+          .cols = dplyr::all_of(columns),
+          .fns = ~ dplyr::case_when(
+            is.na(.data[[predicate_question]]) ~ NA,
+            .data[[predicate_question]] == predicate_question_negative_value ~ predicate_question_default_value,
+            TRUE ~ .x))) }
+
+  return(result)
 }
 
 utils::globalVariables(
