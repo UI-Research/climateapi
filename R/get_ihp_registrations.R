@@ -2,7 +2,7 @@
 
 #' @importFrom magrittr %>%
 
-#' @title Get Individuals and Households Program (IHP) Registrations
+#' @title Get Individuals and Households Program (IHP) registrations
 #'
 #' @param geography Included only for API consistency; this must be NULL.
 #' @param state_fips A character vector of two-digit state codes.
