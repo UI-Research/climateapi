@@ -81,18 +81,21 @@ read_ipums_micro_cached = function(
     # The return value is the path to the DDI codebook file, which can then be passed to read_ipums_micro to read the data
     path_to_ddi_file <- ipumsr::download_extract(submitted_extract, download_dir = download_directory)
 
+    ## the code for the "collection", e.g., "usa", "cps", etc.
+    collection_code = extract_definition$collection
+
     # rename files so they don't depend on the extract number, which changes from
     # extract to extract and user to user
     file.rename(
       from = here::here(
         download_directory,
-        stringr::str_glue("usa_{extract_number}.dat.gz", extract_number = extract_number)),
+        stringr::str_glue("{collection_code}_{extract_number}.dat.gz", extract_number = extract_number)),
       to = here::here(download_directory, stringr::str_c(filename, ".dat.gz")))
 
     file.rename(
       from = here::here(
         download_directory,
-        stringr::str_glue("usa_{extract_number}.xml", extract_number = extract_number)),
+        stringr::str_glue("{collection_code}_{extract_number}.xml", extract_number = extract_number)),
       to = here::here(download_directory, stringr::str_c(filename, ".xml")))
 
   } else {
