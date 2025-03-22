@@ -21,6 +21,7 @@ Imports:
     purrr,
     readr,
     rfema (>= 1.0.0),
+    rlang,
     rvest,
     scales,
     sf,
@@ -38,3 +39,9 @@ Remotes:
     UI-Research/urbnindicators,
     UrbanInstitute/urbnthemes
 URL: https://ui-research.github.io/climateapi/
+Suggests: 
+    knitr,
+    qualtRics,
+    rmarkdown,
+    tidyverse
+VignetteBuilder: knitr

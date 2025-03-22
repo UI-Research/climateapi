@@ -226,6 +226,8 @@ qualtrics_define_missing = function(
   if (!is.list(default_values) | length(default_values) != 3) {
     stop("`default_values` must be a list of length 3.") }
 
+  if (is.null(question_code_omit)) { question_code_omit = "zzzzxzzzz" }
+
   columns = df %>%
     dplyr::select(
       c(
@@ -256,7 +258,7 @@ qualtrics_define_missing = function(
 
     result = df %>%
       dplyr::select(dplyr::all_of(columns)) %>%
-      dplyr::mutate(
+      dplyr::transmute(
         dplyr::across(
           .cols = dplyr::all_of(columns),
           .fns = ~ dplyr::case_when(
@@ -284,7 +286,7 @@ qualtrics_define_missing = function(
     if (any(predicate_question_type %in% c("POSIXct", "POSIXt"))) { predicate_question_default_value = default_values[[3]] }
 
     result = df %>%
-      dplyr::mutate(
+      dplyr::transmute(
         dplyr::across(
           .cols = dplyr::all_of(columns),
           .fns = ~ dplyr::case_when(
