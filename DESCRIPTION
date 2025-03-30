@@ -18,6 +18,7 @@ Imports:
     janitor,
     lubridate,
     magrittr,
+    openxlsx,
     purrr,
     readr,
     rfema (>= 1.0.0),
@@ -30,6 +31,7 @@ Imports:
     tidycensus,
     tidyr,
     tigris,
+    utils,
     uuid,
     urbnindicators,
     urbnthemes

@@ -169,3 +169,89 @@ convert_delimited_to_parquet = function(
 
   arrow::write_parquet(raw_text_subsetted, sink = outpath)
 }
+
+#' @title Get the Census geographies that overlap with the input spatial dataset
+#'
+#' @param data An sf-formatted dataframe
+#' @param return_geometry Logical. Include the geometries of returned geographies?
+#'
+#' @returns A dataframe (optionally, an sf-dataframe) comprising Census geographies
+#' @export
+get_spatial_extent_census = function(data, return_geometry = FALSE) {
+  warning("This leverages `sf::st_overlaps()` and does not provide the desired results consistently.")
+  data = data %>%
+    sf::st_transform(projection)
+
+  states_sf = tigris::states(
+    cb = TRUE,
+    resolution = "20m",
+    year = 2023,
+    progress_bar = FALSE,
+    refresh = TRUE) %>%
+    sf::st_transform(projection)
+
+  state_geoids = states_sf %>%
+    sf::st_filter(data, .predicate = sf::st_overlaps) %>%
+    .[["GEOID"]]
+
+  if (length(state_geoids) > 1) {
+    result = states_sf %>%
+      dplyr::filter(GEOID %in% state_geoids) %>%
+      dplyr::transmute(
+        state_geoid = GEOID,
+        geography = "state") } else {
+
+    result = state_geoids %>%
+      purrr::map_dfr(
+        ~ tigris::tracts(
+          state = .x,
+          county = NULL,
+          cb = TRUE,
+          year = 2023,
+          progress_bar = FALSE,
+          refresh = TRUE)) %>%
+      sf::st_transform(projection) %>%
+      sf::st_filter(data) %>%
+      dplyr::transmute(
+        state_geoid = stringr::str_sub(GEOID, 1, 2),
+        county_geoid = stringr::str_sub(GEOID, 1, 5),
+        geography = "tract") }
+
+  if (isFALSE(return_geometry)) { result = sf::st_drop_geometry(result) }
+
+  return(result)
+}
+
+
+#' Download a .xlsx file(s) from a URL(s)
+#'
+#' @param urls A character vector of URLs of length one or greater
+#' @param directory The path to a single directory--not to a file--where the .xlsx file(s) will be saved
+#' @param file_names Optionally, a character vector of the same length as `urls` containing only the file names (not the full paths) with which the downloaded files should be named. If NULL (default), file names are extracted from `urls`.
+#' @param silent If TRUE (default), files are saved silently. If FALSE, downloaded files are read and returned as a list.
+#'
+#' @returns Either nothing (silent == TRUE) or a list of dataframes from the specified URLs.
+#' @export
+read_xlsx_from_url = function(urls, directory, file_names = NULL, silent = TRUE) {
+
+  if (any(!is.null(file_names)) & length(file_names) != length(urls)) {
+    stop("`urls` and `file_names` must be of the same length.") }
+  if (any(is.null(file_names))) {
+    file_names = purrr::map_chr(urls, ~ file.path(directory, .x %>% stringr::str_split("\\/") %>% purrr::map_chr(~ .[length(.)]))) }
+  if (any(stringr::str_detect(directory, "\\.xlsx$"))) {
+    stop("`directory` must point to a directory (folder), not a file. Provide file names via `file_names`.") }
+
+  result = purrr::imap(
+    urls,
+    function(url, i) {
+      file_path = file_names[i]
+      utils::download.file(
+        url = url,
+        destfile = file_path,
+        mode = "wb")
+
+      result = openxlsx::read.xlsx(file_path)
+      return(result) })
+
+  if (isTRUE(silent)) { return() } else return(result)
+}
