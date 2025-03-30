@@ -1,0 +1,126 @@
+---
+title: "analysis-of-survey-data"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{analysis-of-survey-data}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(tidyverse)
+library(climateapi)
+library(janitor)
+library(qualtRics)
+```
+
+# Background
+
+Primary survey data--i.e., those that are unprocessed and reflect individual-level responses--can be unwieldy to work with. They are frequently structured as exceedingly wide datasets, with many questions represented not as individual columns, but as one column for each response option. Survey data can also be quite tricky because, in most cases, responses to one question may be predicated on or control the possible responses to another column (think about survey "skip" logic: if a respondent indicates they've never engaged in a class of activity, they won't be shown subsequent questions about detailed aspects of that class of activity.)
+
+What does this mean for analysis? That there is a need for tools to facilitate standard parts of the analysis process, in particular, cleaning responses and reformatting and plotting data that fit common survey data structures. The `climateapi` package exposes a mini API for just that, specifically built around Qualtrics--a widely-used survey platform--survey data. (Note that much survey data is organized very similarly, and this API can be applied to other survey data with similar structures.)
+
+This vignette introduces and illustrates these tools, each of which is a function prefixed with `qualtrics_`. 
+
+## Basic Workflow
+
+There are core steps that are likely needed to move from raw survey data to preliminary descriptives and visualizations, regardless of your particular survey. These steps are:
+
+ -    Read in the data
+ -    Rename columns and remove unneeded columns
+ -    Recode responses to address missingness and survey "skip" logic
+ -    Codify metadata (e.g., question text, response options) in a systematic manner
+ -    Generate summary statistics and visualizations
+
+In subsequent sections, we illustrate how to approach each of these steps, leveraging the `climateapi` package to facilitate this process.
+
+# Read in your survey data
+
+This process is already abstracted behind a convenient API courtesy of the `qualtRics` package. Here we read in a simple survey dataset (with fake responses). 
+
+```{r}
+# to access the IDs and other metadata for all surveys to which you have API access:
+# qualtRics::all_surveys()
+survey_df = fetch_survey("SV_9Rhm3O7IYnPanFI")
+survey_metadata = survey_df %>% attr("column_map") # metadata
+```
+
+# Clean data
+
+```{r}
+survey_df_1 = survey_df %>% 
+  filter(
+    Consent == "I consent", ## we only want responses where the (fake) respondent consented
+    str_detect(`Q1...20`, "Yes, I am familiar"), ## we only want responses where the respondent is knowledgeable about our topic of interest
+    Progress > 25) %>% ## we'll consider partial responses with fewer than 25% of the survey as invalid
+  select(-c(matches("_TEXT"), Status:Q_RecaptchaScore, Consent)) %>% ## open-ended "other: write in" style responses -- we'll ignore these for quantitative analyses
+  mutate(
+    response_id = row_number(), ## an identifier to distinguish responses
+    across(
+      .cols = matches("Q16_"), 
+      .fns = ~ factor(.x, levels = c("Strongly agree", "Agree", "Disagree", "Strongly disagree"), ordered = TRUE) %>% fct_rev),
+    across(
+      .cols = matches("Q3_"), 
+      .fns = ~ factor(.x, levels = c("All projecs", "Most projects", "Many projects", "A few projects", "No projects"), ordered = TRUE) %>% fct_rev),
+    across(
+      .cols = matches("Q49"), 
+      .fns = ~ factor(.x %>% as.character, levels = c("1", "2", "3"), ordered = TRUE) %>% fct_rev),
+    across(
+      .cols = matches("Q11_"), 
+      .fns = ~ factor(.x %>% as.character, levels = c("A lot", "Somewhat", "Not at all"), ordered = TRUE) %>% fct_rev))
+```
+
+
+# Recode responses to address missingness and survey "skip" logic
+
+It is common to use early questions within a section of a survey to identify whether to ask follow-on, more detailed questions of a respondent. For example, if we're interested in housing development, we might first ask whether the respondent has ever engaged in housing development activities, and then--if they respond "Yes"--we might ask them a subsequent question about the number of housing units they've developed. Typically, raw survey data will reflect an `NA` value for this second question--number of housing units developed--if the response to the preceding question in "No". This is because the respondent never sees the subsequent question. However, we know that in fact the respondent has developed zero housing units--i.e., that the value for the second question should be zero, not `NA`--if their response to the first question is "No". 
+
+A related challenge occurs with multiple selection questions. For example, we might ask a respondent to select all of the following that apply to them: "I have developed a single-family home", "I have developed a multi-family home", "I have developed a commercial property", and "I have developed a mixed-use property". (We might even include a "None of the above" option, if we're smart.) But with only one set of checkboxes, we only have non-`NA` values for the options the respondent selected; all the other options will have `NA`s. But do these `NA`s truly represent missing values? In this example, they do not -- they represent "No" responses, provided that we can be sure the respondent actually saw and evaluated the question. And to evaluate this, we might want to know if they selected any of the options on this question (or perhaps even if they answered a subsequent question).
+
+For both of these types of cases, we want to modify response values in one column dependent on response values across one or many other columns.
+
+In our survey, question Q8A asks about economic development funding sources. There are two columns of checkboxes--one to indicate the respondent has "Applied to" that funding source, and another to indicate that they have "Received funding from" that funding source. The answer options are mutually exclusive, and if a respondent does not select a given checkbox, the value for the corresponding column in our data is NA. We first want to consolidate values (so that for a given funding source, there's one column with a value of either "Applied to", "Received funding from", or `NA`, rather than two columns, one with "Received funding from" and `NA` values and the other with "Applied to" and `NA` values), and then we want to convert `NA` values to valid "Did not apply" values for any respondent who selected any of the listed funding options. 
+
+To assist with this, we'll use `climateapi::qualtrics_define_missing()`. 
+
+```{r}
+survey_df2 = survey_df_1 %>%
+  clean_names()
+
+colnames(survey_df_1)[!(colnames(survey_df_1) %in% survey_metadata$qname)]
+survey_metadata_1 = survey_metadata %>%
+  filter(qname %in% colnames(survey_df_1)) %>%
+  mutate(qname = colnames(survey_df2)[colnames(survey_df2) != "response_id"])
+
+survey_df3 = survey_df2 %>%
+  pivot_longer(matches("q8a")) %>%
+  mutate(base_name = str_extract(name, "q8a_[0-9]{1,2}")) %>%
+  group_by(response_id, base_name) %>%
+  summarize(value = first(value, na_rm = TRUE)) %>%
+  ungroup() %>%
+  pivot_wider(names_from = base_name, values_from = value) %>%
+  climateapi::qualtrics_define_missing(
+    question_code_include = "q8a_",
+    default_values = list("Did not apply", 0, as.Date(0)))
+
+```
+
+# Codify metadata (e.g., question text, response options) in a systematic manner
+
+```{r}
+
+```
+
+# Generate summary statistics and visualizations
+
+```{r}
+
+```
+
