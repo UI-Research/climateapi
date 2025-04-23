@@ -12,8 +12,7 @@ knitr::opts_chunk$set(
   comment = "#>",
   fig.path = "man/figures/README-",
   out.width = "100%",
-  dpi = 1000
-)
+  dpi = 1000)
 ```
 
 # climateapi
@@ -40,8 +39,6 @@ renv::install("UI-Research/climateapi")
 
 ```{r setup}
 library(climateapi)
-#renv::install("UI-Research/urbnindicators")
-#renv::install("UrbanInstitute/urbnthemes")
 library(urbnindicators)
 library(sf)
 library(tidyverse)
@@ -67,21 +64,54 @@ county_disaster_declarations %>%
 ```
 
 ```{r}
-wildfires_la = get_current_fire_perimeters(
-  bbox = tigris::counties(cb = TRUE, state = "CA") %>%
-    dplyr::filter(stringr::str_detect(NAMELSAD, "Angeles")) %>%
-    sf::st_bbox())
+wildfire_perimeters = get_current_fire_perimeters() %>%
+  arrange(desc(incident_size_acres)) %>%
+  slice(1) %>%
+  st_transform(5070)
 
-la_impacted_structues = estimate_impacted_structures(
-  boundaries = wildfires_la,
+impacted_structures = get_structures(
+  boundaries = wildfire_perimeters,
   geography = "tract")
 
-tracts_sf = tigris::tracts(cb = TRUE, year = 2023) %>%
-  sf::st_filter(wildfires_la %>% st_buffer(10000)) %>%
+us_tracts_sf = tigris::tracts(cb = TRUE, year = 2023, progress_bar = FALSE) %>%
+  sf::st_transform(5070)
+
+tracts_sf = us_tracts_sf %>%
+  sf::st_filter(wildfire_perimeters %>% st_transform(5070) %>% st_buffer(10000)) %>%
   dplyr::select(GEOID) %>%
-  dplyr::left_join(la_impacted_structures, by = "GEOID")
+  dplyr::left_join(
+    impacted_structures %>% 
+      dplyr::filter(occupancy_class == "Residential") %>%
+      dplyr::group_by(GEOID) %>%
+      dplyr::summarize(residential_units = sum(count, na.rm = TRUE)), 
+    by = "GEOID") %>%
+  dplyr::mutate(county_fips = stringr::str_sub(GEOID, 1, 5)) %>%
+  dplyr::left_join(
+    tidycensus::fips_codes %>% 
+      dplyr::mutate(county_fips = stringr::str_c(state_code, county_code)), 
+    by = c("county_fips"))
 
 ggplot() +
-  geom_sf(data = tracts_sf)
+  geom_sf(data = tracts_sf, aes(fill = residential_units), linewidth = .6) +
+    scale_fill_continuous(na.value = "darkgrey") +
+  geom_sf(
+    data = tracts_sf %>% group_by(county_fips) %>% summarize(), 
+    fill = NA, 
+    color = "black",
+    linewidth = .75) +
+  geom_sf(data = wildfire_perimeters, fill = NA, color = palette_urbn_magenta[5], linewidth = .75) +
+  labs(
+    title = "Estimated Residential Units within Wildfire Boundaries",
+    subtitle = str_c(
+      "Incident Name: ", wildfire_perimeters$incident_name, "\n",
+      "State(s): ", paste(
+        tracts_sf %>% 
+          dplyr::filter(!is.na(residential_units)) %>% 
+          dplyr::distinct(state_name) %>%
+          dplyr::pull(), collapse = ", "), "\n",
+      "Incident Size: ", round(wildfire_perimeters$incident_size_acres, 0), " acres", "\n",
+      "Intersecting Tracts: ", nrow(tracts_sf %>% dplyr::filter(!is.na(residential_units)))),
+    fill = "Residential units") +
+  theme_urbn_map()
 ```
 

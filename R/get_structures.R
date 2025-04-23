@@ -83,7 +83,8 @@ get_structures = function(
         dplyr::pull(state_name) %>%
         unique()
 
-      existing_files = list.files(box_path) %>%
+      existing_files = list.files(box_path, full.names = TRUE) %>%
+        list.files(full.names = TRUE) %>%
         purrr::keep(~ stringr::str_detect(.x, state_name))
 
       if (length(existing_files) == 1) {
@@ -133,9 +134,15 @@ get_structures = function(
         dplyr::rename(GEOID = county_fips) }
 
     if (geography == "tract") {
-      tracts_sf = tigris::tracts(cb = TRUE, year = 2023, state = state_abbreviation) %>%
-        sf::st_transform(projection) %>%
-        dplyr::select(GEOID)
+      tracts_sf = purrr::map_dfr(
+        structure_data_states,
+        function(state_abbreviation) {
+          tigris::tracts(
+            cb = TRUE,
+            year = 2023,
+            state = state_abbreviation) %>%
+            sf::st_transform(projection) %>%
+            dplyr::select(GEOID) } )
 
       df2 = df1 %>%
         sf::st_join(tracts_sf) %>%

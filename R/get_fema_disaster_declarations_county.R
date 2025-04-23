@@ -53,10 +53,10 @@ get_fema_disaster_declarations_county = function(
 	## no longer exist as of 2010 or 2022; we drop those counties
 	## counties that exist in 2010 or 2022
 	benchmark_geographies = dplyr::bind_rows(
-	  tigris::counties(cb = TRUE, year = 2010) %>%
+	  tigris::counties(cb = TRUE, year = 2010, progress_bar = FALSE) %>%
 	    dplyr::transmute(GEOID = stringr::str_c(STATE, COUNTY)) %>%
 	    sf::st_drop_geometry(),
-	  tigris::counties(cb = TRUE, year = 2022) %>%
+	  tigris::counties(cb = TRUE, year = 2022, progress_bar = FALSE) %>%
 	    dplyr::select(GEOID) %>%
 	    sf::st_drop_geometry()) %>%
 	  dplyr::pull(GEOID) %>%
