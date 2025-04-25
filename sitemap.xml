@@ -4,6 +4,7 @@
 <url><loc>https://ui-research.github.io/climateapi/LICENSE.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/authors.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/index.html</loc></url>
+<url><loc>https://ui-research.github.io/climateapi/reference/calculate_residential_units.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/convert_delimited_to_parquet.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/estimate_zoning_envelope.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/get_box_path.html</loc></url>
@@ -12,15 +13,20 @@
 <url><loc>https://ui-research.github.io/climateapi/reference/get_fema_disaster_declarations_county.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/get_ihp_registrations.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/get_nfip_policies_county.html</loc></url>
+<url><loc>https://ui-research.github.io/climateapi/reference/get_sba_loans.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/get_sheldus_county.html</loc></url>
+<url><loc>https://ui-research.github.io/climateapi/reference/get_spatial_extent_census.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/get_structures.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/get_system_username.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/index.html</loc></url>
+<url><loc>https://ui-research.github.io/climateapi/reference/polygons_to_linestring.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/qualtrics_define_missing.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/qualtrics_format_metadata.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/qualtrics_get_metadata.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/qualtrics_plot_question.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/read_ipums_micro_cached.html</loc></url>
+<url><loc>https://ui-research.github.io/climateapi/reference/read_xlsx_from_url.html</loc></url>
+<url><loc>https://ui-research.github.io/climateapi/reference/subdivide_linestring.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/zoning_interpolate_demographics.html</loc></url>
 </urlset>
 
