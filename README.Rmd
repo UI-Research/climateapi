@@ -91,16 +91,16 @@ tracts_sf = us_tracts_sf %>%
       dplyr::mutate(county_fips = stringr::str_c(state_code, county_code)), 
     by = c("county_fips"))
 
-ggplot() +
-  geom_sf(data = tracts_sf, aes(fill = residential_units), linewidth = .6) +
-    scale_fill_continuous(na.value = "darkgrey") +
-  geom_sf(
-    data = tracts_sf %>% group_by(county_fips) %>% summarize(), 
+ggplot2::ggplot() +
+  geom_sf(data = tracts_sf, ggplot2::aes(fill = residential_units), linewidth = .6) +
+    ggplot2::scale_fill_continuous(na.value = "darkgrey") +
+  ggplot2::geom_sf(
+    data = tracts_sf %>% dplyr::group_by(county_fips) %>% dplyr::summarize(), 
     fill = NA, 
     color = "black",
     linewidth = .75) +
-  geom_sf(data = wildfire_perimeters, fill = NA, color = palette_urbn_magenta[5], linewidth = .75) +
-  labs(
+  ggplot2::geom_sf(data = wildfire_perimeters, fill = NA, color = palette_urbn_magenta[5], linewidth = .75) +
+  ggplot2::labs(
     title = "Estimated Residential Units within Wildfire Boundaries",
     subtitle = str_c(
       "Incident Name: ", wildfire_perimeters$incident_name, "\n",
@@ -112,6 +112,6 @@ ggplot() +
       "Incident Size: ", round(wildfire_perimeters$incident_size_acres, 0), " acres", "\n",
       "Intersecting Tracts: ", nrow(tracts_sf %>% dplyr::filter(!is.na(residential_units)))),
     fill = "Residential units") +
-  theme_urbn_map()
+  urbnthemes::theme_urbn_map()
 ```
 

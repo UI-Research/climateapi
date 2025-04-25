@@ -83,12 +83,12 @@ get_structures = function(
         dplyr::pull(state_name) %>%
         unique()
 
-      existing_files = list.files(box_path, full.names = TRUE) %>%
-        list.files(full.names = TRUE) %>%
-        purrr::keep(~ stringr::str_detect(.x, state_name))
+      existing_file = list.files(box_path, full.names = TRUE, recursive = TRUE) %>%
+        purrr::keep(stringr::str_detect(., stringr::str_c(state_abbreviation, "_Structures.gdb/gdb$"))) %>%
+        stringr::str_remove("/gdb$")
 
-      if (length(existing_files) == 1) {
-        structures1 = readr::read_csv(existing_files)
+      if (length(existing_file) == 1) {
+        structures1 = sf::st_read(existing_file)
         warning("Data are being read from Box and reflect a cached version of these data.")
       } else {
         url = data_urls %>%
