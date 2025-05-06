@@ -2,7 +2,7 @@
 % Please edit documentation in R/get_ihp_registrations.R
 \name{get_ihp_registrations}
 \alias{get_ihp_registrations}
-\title{Get Individuals and Households Program (IHP) Registrations}
+\title{Get Individuals and Households Program (IHP) registrations}
 \usage{
 get_ihp_registrations(
   geography = NULL,
@@ -27,7 +27,7 @@ get_ihp_registrations(
 A dataframe comprising county-level data on current NFIP policies
 }
 \description{
-Get Individuals and Households Program (IHP) Registrations
+Get Individuals and Households Program (IHP) registrations
 }
 \examples{
 \dontrun{
