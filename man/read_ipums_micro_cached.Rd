@@ -2,7 +2,7 @@
 % Please edit documentation in R/read_ipums_micro_cached.R
 \name{read_ipums_micro_cached}
 \alias{read_ipums_micro_cached}
-\title{Read Cached IPUMS Microdata}
+\title{Read cached IPUMS microdata}
 \usage{
 read_ipums_micro_cached(
   filename,
@@ -12,19 +12,19 @@ read_ipums_micro_cached(
 )
 }
 \arguments{
-\item{filename}{name of the file (not the full path)--do not include a file extension}
+\item{filename}{The name of the file (not the full file path)}
 
-\item{download_directory}{wherever the data will be downloaded to--must be a relative path}
+\item{download_directory}{A relative path specifying where to download the data}
 
-\item{extract_definition}{the object resulting from define_extract_micro()}
+\item{extract_definition}{A \code{define_extract_micro()} object}
 
-\item{refresh}{if true, execute the API query, even if data are already stored locally}
+\item{refresh}{If true, execute the API query, even if data are already stored locally. Defaults to FALSE}
 }
 \value{
 A dataframe corresponding to the supplied extract_definition
 }
 \description{
-Read Cached IPUMS Microdata
+Read cached IPUMS microdata
 }
 \examples{
 \dontrun{
@@ -41,5 +41,4 @@ read_ipums_micro_cached(
       "REPWT"),
   refresh = FALSE))
 }
-
 }

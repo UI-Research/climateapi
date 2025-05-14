@@ -2,7 +2,7 @@
 % Please edit documentation in R/get_fema_disaster_declarations_county.R
 \name{get_fema_disaster_declarations_county}
 \alias{get_fema_disaster_declarations_county}
-\title{Get Major Disaster Declarations by County}
+\title{Get major disaster declarations by county}
 \usage{
 get_fema_disaster_declarations_county(
   geography = "county",
@@ -22,7 +22,7 @@ get_fema_disaster_declarations_county(
 A dataframe comprising Major Disaster Declarations by month by year by county.
 }
 \description{
-Get Major Disaster Declarations by County
+Get major disaster declarations by county
 }
 \examples{
 \dontrun{

@@ -1,5 +1,3 @@
-# Author: Will Curran-Groome
-
 #' @importFrom magrittr %>%
 
 #' @title Estimate counts of hazard-impacted structures by structure type
@@ -20,6 +18,8 @@ get_structures = function(
     boundaries,
     geography = "county",
     keep_structures = FALSE) {
+
+  warning("The raw building footprint data files are large; this function can be slow to execute.")
 
   options(timeout = 240)
 
@@ -87,6 +87,10 @@ get_structures = function(
         purrr::keep(stringr::str_detect(., stringr::str_c(state_abbreviation, "_Structures.gdb/gdb$"))) %>%
         stringr::str_remove("/gdb$")
 
+
+      ## if there's an existing file on Box, we read the data locally rather than
+      ## download them from the website (which is very slow)
+      ## otherwise, we download them from the website
       if (length(existing_file) == 1) {
         structures1 = sf::st_read(existing_file)
         warning("Data are being read from Box and reflect a cached version of these data.")
@@ -110,6 +114,8 @@ get_structures = function(
             list.files(full.names = TRUE) %>%
             purrr::keep(~ stringr::str_detect(.x, "gdb"))) }
 
+      ## transalate to appropriate spatial format, filter to the user-provided `boundaries`
+      ## object, and select the relevant columns
       structures2 = structures1 %>%
         janitor::clean_names() %>%
         sf::st_drop_geometry() %>%
@@ -122,6 +128,7 @@ get_structures = function(
           primary_occupancy = prim_occ,
           county_fips = fips) })
 
+    ## summarize to the user-inputted geographic summary level
     if (geography == "county") {
       df2 = df1 %>%
         sf::st_drop_geometry() %>%
