@@ -125,7 +125,7 @@ benchmark_units_to_census = function(data) {
 #'
 #' @returns The inputted parcels datasets with attributes describing estimated unit counts by unit type.
 #' @export
-calculate_residential_units = function(
+estimate_units_per_parcel = function(
     structures,
     parcels,
     zoning,

@@ -23,13 +23,22 @@ reference:
   - get_current_fire_perimeters
 - title: Land use
   contents:
-  - zoning_calculate_development_capacity
-  - zoning_estimate_units_per_parcel
-  - zoning_interpolate_demographics
+  - estimate_zoning_envelope
+  - estimate_units_per_parcel
+  - interpolate_demographics
 - title: Utilities
   contents:
-  - utilities
-  - spatial_analysis
-  - shift_geometries
+  - get_system_username
+  - get_box_path
+  - get_dataset_columns
+  - convert_delimited_to_parquet
+  - get_spatial_extent_census
+  - read_xlsx_from_url
+  - subdivide_linestring
+  - polygons_to_linestring
   - read_ipums_micro_cached
-  - qualtrics_analysis
+  - qualtrics_format_metadata
+  - qualtrics_get_metadata
+  - qualtrics_plot_question
+  - qualtrics_define_missing
+

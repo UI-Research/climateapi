@@ -11,7 +11,7 @@
 #'
 #' @return A spatial (sf) dataset comprising one observation for each level of id_column with interpolated values taken from sociodemographic_tracts_sf.
 #' @export
-zoning_interpolate_demographics = function(
+interpolate_demographics = function(
     zones_sf,
     sociodemographic_tracts_sf = NULL,
     id_column,
