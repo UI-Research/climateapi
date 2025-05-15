@@ -14,7 +14,7 @@ reference:
 - title: County data
   contents:
   - get_business_patterns
-  - get_nfip_policies
+  - get_nfip_policies_county
   - get_fema_disaster_declarations_county
   - get_ihp_registrations
   - get_sheldus_county
