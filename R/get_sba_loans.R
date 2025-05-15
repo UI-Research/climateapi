@@ -75,7 +75,10 @@ get_sba_loans = function() {
 
   result = dplyr::bind_rows(
     business_loans %>% dplyr::mutate(loan_type = "business"),
-    home_loans %>% dplyr::mutate(loan_type = "residential"))
+    home_loans %>% dplyr::mutate(loan_type = "residential")) %>%
+    ## these are weird, meaningless records that are either embedded in the raw data
+    ## or that are accidentally created as rows when data are read-in from file
+    dplyr::filter(!stringr::str_detect(disaster_number_sba_physical, "Business Data Only|United States Small Business"))
 
   return(result)
 }

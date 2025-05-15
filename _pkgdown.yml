@@ -1,4 +1,35 @@
 url: https://ui-research.github.io/climateapi/
 template:
   bootstrap: 5
-
+reference:
+- title: Point data
+  contents:
+  - get_structures
+- title: Cities data
+  contents:
+  - get_sba_loans
+- title: Government unit data
+  contents:
+  - get_government_finances
+- title: County data
+  contents:
+  - get_business_patterns
+  - get_nfip_policies
+  - get_fema_disaster_declarations_county
+  - get_ihp_registrations
+  - get_sheldus_county
+- title: Event boundaries
+  contents:
+  - get_current_fire_perimeters
+- title: Land use
+  contents:
+  - zoning_calculate_development_capacity
+  - zoning_estimate_units_per_parcel
+  - zoning_interpolate_demographics
+- title: Utilities
+  contents:
+  - utilities
+  - spatial_analysis
+  - shift_geometries
+  - read_ipums_micro_cached
+  - qualtrics_analysis

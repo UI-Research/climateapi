@@ -18,13 +18,10 @@ knitr::opts_chunk$set(
 # climateapi
 
 <!-- badges: start -->
+
 <!-- badges: end -->
 
-The goal of `library(climateapi)` is to minimize repeated data cleaning and wrangling
-to enable project teams to devote more time to substantive analysis and inference-making.
-The package works toward this goal by creating a unified interface to common datasets
-and data manipulation tasks. Functions (will) support both climate-specific datasets
-as well as those that are climate-adjacent.
+The goal of `library(climateapi)` is to minimize repeated data cleaning and wrangling to enable project teams to devote more time to substantive analysis and inference-making. The package works toward this goal by creating a unified interface to common datasets and data manipulation tasks. Functions (will) support both climate-specific datasets as well as those that are climate-adjacent.
 
 ## Installation
 
@@ -46,7 +43,15 @@ library(urbnthemes)
 set_urbn_defaults(style = "print")
 ```
 
-```{r example}
+### ACS Housing and Demographics
+
+Capacity for interacting with data from the American Community Survey is housed in an adjacent package, `urbnindicators`.
+
+Visit that package's [webpage and documentation](https://ui-research.github.io/urbnindicators/) to learn more.
+
+### Major Disaster Declarations
+
+```{r}
 county_disaster_declarations = get_fema_disaster_declarations_county(api = TRUE)
 
 county_disaster_declarations %>%
@@ -55,6 +60,7 @@ county_disaster_declarations %>%
     summarize(annual_incidents = sum(incidents_all, na.rm = TRUE)) %>%
   ggplot() +
     geom_col(aes(x = year_declared, y = annual_incidents)) +
+    annotate("text", x = 2016.5, y = 132, label = "COVID-19 pandemic" %>% str_wrap(10), fontface = "bold") +
     labs(
       title = "COVID Results in a Spike of Counties with Disaster Declarations in 2020",
       subtitle = "Sum of major disaster declarations per Alabama county, by year",
@@ -63,24 +69,31 @@ county_disaster_declarations %>%
     theme_urbn_print()
 ```
 
+### Wildfire Perimeters and Structures
+
 ```{r}
+## take the largest active fire
 wildfire_perimeters = get_current_fire_perimeters() %>%
   arrange(desc(incident_size_acres)) %>%
   slice(1) %>%
   st_transform(5070)
 
+## a two-item list
+## the first item contains tract-level structure estimates
+## the second contains the structure points
 impacted_structures = get_structures(
   boundaries = wildfire_perimeters,
-  geography = "tract")
+  geography = "tract",
+  keep_structures = TRUE)
 
 us_tracts_sf = tigris::tracts(cb = TRUE, year = 2023, progress_bar = FALSE) %>%
   sf::st_transform(5070)
 
 tracts_sf = us_tracts_sf %>%
-  sf::st_filter(wildfire_perimeters %>% st_transform(5070) %>% st_buffer(10000)) %>%
+  sf::st_filter(wildfire_perimeters %>% st_transform(5070) %>% st_buffer(100000)) %>%
   dplyr::select(GEOID) %>%
   dplyr::left_join(
-    impacted_structures %>% 
+    impacted_structures[[1]] %>% 
       dplyr::filter(occupancy_class == "Residential") %>%
       dplyr::group_by(GEOID) %>%
       dplyr::summarize(residential_units = sum(count, na.rm = TRUE)), 
@@ -91,27 +104,114 @@ tracts_sf = us_tracts_sf %>%
       dplyr::mutate(county_fips = stringr::str_c(state_code, county_code)), 
     by = c("county_fips"))
 
+counties_sf = tracts_sf %>%
+  dplyr::group_by(county_fips, county) %>% 
+  dplyr::summarize() %>%
+  dplyr::ungroup() %>%
+  dplyr::mutate(county = county %>% stringr::str_remove((" County")))
+
 ggplot2::ggplot() +
   geom_sf(data = tracts_sf, ggplot2::aes(fill = residential_units), linewidth = .6) +
     ggplot2::scale_fill_continuous(na.value = "darkgrey") +
-  ggplot2::geom_sf(
-    data = tracts_sf %>% dplyr::group_by(county_fips) %>% dplyr::summarize(), 
-    fill = NA, 
-    color = "black",
-    linewidth = .75) +
-  ggplot2::geom_sf(data = wildfire_perimeters, fill = NA, color = palette_urbn_magenta[5], linewidth = .75) +
+  ggplot2::geom_sf(data = counties_sf, fill = NA, color = "black", linewidth = .75) +
+  ggplot2::geom_sf_text(data = counties_sf, color = "black", ggplot2::aes(label = county), fontface = "bold", size = 3) +
+  ggplot2::geom_sf(data = wildfire_perimeters, fill = NA, color = "red", linewidth = 1) +
   ggplot2::labs(
-    title = "Estimated Residential Units within Wildfire Boundaries",
-    subtitle = str_c(
-      "Incident Name: ", wildfire_perimeters$incident_name, "\n",
-      "State(s): ", paste(
+    title = "Estimated Residential Units within Wildfire Boundaries, by Tract",
+    subtitle = stringr::str_c(
+      "Incident Name: ", wildfire_perimeters$incident_name, " (", 
+      paste(
         tracts_sf %>% 
           dplyr::filter(!is.na(residential_units)) %>% 
           dplyr::distinct(state_name) %>%
-          dplyr::pull(), collapse = ", "), "\n",
-      "Incident Size: ", round(wildfire_perimeters$incident_size_acres, 0), " acres", "\n",
-      "Intersecting Tracts: ", nrow(tracts_sf %>% dplyr::filter(!is.na(residential_units)))),
+          dplyr::pull(), collapse = ", "), ") \n",
+      "Incident Size: ", (round(wildfire_perimeters$incident_size_acres, 0) %>% scales::comma()), " acres", "\n"),
     fill = "Residential units") +
   urbnthemes::theme_urbn_map()
+```
+
+### SBA
+```{r}
+sba_disaster_declarations = get_sba_loans()
+
+sba_disaster_declarations %>%
+  dplyr::mutate(
+    fiscal_year = as.numeric(fiscal_year),
+    sba_approved = dplyr::if_else(approved_amount_total > 0, 1, 0)) %>%
+  ## some records, especially those from 2020 onwards, have NA values for approved fields
+  ## for that reason, we'll only look at years predating 2020
+  ## we're also going to exclude FY 2000--there are records for this year, but none
+  ## for the following three years, suggesting some... irregularities in the data
+  dplyr::filter(
+    !is.na(sba_approved),
+    fiscal_year > 2000, 
+    fiscal_year < 2020) %>%
+  dplyr::group_by(loan_type, sba_approved, fiscal_year) %>%
+  dplyr::summarize(count = dplyr::n()) %>%
+  dplyr::ungroup() %>%
+  dplyr::mutate(
+    fill = dplyr::case_when(
+      loan_type == "business" & sba_approved == 1 ~ "Business loans approved",
+      loan_type == "business" & sba_approved == 0 ~ "Business loans not approved",
+      loan_type == "residential" & sba_approved == 1 ~ "Residential loans approved",
+      loan_type == "residential" & sba_approved == 0 ~ "Residential loans not approved")) %>%
+  ggplot2::ggplot() +
+  ggplot2::geom_col(ggplot2::aes(x = fiscal_year, y = count, fill = fill)) +
+  ggplot2::labs(
+    title = "The Small Business Administration (SBA) Makes Many Residential Loans Post-Disaster",
+    x = "Fiscal year", 
+    y = "Toal loan applications") +
+  ggplot2::scale_fill_manual(
+    values = c(
+      "Business loans approved" = palette_urbn_cyan[5] %>% as.character,
+      "Business loans not approved" = palette_urbn_cyan[3] %>% as.character,
+      "Residential loans approved" = palette_urbn_yellow[5] %>% as.character,
+      "Residential loans not approved" = palette_urbn_yellow[3] %>% as.character)) +
+  ggplot2::scale_y_continuous(labels = scales::comma) +
+  ggplot2::scale_x_continuous(breaks = seq(2004, 2019, 3)) +
+  ggplot2::guides(fill = ggplot2::guide_legend(nrow = 2, byrow = TRUE))
+```
+
+
+### County Business Patterns
+```{r}
+business_patterns = get_business_patterns()
+
+business_patterns %>%
+  dplyr::filter(employee_size_range_code == "001") %>% ## all sizes
+  dplyr::group_by(state, county) %>%
+    dplyr::mutate(
+      industry_share_payroll = annual_payroll / annual_payroll[industry == "total"]) %>%
+    dplyr::filter(industry != "total") %>%
+  dplyr::ungroup() %>%
+  dplyr::filter(state == "01", county == "001") %>%
+  dplyr::mutate(industry = industry %>% janitor::make_clean_names(case = "sentence") %>% stringr::str_wrap(40)) %>%
+  ggplot2::ggplot() +
+    ggplot2::geom_col(ggplot2::aes(y = stats::reorder(industry, industry_share_payroll), x = industry_share_payroll)) +
+    ggplot2::labs(
+      x = "Share of total payroll",
+       y = "Industry",
+       title = "Autauga County, AL's Industries (NAICS Codes) by Payroll Share")
+```
+### Government Unit Expenses from the Census of Governments
+
+```{r}
+government_finances = get_government_finances()
+
+government_finances %>%
+  dplyr::filter(state_code == "01", county_code == "001") %>%
+  dplyr::group_by(government_type) %>%
+    dplyr::summarize(
+      amount_millions = sum(amount_thousands, na.rm = TRUE) / 1000,
+      count = dplyr::n()) %>%
+  ggplot2::ggplot(aes(y = stats::reorder(government_type, amount_millions) %>% stringr::str_wrap(30), x = amount_millions)) +
+  ggplot2::geom_col() +
+  ggplot2::geom_text(ggplot2::aes(label = stringr::str_c("(N = ", count, ")")), hjust = -.25) +
+  ggplot2::labs(x = "Total annual expenditures (millions, USD)",
+       y = "",
+       title = "Autauga County, AL's Expenditures by Government Unit Class",
+       subtitle = "Government unit counts in parentheses") +
+  ggplot2::scale_x_continuous(labels = scales::dollar, limits = c(0, 500)) +
+  ggplot2::theme(panel.grid.major = ggplot2::element_blank())
 ```
 

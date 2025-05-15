@@ -114,7 +114,7 @@ get_structures = function(
             list.files(full.names = TRUE) %>%
             purrr::keep(~ stringr::str_detect(.x, "gdb"))) }
 
-      ## transalate to appropriate spatial format, filter to the user-provided `boundaries`
+      ## translate to appropriate spatial format, filter to the user-provided `boundaries`
       ## object, and select the relevant columns
       structures2 = structures1 %>%
         janitor::clean_names() %>%
