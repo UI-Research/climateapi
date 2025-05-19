@@ -17,6 +17,7 @@ Imports:
     here,
     ipumsr,
     janitor,
+    lehdr,
     lubridate,
     magrittr,
     openxlsx,

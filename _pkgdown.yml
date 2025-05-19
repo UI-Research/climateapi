@@ -5,6 +5,9 @@ reference:
 - title: Point data
   contents:
   - get_structures
+- title: Block data
+  contents:
+  - get_lehd
 - title: Cities data
   contents:
   - get_sba_loans
