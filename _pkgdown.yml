@@ -7,7 +7,7 @@ reference:
   - get_structures
 - title: Block data
   contents:
-  - get_lehd
+  - get_lodes
 - title: Cities data
   contents:
   - get_sba_loans

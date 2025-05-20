@@ -74,9 +74,10 @@ county_disaster_declarations %>%
 ```{r}
 ## take the largest active fire
 wildfire_perimeters = get_current_fire_perimeters() %>%
-  arrange(desc(incident_size_acres)) %>%
-  slice(1) %>%
-  st_transform(5070)
+  dplyr::arrange(desc(incident_size_acres)) %>%
+  dplyr::slice(1) %>%
+  sf::st_transform(5070) %>%
+  sf::st_make_valid()
 
 ## a two-item list
 ## the first item contains tract-level structure estimates
@@ -213,5 +214,64 @@ government_finances %>%
        subtitle = "Government unit counts in parentheses") +
   ggplot2::scale_x_continuous(labels = scales::dollar, limits = c(0, 500)) +
   ggplot2::theme(panel.grid.major = ggplot2::element_blank())
+```
+### LODES (LEHD Origin Destination Employment Statistics)
+
+```{r}
+lodes = get_lodes(
+    lodes_type = "od",
+    jobs_type = "all",
+    states = "AL",
+    years = 2022,
+    geography = "tract",
+    ## for simplicity, considering only workers who live and work in AL
+    state_part = "main") %>%
+  ## federal jobs are broken out separately in case users need to standardize
+  ## all-jobs counts over time, but this doesn't apply here
+  dplyr::filter(job_type == "all")
+
+al_tracts = us_tracts_sf %>%
+  dplyr::filter(GEOID %>% str_sub(1,2) == "01") %>%
+  dplyr::select(GEOID) %>%
+  sf::st_transform(5070)
+
+al_centroids = al_tracts %>%
+  sf::st_centroid() %>%
+  sf::st_transform(5070) %>%
+  sf::st_coordinates() %>%
+  tibble::as_tibble() %>%
+  cbind(al_tracts$GEOID) %>%
+  dplyr::rename(
+    x = X,
+    y = Y,
+    GEOID = 3)
+
+major_al_cities = tidycensus::get_acs(
+    geography = "place",
+    variables = c(population = "B01003_001"),
+    year = 2022,
+    output = "wide",
+    state = "AL",
+    geometry = TRUE) %>%
+  dplyr::slice_max(populationE, n = 5) %>%
+  dplyr::transmute(
+    NAME = NAME %>% 
+      stringr::str_remove_all("CDP|city|town|,|Alabama") %>% 
+      stringr::str_squish() %>% 
+      stringr::str_trim())
+
+lodes %>%
+  dplyr::select(dplyr::matches("GEOID"), total_jobs) %>%
+  dplyr::left_join(al_centroids, by = c("h_GEOID" = "GEOID")) %>%
+  dplyr::left_join(al_centroids %>% dplyr::rename(xend = x, yend = y), by = c("w_GEOID" = "GEOID")) %>%
+  filter(total_jobs > 20) %>%
+  ggplot() +
+    geom_sf(data = al_tracts, fill = "lightgrey", color = "darkgrey", linewidth = .5) +
+    geom_segment(
+      aes(x = x, y = y, xend = xend, yend = yend), color = palette_urbn_main[1], alpha = .1) +
+    geom_sf(data = major_al_cities, fill = NA, color = "black") +
+    geom_sf_text(data = major_al_cities, aes(label = NAME), size = 3, , fontface = "bold", color = "black", vjust = -2) +
+    theme_urbn_map() +
+  labs(title = "Employment Commuting Patterns by Tract in Alabama (2022)")
 ```
 

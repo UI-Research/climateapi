@@ -1,31 +1,62 @@
 #' Obtain County Business Patterns (CBP) Estimates per County
 #'
+#' @param year The vintage of CBP data desired. Data are available from 1986, though this function likely only supports more recent years (it it tested on 2022-vintage data only). Default is 2022.
+#' @param naics_code_digits One of c(2, 3). Default is 2. NAICS codes range in specificity; 2-digit codes describe the highest groupings of industries, while six-digit codes are exceedingly detailed. There are 20 2-digit NAICS codes and 196 3-digit codes.
+#' @param naics_codes A vector of NAICS codes to query. If NULL, the function will query all available codes with the specified number of digits. If not NULL, this argument overrides the `naics_code_digits` argument.
 #' @return A tibble with data on county-level employees, employers, and aggregate annual payrolls by industry and employer size
 #' @export
 #'
 #' @examples
 #' \dontrun{
-#' get_business_patterns()
+#' get_business_patterns(
+#'  year = 2022,
+#'  naics_code_digits = 3)
+#'
+#' get_business_patterns(
+#'  year = 2017,
+#'  naics_codes = c(221111, 221112))
 #' }
-get_business_patterns = function() {
-  naics_codes = censusapi::listCensusMetadata(
+
+get_business_patterns = function(year = 2022, naics_code_digits = 2, naics_codes = NULL) {
+  if (year < 1986) { stop("Year must be 1986 or later.") }
+  if (! naics_code_digits %in% c(2, 3)) {
+    stop("`naics_code_digits` must be one of c(2, 3). For more detailed codes, explicitly pass desired codes to the `naics_codes` parameter.") }
+
+  naics_codes_metadata = censusapi::listCensusMetadata(
     name = "cbp",
     vintage = "2022",
     type = "variables",
     include_values = TRUE)
 
-  ## only selecting high-level (two-digit) NAICS codes
-  ## though this could be easily modified to accept any/all NAICS codes
-  ## (though the query will get progressively slower as we supply more codes,
-  ## or so I would assume)
-  naics_codes_to_query = naics_codes %>%
-    dplyr::filter(nchar(values_code) == 2) %>%
-    dplyr::pull(values_code)
+  if (!is.null(naics_codes)) {
+    naics_code_check = naics_codes_metadata %>%
+      dplyr::filter(values_code %in% naics_codes) %>%
+      nrow()
+
+    if (naics_code_check < 1) {
+      stop("The provided `naics_codes` do not appear to be valid NAICS codes. Refer to https://www.census.gov/naics/ for the relevant vintage's NAICS codes.") }
+
+    if (naics_code_check < length(naics_codes)) {
+      warning("Some, but not all, supplied `naics_codes` appear to be valid NAICS codes. Returning data only for valid codes.") }
+
+    naics_code_digits = NULL }
+
+  if (!is.null(naics_code_digits)) {
+    naics_codes_to_query = naics_codes_metadata %>%
+      dplyr::filter(
+        nchar(values_code) == naics_code_digits,
+        !is.na(values_code)) %>%
+      dplyr::pull(values_code) } else {
+    naics_codes_to_query = naics_codes_metadata %>%
+      dplyr::filter(
+        values_code %in% naics_codes,
+        !is.na(values_code)) %>%
+      dplyr::pull(values_code) }
 
   cbp = purrr::map_dfr(
     naics_codes_to_query,
     ## some high-level codes (92 and 94) error with a "No data to return"
-    ## message, so we wrap this in a tryCatch. this doesn't appear to be an
+    ## message, so we wrap this in a tryCatch(). this doesn't appear to be an
     ## error with our query--there's no data for these codes on data.census.gov
     ## either
     ~ tryCatch({
