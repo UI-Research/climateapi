@@ -1,8 +1,17 @@
 Package: climateapi
 Title: Climate (and adjacent) data and functions for the C&C practice area
 Version: 0.0.0.9001
-Authors@R: 
-    person(family = "Curran-Groome", given = "Will", email = "wcurrangroome@urban.org", role = c("aut", "cre"))
+Authors@R: c(
+    person(
+        family = "Curran-Groome", 
+        given = "Will", 
+        email = "wcurrangroome@urban.org", 
+        role = c("aut", "cre"),
+        comment = c(ORCID = "0000-0001-6432-7561")),
+    person(
+        family = "Lloyd",
+        given = "Kameron",
+        role = c("aut")))
 Description: This packages combines a set of utilities for acquiring and processing climate and climate-adjacent datasets under a consistent API. It takes opinionated stances on how to manipulate raw data in an effort to produce standard workflows that enable project teams to devote more time to substantive analysis and inference-making.
 License: MIT + file LICENSE
 Encoding: UTF-8

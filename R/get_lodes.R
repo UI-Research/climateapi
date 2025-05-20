@@ -1,6 +1,6 @@
 #' @importFrom magrittr %>%
 
-rename_lehd_variables = function(.df) {
+rename_lodes_variables = function(.df) {
   ## renaming code from GH Copilot (in small part--just translating the codebook to a tribble)
   ## variable definitions/metadata from: https://lehd.ces.census.gov/data/lodes/LODES7/LODESTechDoc7.2.pdf
   ## table of variable definitions
@@ -98,17 +98,17 @@ rename_lehd_variables = function(.df) {
 #' @param states A vector of state abbreviations.
 #' @param years A vector of years.
 #' @param geography One of c("block", "block group", "tract", "county", "state"). Default is "tract".
-#' @param state_part One of c("main", "aux"). Default is "aux", which includes workers who reside outside of the state where they work.
+#' @param state_part One of c("main", "aux"). Default is "main", which includes only workers who reside inside the state where they work. "aux" returns only workers who work in the specified state but live outside of that state.
 #'
 #' @return A tibble with one record per geography per year per job type. Attributes include total jobs and jobs by worker earnings, industry, and demographics; the origin-destination results have more limited demographics compared to the "wac" and "rac" results.
 #' @export
-get_lehd = function(
+get_lodes = function(
     lodes_type,
     jobs_type = "all",
     states,
     years,
     geography = "tract",
-    state_part = "aux") {
+    state_part = "main") {
 
   if (geography == "bg") { geography = "block group"}
 
@@ -147,6 +147,59 @@ form of multi-year job count comparison, we return by default federal job counts
 alongside those for all jobs; users can subtract federal job counts to create
 a temporally-consistent measure of total jobs.\n") }
 
+  state_years_missing = tibble::tribble(
+    ~ year, ~ state,
+    2002, "AK",
+    2002, "AZ",
+    2002, "DC",
+    2002, "MA",
+    2002, "MS",
+    2002, "NH",
+    2003, "AZ",
+    2003, "DC",
+    2003, "MA",
+    2003, "MS",
+    2004, "DC",
+    2004, "MA",
+    2005, "DC",
+    2005, "MA",
+    2006, "DC",
+    2006, "MA",
+    2007, "DC",
+    2007, "MA",
+    2008, "DC",
+    2008, "MA",
+    2009, "DC",
+    2009, "MA",
+    2010, "MA",
+    2018, "AK",
+    2019, "AK",
+    2019, "MS",
+    2020, "AK",
+    2020, "MS",
+    2021, "AK",
+    2021, "MS",
+    2022, "AK",
+    2022, "MS",
+    2022, "MI")
+
+  state_years_supplied = expand.grid(years, states %>% stringr::str_to_upper()) %>%
+    tibble::as_tibble() %>%
+    dplyr::rename(year = Var1, state = Var2) %>%
+    dplyr::mutate(flag = 1)
+
+  years_to_omit = state_years_missing %>%
+    dplyr::left_join(state_years_supplied) %>%
+    dplyr::filter(flag == 1) %>%
+    dplyr::mutate(state = stringr::str_to_lower(state))
+
+  if (nrow(years_to_omit) > 0) {
+    warning(
+"\nSome supplied state-year combinations are not included in the LODES data.
+Returning for only those states that are available for all specified years.\n") }
+
+  states = states[!states %in% years_to_omit$state]
+
   #https://lehd.ces.census.gov/doc/help/onthemap/LODESDataNote-FedEmp2015.pdf
 
   ## geography identifying variables are variably-named across different geography
@@ -159,9 +212,14 @@ a temporally-consistent measure of total jobs.\n") }
     jobs_type_all = "JT01"
     jobs_type_federal = "JT05" }
 
+  # states = "TX"
+  # years = 2022
+  # agg_geo = "tract"
+  # lodes_type = "od"
+
   ## else this is noisy
   suppressWarnings({suppressMessages({
-    lehd_all_jobs = lehdr::grab_lodes(
+    lodes_all_jobs = lehdr::grab_lodes(
         state = states,
         year = years,
         job_type = jobs_type_all, ## all primary jobs, i.e., the highest-paying job per worker
@@ -169,7 +227,7 @@ a temporally-consistent measure of total jobs.\n") }
         segment = "S000", ## total number of jobs for workers
         lodes_type = lodes_type,
         version = "LODES8",
-        state_part = "aux") %>% ## include out-of-state workers who work in the state of interest
+        state_part = state_part) %>% ## include out-of-state workers who work in the state of interest
       dplyr::rename_with(
         .cols = dplyr::everything(),
         .fn = ~ stringr::str_replace_all(.x, geoid_rename)) %>%
@@ -182,7 +240,7 @@ include federal jobs for 2010 and later. Records for pre-2010 federal jobs are l
 as NA.\n") }
 
   suppressWarnings({suppressMessages({
-    lehd_federal_jobs = lehdr::grab_lodes(
+    lodes_federal_jobs = lehdr::grab_lodes(
         state = states,
         year = years[years > 2009],
         job_type = jobs_type_federal, ## federal jobs
@@ -190,7 +248,7 @@ as NA.\n") }
         segment = "S000",
         lodes_type = lodes_type,
         version = "LODES8",
-      state_part = "aux") %>%
+      state_part = state_part) %>%
       dplyr::rename_with(
         .cols = dplyr::everything(),
         .fn = ~ stringr::str_replace_all(.x, geoid_rename)) %>%
@@ -201,11 +259,11 @@ as NA.\n") }
     join_by = c("year", "w_GEOID", "h_GEOID") }
 
   ## both all jobs and all federal jobs
-  lehd_all_nonfederal_jobs = lehd_all_jobs %>%
+  lodes_all_nonfederal_jobs = lodes_all_jobs %>%
     dplyr::rename_with(.cols = -c(year, dplyr::matches("GEOID"), state), .fn = ~ stringr::str_c("all_", .x)) %>%
     dplyr::mutate(year = as.numeric(year)) %>%
     dplyr::left_join(
-      lehd_federal_jobs %>%
+      lodes_federal_jobs %>%
         dplyr::select(-state) %>%
         dplyr::rename_with(.cols = -c(year, dplyr::matches("GEOID")), .fn = ~ stringr::str_c("federal_", .x)) %>%
         dplyr::mutate(year = as.numeric(year)),
@@ -226,9 +284,10 @@ as NA.\n") }
       names_pattern = "(all|federal)_(.*)",
       names_to = c("job_type", "variable")) %>%
     tidyr::pivot_wider(names_from = "variable", values_from = value) %>%
-    rename_lehd_variables()
+    rename_lodes_variables()
 
-  return(lehd_all_nonfederal_jobs)
+  return(lodes_all_nonfederal_jobs)
 }
 
-utils::globalVariables(c("Explanation", "Variable"))
+utils::globalVariables(c(
+  "Explanation", "Variable", "Var1", "Var2", "flag"))
