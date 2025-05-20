@@ -38,9 +38,25 @@
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">get_business_patterns</span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">get_business_patterns</span><span class="op">(</span>year <span class="op">=</span> <span class="fl">2022</span>, naics_code_digits <span class="op">=</span> <span class="fl">2</span>, naics_codes <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
     </div>
 
+    <div class="section level2">
+    <h2 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a></h2>
+
+
+<dl><dt id="arg-year">year<a class="anchor" aria-label="anchor" href="#arg-year"></a></dt>
+<dd><p>The vintage of CBP data desired. Data are available from 1986, though this function likely only supports more recent years (it it tested on 2022-vintage data only). Default is 2022.</p></dd>
+
+
+<dt id="arg-naics-code-digits">naics_code_digits<a class="anchor" aria-label="anchor" href="#arg-naics-code-digits"></a></dt>
+<dd><p>One of c(2, 3). Default is 2. NAICS codes range in specificity; 2-digit codes describe the highest groupings of industries, while six-digit codes are exceedingly detailed. There are 20 2-digit NAICS codes and 196 3-digit codes.</p></dd>
+
+
+<dt id="arg-naics-codes">naics_codes<a class="anchor" aria-label="anchor" href="#arg-naics-codes"></a></dt>
+<dd><p>A vector of NAICS codes to query. If NULL, the function will query all available codes with the specified number of digits. If not NULL, this argument overrides the <code>naics_code_digits</code> argument.</p></dd>
+
+</dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A tibble with data on county-level employees, employers, and aggregate annual payrolls by industry and employer size</p>
@@ -49,7 +65,13 @@
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
-<span class="r-in"><span><span class="fu">get_business_patterns</span><span class="op">(</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">get_business_patterns</span><span class="op">(</span></span></span>
+<span class="r-in"><span> year <span class="op">=</span> <span class="fl">2022</span>,</span></span>
+<span class="r-in"><span> naics_code_digits <span class="op">=</span> <span class="fl">3</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="fu">get_business_patterns</span><span class="op">(</span></span></span>
+<span class="r-in"><span> year <span class="op">=</span> <span class="fl">2017</span>,</span></span>
+<span class="r-in"><span> naics_codes <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">221111</span>, <span class="fl">221112</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 </code></pre></div>
     </div>
@@ -58,7 +80,7 @@
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Will Curran-Groome.</p>
+  <p>Developed by Will Curran-Groome, Kameron Lloyd.</p>
 </div>
 
 <div class="pkgdown-footer-right">
