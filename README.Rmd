@@ -131,7 +131,8 @@ ggplot2::ggplot() +
   urbnthemes::theme_urbn_map()
 ```
 
-### SBA
+### SBA Disaster Loans
+
 ```{r}
 sba_disaster_declarations = get_sba_loans()
 
@@ -173,8 +174,8 @@ sba_disaster_declarations %>%
   ggplot2::guides(fill = ggplot2::guide_legend(nrow = 2, byrow = TRUE))
 ```
 
-
 ### County Business Patterns
+
 ```{r}
 business_patterns = get_business_patterns()
 
@@ -194,7 +195,8 @@ business_patterns %>%
        y = "Industry",
        title = "Autauga County, AL's Industries (NAICS Codes) by Payroll Share")
 ```
-### Government Unit Expenses from the Census of Governments
+
+### Government Expenses
 
 ```{r}
 government_finances = get_government_finances()
@@ -215,7 +217,8 @@ government_finances %>%
   ggplot2::scale_x_continuous(labels = scales::dollar, limits = c(0, 500)) +
   ggplot2::theme(panel.grid.major = ggplot2::element_blank())
 ```
-### LODES (LEHD Origin Destination Employment Statistics)
+
+### LEHD Origin Destination Employment Statistics (LODES)
 
 ```{r}
 lodes = get_lodes(
@@ -274,4 +277,3 @@ lodes %>%
     theme_urbn_map() +
   labs(title = "Employment Commuting Patterns by Tract in Alabama (2022)")
 ```
-
