@@ -31,7 +31,7 @@ get_ihp_registrations = function(
 
     if (isFALSE(api)) {
       inpath = file.path(
-        get_box_path, "hazards", "fema", "individual-households-program", "raw", file_name)
+        get_box_path(), "hazards", "fema", "individual-households-program", "raw", file_name)
 
       if (! file.exists(inpath)) {
         stop("The provided `file_name` is invalid.") }
@@ -88,7 +88,7 @@ get_ihp_registrations = function(
         amount_individual_housing_program = ihp_amount,
         amount_flood_insurance_premium_paid_by_fema = fip_amount,
         amount_housing_assistance = ha_amount,
-        other_needs_assistance = ona_amount,
+        amount_other_needs_assistance = ona_amount,
         emergency_needs_flag = emergency_needs,
         food_needs_flag = food_need,
         shelter_needs_flag = shelter_need,
@@ -141,9 +141,9 @@ This dataset includes all major disasters and includes only valid registrants
 IHP is intended to meet basic needs and supplement disaster recovery efforts.")
 
   message(stringr::str_c(
-    "The unit of observation is individual households' IHP registrations. ",
-    "The `unique_id` field is a unique identifier for each observation. ",
-    "Note that a zip-county crosswalk is included as the second item in the list returned by this function."))
+"The unit of observation is individual households' IHP registrations. ",
+"The `unique_id` field is a unique identifier for each observation. ",
+"Note that a zip-county crosswalk is included as the second item in the list returned by this function."))
 
   return(list(c(ihp_registrations, zcta_county_xwalk)))
 }
