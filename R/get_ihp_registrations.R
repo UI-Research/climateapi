@@ -5,7 +5,7 @@
 #' @title Get Individuals and Households Program (IHP) registrations
 #'
 #' @param geography Included only for API consistency; this must be NULL.
-#' @param state_fips A character vector of two-digit state codes.
+#' @param state_abbreviations A character vector of two-letter state abbreviations. If NULL (default), return data for all 51 states. Otherwise return data for the specified states.
 #' @param file_name The name (not the full path) of the Box file containing the raw data.
 #' @param api If TRUE (default), query the API.
 #' @param outpath The path to save the parquet-formatted datafile. Applicable only when `api = FALSE`.
@@ -16,13 +16,13 @@
 #' @examples
 #' \dontrun{
 #' get_ihp_registrations(
-#'    county_geoids = c("01001", "01003"),
+#'    state_fips = "NJ",
 #'    api = TRUE)
 #' }
 
 get_ihp_registrations = function(
     geography = NULL,
-    state_fips,
+    state_fips = NULL,
     file_name = "IndividualsAndHouseholdsProgramValidRegistrations_2024_10_13.parquet",
     api = TRUE,
     outpath = NULL) {
@@ -145,8 +145,11 @@ IHP is intended to meet basic needs and supplement disaster recovery efforts.")
 "The `unique_id` field is a unique identifier for each observation. ",
 "Note that a zip-county crosswalk is included as the second item in the list returned by this function."))
 
-  return(list(c(ihp_registrations, zcta_county_xwalk)))
+  return(list(c(ihp_registrations, zip_county_xwalk)))
 }
+
+"C:/Users/wcurrangroome/Box/METRO Climate and Communities Practice Area/github-repository/crosswalks/geocorr2022_2020_zip_zcta_to_county.csv" %>% file.exists()
+
 
 utils::globalVariables(c(
   "substate_geography", "state_abbreviation", "city_name", "zip_code", "househole_residents",
@@ -156,7 +159,7 @@ utils::globalVariables(c(
   "fema_determined_value_real_property_damage", "fema_determined_value_personal_property_damage",
   "amount_rental_assistance", "amount_repairs", "amount_replacement", "amount_personal_property",
   "max_individual_households_program_flag", "max_housing_assistance_flag", "max_other_needs_assistance_flag",
-  "date_last_updated", "zcta_county_xwalk", "access_functional_needs", "afact",
+  "date_last_updated", "zip_county_xwalk", "access_functional_needs", "afact",
   "damaged_city", "damaged_state_abbreviation", "damaged_zip_code", "emergency_needs",
   "fip_amount", "food_need", "gross_income", "ha_amount", "ha_max", "household_composition",
   "ihp_amount", "ihp_max", "last_refresh", "ona_amount", "ona_max", "own_rent", "personal_property_amount",
