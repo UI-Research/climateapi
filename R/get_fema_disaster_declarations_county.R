@@ -49,7 +49,7 @@ get_fema_disaster_declarations_county = function(
 		paste0("incidents_", .) %>%
 		janitor::make_clean_names()
 
-	## the data date back multiple decade, so there are some valid observations for counties that
+	## the data date back multiple decades, so there are some valid observations for counties that
 	## no longer exist as of 2010 or 2022; we drop those counties
 	## counties that exist in 2010 or 2022
 	benchmark_geographies = dplyr::bind_rows(
@@ -74,7 +74,9 @@ get_fema_disaster_declarations_county = function(
 		dplyr::filter(declaration_type == "DR") %>%
 		## produce counts at the county x incident-type x year x month level
 		dplyr::group_by(GEOID, incident_type, year_declared, month_declared) %>%
-			dplyr::summarise(count = dplyr::n()) %>%
+			dplyr::summarise(
+			  count = dplyr::n(),
+			  declaration_title = paste(declaration_title, collapse = ", ")) %>%
 			dplyr::ungroup() %>%
 	  dplyr::arrange(GEOID, year_declared, month_declared) %>%
 		## widen the data so that there is one row per county x year x month, with
@@ -91,6 +93,7 @@ get_fema_disaster_declarations_county = function(
 			GEOID,
 			year_declared,
 			month_declared,
+			declaration_title,
 			incidents_all,
 			incidents_natural_hazard,
 			dplyr::everything()) %>%
