@@ -49,7 +49,8 @@ get_ihp_registrations = function(
       df1 = arrow::read_parquet(file = inpath) %>%
         dplyr::select(dplyr::all_of(get_dataset_columns("ihp_registrations"))) %>%
         janitor::clean_names() %>%
-        dplyr::filter(damaged_state_abbreviation %in% state_fips) } else {
+        dplyr::filter(damaged_state_abbreviation %in% state_fips)
+      } else {
 
       df1 = purrr::map_dfr(
           state_fips,
@@ -145,11 +146,8 @@ IHP is intended to meet basic needs and supplement disaster recovery efforts.")
 "The `unique_id` field is a unique identifier for each observation. ",
 "Note that a zip-county crosswalk is included as the second item in the list returned by this function."))
 
-  return(list(c(ihp_registrations, zip_county_xwalk)))
+  return(list(ihp_registrations, zip_county_xwalk))
 }
-
-"C:/Users/wcurrangroome/Box/METRO Climate and Communities Practice Area/github-repository/crosswalks/geocorr2022_2020_zip_zcta_to_county.csv" %>% file.exists()
-
 
 utils::globalVariables(c(
   "substate_geography", "state_abbreviation", "city_name", "zip_code", "househole_residents",
