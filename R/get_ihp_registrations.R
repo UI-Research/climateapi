@@ -23,7 +23,7 @@
 get_ihp_registrations = function(
     geography = NULL,
     state_fips = NULL,
-    file_name = "IndividualsAndHouseholdsProgramValidRegistrations_2024_10_13.parquet",
+    file_name = "IndividualsAndHouseholdsProgramValidRegistrations_2025_06_10.csv",
     api = TRUE,
     outpath = NULL) {
 

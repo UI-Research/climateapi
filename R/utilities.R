@@ -164,7 +164,7 @@ convert_delimited_to_parquet = function(
 
   ## reading the file in chunks
   raw_text_subsetted = tryCatch(
-    { readr::read_delim_chunked(inpath, delim = delimit_character, callback = DataFrameCallback$new(read_chunk_callback), chunk_size = 1000000) },
+    { readr::read_delim_chunked(inpath, delim = delimit_character, callback = readr::DataFrameCallback$new(read_chunk_callback), chunk_size = 1000000) },
     error = function(e) { stop(e) })
 
   arrow::write_parquet(raw_text_subsetted, sink = outpath)
