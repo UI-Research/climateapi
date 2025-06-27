@@ -17,10 +17,10 @@ reference:
 - title: County data
   contents:
   - get_business_patterns
-  - get_nfip_policies_county
-  - get_fema_disaster_declarations_county
+  - get_nfip_policies
+  - get_fema_disaster_declarations
   - get_ihp_registrations
-  - get_sheldus_county
+  - get_sheldus
 - title: Event boundaries
   contents:
   - get_current_fire_perimeters
