@@ -35,6 +35,7 @@ reference:
   - get_box_path
   - get_dataset_columns
   - convert_delimited_to_parquet
+  - convert_table_text_to_dataframe
   - get_spatial_extent_census
   - read_xlsx_from_url
   - subdivide_linestring
