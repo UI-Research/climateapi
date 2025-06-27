@@ -9,7 +9,7 @@
 #' get_sheldus()
 #' }
 
-get_sheldus_county = function(
+get_sheldus = function(
 	file_path = file.path(
 		get_box_path(), "hazards", "sheldus",
 		"SHELDUS_22.0_01012916_01012023_AllCounties_CountyAggregate_YearMonth_2022USD",

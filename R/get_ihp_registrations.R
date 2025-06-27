@@ -5,7 +5,7 @@
 #' @title Get Individuals and Households Program (IHP) registrations
 #'
 #' @param geography Included only for API consistency; this must be NULL.
-#' @param state_abbreviations A character vector of two-letter state abbreviations. If NULL (default), return data for all 51 states. Otherwise return data for the specified states.
+#' @param state_fips A character vector of two-letter state abbreviations. If NULL (default), return data for all 51 states. Otherwise return data for the specified states.
 #' @param file_name The name (not the full path) of the Box file containing the raw data.
 #' @param api If TRUE (default), query the API.
 #' @param outpath The path to save the parquet-formatted datafile. Applicable only when `api = FALSE`.

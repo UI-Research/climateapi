@@ -6,8 +6,8 @@
 \usage{
 get_ihp_registrations(
   geography = NULL,
-  state_fips,
-  file_name = "IndividualsAndHouseholdsProgramValidRegistrations_2024_10_13.parquet",
+  state_fips = NULL,
+  file_name = "IndividualsAndHouseholdsProgramValidRegistrations_2025_06_10.csv",
   api = TRUE,
   outpath = NULL
 )
@@ -15,7 +15,7 @@ get_ihp_registrations(
 \arguments{
 \item{geography}{Included only for API consistency; this must be NULL.}
 
-\item{state_fips}{A character vector of two-digit state codes.}
+\item{state_fips}{A character vector of two-letter state abbreviations. If NULL (default), return data for all 51 states. Otherwise return data for the specified states.}
 
 \item{file_name}{The name (not the full path) of the Box file containing the raw data.}
 
@@ -32,7 +32,7 @@ Get Individuals and Households Program (IHP) registrations
 \examples{
 \dontrun{
 get_ihp_registrations(
-   county_geoids = c("01001", "01003"),
+   state_fips = "NJ",
    api = TRUE)
 }
 }
