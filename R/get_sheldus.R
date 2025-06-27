@@ -1,4 +1,4 @@
-#' @title Access temporal county-level SHELDUS hazard counts.
+#' @title Access temporal county-level SHELDUS hazard damage data.
 #' @param file_path The path to the raw SHELDUS data.
 #'
 #' @returns A dataframe comprising month x year x county observations of hazard events.
@@ -36,11 +36,13 @@ get_sheldus = function(
 
 	df1 = file_path |>
 		readr::read_csv() |>
-		janitor::clean_names() |>
+		janitor::clean_names()
+
+	df2 = df1 |>
 		dplyr::mutate(
 			state_name = state_name |> stringr::str_to_sentence(),
 			GEOID = stringr::str_remove_all(county_fips, "'"),
-			unique_id = uuid::UUIDgenerate(n = nrow(.))) |>
+			unique_id = uuid::UUIDgenerate(n = nrow(df1))) |>
 		dplyr::rename_with(
 		  .cols = dplyr::everything(),
 		  .fn = ~ stringr::str_replace_all(.x,
@@ -61,7 +63,7 @@ get_sheldus = function(
 		dplyr::arrange(GEOID, year, month) |>
 		dplyr::filter(GEOID %in% benchmark_geographies)
 
-	message(stringr::str_c(
+message(stringr::str_c(
 "The unit of observation is: county x year x month. ",
 "The `unique_id` field is a unique identifier for each observation. ",
 "Not all counties have observations for each month x year. ",
@@ -69,7 +71,7 @@ get_sheldus = function(
 "The `records` field reflects the number of events that were aggregated to ",
 "calculate the values reflected in the given observation."))
 
-	return(df1)
+	return(df2)
 }
 
 utils::globalVariables(c(
