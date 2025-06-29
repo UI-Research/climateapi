@@ -33,11 +33,12 @@ get_fema_disaster_declarations = function(
 			janitor::clean_names() }
 
 	# Defining natural hazards so we can filter out disaster declarations for things like terrorist attacks/biological
-	natural_hazards <- c(
-		"Fire", "Flood", "Hurricane", "Severe Storm", "Winter Storm", "Tornado", "Snowstorm",
-		"Earthquake", "Mud/Landslide", "Coastal Storm", "Severe Ice Storm",
-		"Tropical Storm", "Typhoon", "Volcanic Eruption", "Tsunami", "Freezing", "Drought") |>
-		paste0("incidents_", .) |>
+	natural_hazards <- paste0(
+		  "incidents_",
+		  c(
+		    "Fire", "Flood", "Hurricane", "Severe Storm", "Winter Storm", "Tornado", "Snowstorm",
+		    "Earthquake", "Mud/Landslide", "Coastal Storm", "Severe Ice Storm",
+		    "Tropical Storm", "Typhoon", "Volcanic Eruption", "Tsunami", "Freezing", "Drought")) |>
 		janitor::make_clean_names()
 
 	## the data date back multiple decades, so there are some valid observations for counties that
