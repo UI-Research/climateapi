@@ -1,7 +1,5 @@
 ## Author: Will Curran-Groome
 
-#' @importFrom magrittr %>%
-
 #' @title Get the user's username
 #'
 #' @return The username of the user running the script
@@ -12,8 +10,8 @@
 #' get_system_username()
 #' }
 get_system_username = function() {
-  here::here() %>%
-    stringr::str_match("Users/.*?/") %>%
+  here::here() |>
+    stringr::str_match("Users/.*?/") |>
     stringr::str_remove_all("Users|/")
 }
 
@@ -114,7 +112,7 @@ get_dataset_columns = function(dataset) {
 
 # Author: Will Curran-Groome
 
-#' @importFrom magrittr %>%
+#' @importFrom magrittr |>
 
 #' @title Convert raw data to parquet to conserve memory / speed subsequent operations
 #'
@@ -134,7 +132,7 @@ convert_delimited_to_parquet = function(
 
   ## write to the same location (but as .parquet)
   if (is.null(outpath)) {
-    outpath = inpath %>% stringr::str_replace("\\..*$", "\\.parquet") }
+    outpath = inpath |> stringr::str_replace("\\..*$", "\\.parquet") }
 
   if (file.exists(outpath)) {
     stop("A file already exists at the specified `outpath`.") }
@@ -160,7 +158,7 @@ convert_delimited_to_parquet = function(
     error = function(e) { stop("Error reading inpath file. The subsetted columns may not be present in the inpath file.") })
 
   ## a callback function to read the full file in chunks
-  read_chunk_callback = function(x, cols) { x %>% dplyr::select(dplyr::all_of(subsetted_columns)) }
+  read_chunk_callback = function(x, cols) { x |> dplyr::select(dplyr::all_of(subsetted_columns)) }
 
   ## reading the file in chunks
   raw_text_subsetted = tryCatch(
@@ -179,7 +177,7 @@ convert_delimited_to_parquet = function(
 #' @export
 get_spatial_extent_census = function(data, return_geometry = FALSE) {
   warning("This leverages `sf::st_overlaps()` and does not provide the desired results consistently.")
-  data = data %>%
+  data = data |>
     sf::st_transform(projection)
 
   states_sf = tigris::states(
@@ -187,21 +185,21 @@ get_spatial_extent_census = function(data, return_geometry = FALSE) {
     resolution = "20m",
     year = 2023,
     progress_bar = FALSE,
-    refresh = TRUE) %>%
+    refresh = TRUE) |>
     sf::st_transform(projection)
 
-  state_geoids = states_sf %>%
-    sf::st_filter(data, .predicate = sf::st_overlaps) %>%
-    .[["GEOID"]]
+  state_geoids = states_sf |>
+    sf::st_filter(data, .predicate = sf::st_overlaps) |>
+    _[["GEOID"]]
 
   if (length(state_geoids) > 1) {
-    result = states_sf %>%
-      dplyr::filter(GEOID %in% state_geoids) %>%
+    result = states_sf |>
+      dplyr::filter(GEOID %in% state_geoids) |>
       dplyr::transmute(
         state_geoid = GEOID,
         geography = "state") } else {
 
-    result = state_geoids %>%
+    result = state_geoids |>
       purrr::map_dfr(
         ~ tigris::tracts(
           state = .x,
@@ -209,9 +207,9 @@ get_spatial_extent_census = function(data, return_geometry = FALSE) {
           cb = TRUE,
           year = 2023,
           progress_bar = FALSE,
-          refresh = TRUE)) %>%
-      sf::st_transform(projection) %>%
-      sf::st_filter(data) %>%
+          refresh = TRUE)) |>
+      sf::st_transform(projection) |>
+      sf::st_filter(data) |>
       dplyr::transmute(
         state_geoid = stringr::str_sub(GEOID, 1, 2),
         county_geoid = stringr::str_sub(GEOID, 1, 5),
@@ -237,7 +235,7 @@ read_xlsx_from_url = function(urls, directory, file_names = NULL, silent = TRUE)
   if (any(!is.null(file_names)) & length(file_names) != length(urls)) {
     stop("`urls` and `file_names` must be of the same length.") }
   if (any(is.null(file_names))) {
-    file_names = purrr::map_chr(urls, ~ file.path(directory, .x %>% stringr::str_split("\\/") %>% purrr::map_chr(~ .[length(.)]))) }
+    file_names = purrr::map_chr(urls, ~ file.path(directory, .x |> stringr::str_split("\\/") |> purrr::map_chr(~ _[length(_)]))) }
   if (any(stringr::str_detect(directory, "\\.xlsx$"))) {
     stop("`directory` must point to a directory (folder), not a file. Provide file names via `file_names`.") }
 
