@@ -54,7 +54,7 @@ get_fema_disaster_declarations = function(
 	  unique()
 
 	# Counting disaster declarations by county by year and month
-	disaster_declarations <- disaster_declarations1 |>
+	disaster_declarations2 <- disaster_declarations1 |>
 		dplyr::mutate(
 			fips_state_code = stringr::str_pad(as.character(fips_state_code), width = 2, side = "left", pad = "0"),
 			fips_county_code = stringr::str_pad(as.character(fips_county_code), width = 3, side = "left", pad = "0"),
@@ -73,9 +73,11 @@ get_fema_disaster_declarations = function(
 		## widen the data so that there is one row per county x year x month, with
 		## incident-level counts in columns
 		tidyr::pivot_wider(names_from = incident_type, values_from = count, values_fill = list(count = 0), names_prefix = "incidents_") |>
-	  dplyr::rename_with(.cols = dplyr::matches("incidents_"), janitor::make_clean_names) |>
+	  dplyr::rename_with(.cols = dplyr::matches("incidents_"), janitor::make_clean_names)
+
+	disaster_declarations = disaster_declarations2 |>
 	  dplyr::mutate(
-			unique_id = uuid::UUIDgenerate(n = nrow(.)),
+			unique_id = uuid::UUIDgenerate(n = nrow(disaster_declarations2)),
 			incidents_all = rowSums(dplyr::select(., dplyr::matches("incidents")), na.rm = TRUE),
 			incidents_natural_hazard = rowSums(dplyr::select(., dplyr::all_of(natural_hazards)), na.rm = TRUE)) |>
 	  dplyr::rename_with(.cols = -GEOID, .fn = ~ .x |> stringr::str_to_lower()) |>
