@@ -4,12 +4,14 @@
 \alias{get_spatial_extent_census}
 \title{Get the Census geographies that overlap with the input spatial dataset}
 \usage{
-get_spatial_extent_census(data, return_geometry = FALSE)
+get_spatial_extent_census(data, return_geometry = FALSE, projection = 5070)
 }
 \arguments{
 \item{data}{An sf-formatted dataframe}
 
 \item{return_geometry}{Logical. Include the geometries of returned geographies?}
+
+\item{projection}{The EPSG code of the desired projection. Default is 5070 (Albers Equal Area).}
 }
 \value{
 A dataframe (optionally, an sf-dataframe) comprising Census geographies

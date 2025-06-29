@@ -7,9 +7,9 @@
 read_xlsx_from_url(urls, directory, file_names = NULL, silent = TRUE)
 }
 \arguments{
-\item{urls}{A character vector of URLs of length one or greater}
+\item{urls}{A character vector of URLs of length one or greater.}
 
-\item{directory}{The path to a single directory--not to a file--where the .xlsx file(s) will be saved}
+\item{directory}{The path to a single directory--not to a file--where the .xlsx file(s) will be saved.}
 
 \item{file_names}{Optionally, a character vector of the same length as \code{urls} containing only the file names (not the full paths) with which the downloaded files should be named. If NULL (default), file names are extracted from \code{urls}.}
 

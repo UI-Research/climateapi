@@ -2,7 +2,7 @@
 % Please edit documentation in R/get_sheldus.R
 \name{get_sheldus}
 \alias{get_sheldus}
-\title{Access temporal county-level SHELDUS hazard counts.}
+\title{Access temporal county-level SHELDUS hazard damage data.}
 \usage{
 get_sheldus(
   file_path = file.path(get_box_path(), "hazards", "sheldus",
@@ -17,7 +17,7 @@ get_sheldus(
 A dataframe comprising month x year x county observations of hazard events.
 }
 \description{
-Access temporal county-level SHELDUS hazard counts.
+Access temporal county-level SHELDUS hazard damage data.
 }
 \examples{
 \dontrun{
