@@ -79,8 +79,8 @@ get_fema_disaster_declarations = function(
 	disaster_declarations = disaster_declarations2 |>
 	  dplyr::mutate(
 			unique_id = uuid::UUIDgenerate(n = nrow(disaster_declarations2)),
-			incidents_all = rowSums(dplyr::select(., dplyr::matches("incidents")), na.rm = TRUE),
-			incidents_natural_hazard = rowSums(dplyr::select(., dplyr::all_of(natural_hazards)), na.rm = TRUE)) |>
+			incidents_all = rowSums(dplyr::select(disaster_declarations2, dplyr::matches("incidents")), na.rm = TRUE),
+			incidents_natural_hazard = rowSums(dplyr::select(disaster_declarations2, dplyr::all_of(natural_hazards)), na.rm = TRUE)) |>
 	  dplyr::rename_with(.cols = -GEOID, .fn = ~ .x |> stringr::str_to_lower()) |>
 	  dplyr::select(
 			unique_id,
