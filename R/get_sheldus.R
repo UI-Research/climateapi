@@ -9,11 +9,12 @@
 #' get_sheldus()
 #' }
 
+
 get_sheldus = function(
 	file_path = file.path(
 		get_box_path(), "hazards", "sheldus",
-		"SHELDUS_22.0_01012916_01012023_AllCounties_CountyAggregate_YearMonth_2022USD",
-		"UID14148f_AGG_A.csv")) {
+		"SHELDUS_23.0_12312023_AllCounties_CountyAggregate_YearMonth_2023USD",
+		"direct_loss_aggregated_output_5071.csv")) {
 
 	## is the file path valid/accessible?
 	if (!file.exists(file_path)) {
@@ -54,10 +55,10 @@ get_sheldus = function(
 			county_name,
 			year,
 			month,
-			property_damage_adjusted_2022,
-			property_damage_per_capita_adjusted_2022,
-			crop_damage_adjusted_2022,
-			crop_damage_per_capita_adjusted_2022,
+			property_damage_adjusted_2023,
+			property_damage_per_capita_adjusted_2023 = property_damage_per_capita,
+			crop_damage_adjusted_2023,
+			crop_damage__per_capita_adjusted_2023 = crop_damage_per_capita, ### confirmed in data documentation the per capita values are calculated using the most recent year inflation
 			dplyr::matches("injuries|fatalities|duration"),
 			records) |>
 		dplyr::arrange(GEOID, year, month) |>
@@ -76,6 +77,21 @@ message(stringr::str_c(
 
 utils::globalVariables(c(
   "state_name", "county_fips", "unique_id", "GEOID", "county_name", "year", "month",
-  "property_damage_adjusted_2022", "crop_damage_adjusted_2022", "crop_damage_per_capita_adjusted_2022",
-  "property_damage_per_capita_adjusted_2022", "records", "benchmark_geographies",
+  "property_damage_adjusted_2023", "crop_damage_adjusted_2023", "crop_damage_per_capita_adjusted_2023",
+  "property_damage_per_capita_adjusted_2023", "records", "benchmark_geographies",
   "STATE", "COUNTY", "."))
+
+# test <- get_sheldus()
+
+# get_system_username = function() {
+#   here::here() |>
+#     stringr::str_match("Users/.*?/") |>
+#     stringr::str_remove_all("Users|/")
+# }
+#
+# get_box_path = function() {
+#   username = get_system_username()
+#   file.path(
+#     "C:", "Users", username, "Box", "METRO Climate and Communities Practice Area",
+#     "github-repository")
+# }
