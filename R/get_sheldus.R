@@ -81,7 +81,7 @@ utils::globalVariables(c(
   "property_damage_per_capita_adjusted_2023", "records", "benchmark_geographies",
   "STATE", "COUNTY", "."))
 
-# test <- get_sheldus()
+ test <- get_sheldus()
 
 # get_system_username = function() {
 #   here::here() |>
