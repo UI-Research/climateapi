@@ -1,7 +1,7 @@
 #' @title Access temporal county-level SHELDUS hazard damage data.
 #' @param file_path The path to the raw SHELDUS data.
 #'
-#' @returns A dataframe comprising month x year x county observations of hazard events.
+#' @returns A dataframe comprising hazard x month x year x county observations of hazard events.
 #' @export
 #'
 #' @examples
@@ -11,9 +11,9 @@
 
 get_sheldus = function(
 	file_path = file.path(
-		get_box_path(), "hazards", "sheldus",
-		"SHELDUS_23.0_12312023_AllCounties_CountyAggregate_YearMonth_2023USD",
-		"direct_loss_aggregated_output_5071.csv")) {
+		get_box_path(),"hazards", "sheldus",
+		"SHELDUS_23.0_12312023_AllCounties_CountyAggregate_YearMonthHazard_2023USD",
+		"direct_loss_aggregated_output_24075.csv")) {
 
 	## is the file path valid/accessible?
 	if (!file.exists(file_path)) {
@@ -66,10 +66,10 @@ get_sheldus = function(
 		dplyr::filter(GEOID %in% benchmark_geographies)
 
 message(stringr::str_c(
-"The unit of observation is: county x year x month. ",
+"The unit of observation is: county x year x month x hazard. ",
 "The `unique_id` field is a unique identifier for each observation. ",
-"Not all counties have observations for each month x year. ",
-"That is, only counties with a disaster event have an observation for a given month x year. ",
+"Not all counties have observations for each month x year x hazard. ",
+"That is, only counties with a disaster event have an observation for a given month x year x hazard. ",
 "The `records` field reflects the number of events that were aggregated to ",
 "calculate the values reflected in the given observation.",
 "All dollar-denominated values are in 2023 dollars."))
