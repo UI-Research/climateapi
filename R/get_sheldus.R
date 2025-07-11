@@ -9,7 +9,6 @@
 #' get_sheldus()
 #' }
 
-
 get_sheldus = function(
 	file_path = file.path(
 		get_box_path(),"hazards", "sheldus",
@@ -55,12 +54,13 @@ get_sheldus = function(
 			county_name,
 			year,
 			month,
-			hazard,
-			property_damage_adjusted_2023,
-			property_damage_per_capita_adjusted_2023 = property_damage_per_capita,
-			crop_damage_adjusted_2023,
-			crop_damage__per_capita_adjusted_2023 = crop_damage_per_capita, ### confirmed in data documentation the per capita values are calculated using the most recent year inflation
-			dplyr::matches("injuries|fatalities|duration"),
+			### confirmed in data documentation the per capita values are calculated using the most recent year inflation
+			### all values are in the latest year's data
+			damage_property = property_damage_adjusted_2023,
+			damage_property_per_capita = property_damage_per_capita,
+			damage_crop = crop_damage_adjusted_2023,
+			damage_crop_per_capita = crop_damage_per_capita,
+			dplyr::matches("injuries|fatalities"),
 			records) |>
 		dplyr::arrange(GEOID, year, month) |>
 		dplyr::filter(GEOID %in% benchmark_geographies)
@@ -71,28 +71,14 @@ message(stringr::str_c(
 "Not all counties have observations for each month x year x hazard. ",
 "That is, only counties with a disaster event have an observation for a given month x year x hazard. ",
 "The `records` field reflects the number of events that were aggregated to ",
-"calculate the values reflected in the given observation."))
+"calculate the values reflected in the given observation.",
+"All dollar-denominated values are in 2023 dollars."))
 
 	return(df2)
 }
 
 utils::globalVariables(c(
-  "state_name", "county_fips", "unique_id", "GEOID", "county_name", "year", "month", "hazard",
-  "property_damage_adjusted_2023", "crop_damage_adjusted_2023", "crop_damage_per_capita_adjusted_2023",
-  "property_damage_per_capita_adjusted_2023", "records", "benchmark_geographies",
+  "state_name", "county_fips", "unique_id", "GEOID", "county_name", "year", "month",
+  "damage_property", "damage_property_per_capita", "damage_crop",
+  "damage_crop_per_capita", "records", "benchmark_geographies",
   "STATE", "COUNTY", "."))
-
-test <- get_sheldus()
-
-get_system_username = function() {
-  here::here() |>
-    stringr::str_match("Users/.*?/") |>
-    stringr::str_remove_all("Users|/")
-}
-
-get_box_path = function() {
-  username = get_system_username()
-  file.path(
-    "C:", "Users", username, "Box", "METRO Climate and Communities Practice Area",
-    "github-repository")
-}
