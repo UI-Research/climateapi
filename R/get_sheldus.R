@@ -1,7 +1,7 @@
 #' @title Access temporal county-level SHELDUS hazard damage data.
 #' @param file_path The path to the raw SHELDUS data.
 #'
-#' @returns A dataframe comprising month x year x county observations of hazard events.
+#' @returns A dataframe comprising hazard x month x year x county observations of hazard events.
 #' @export
 #'
 #' @examples
@@ -12,9 +12,9 @@
 
 get_sheldus = function(
 	file_path = file.path(
-		get_box_path(), "hazards", "sheldus",
-		"SHELDUS_23.0_12312023_AllCounties_CountyAggregate_YearMonth_2023USD",
-		"direct_loss_aggregated_output_5071.csv")) {
+		get_box_path(),"hazards", "sheldus",
+		"SHELDUS_23.0_12312023_AllCounties_CountyAggregate_YearMonthHazard_2023USD",
+		"direct_loss_aggregated_output_24075.csv")) {
 
 	## is the file path valid/accessible?
 	if (!file.exists(file_path)) {
@@ -55,6 +55,7 @@ get_sheldus = function(
 			county_name,
 			year,
 			month,
+			hazard,
 			property_damage_adjusted_2023,
 			property_damage_per_capita_adjusted_2023 = property_damage_per_capita,
 			crop_damage_adjusted_2023,
@@ -65,10 +66,10 @@ get_sheldus = function(
 		dplyr::filter(GEOID %in% benchmark_geographies)
 
 message(stringr::str_c(
-"The unit of observation is: county x year x month. ",
+"The unit of observation is: county x year x month x hazard. ",
 "The `unique_id` field is a unique identifier for each observation. ",
-"Not all counties have observations for each month x year. ",
-"That is, only counties with a disaster event have an observation for a given month x year. ",
+"Not all counties have observations for each month x year x hazard. ",
+"That is, only counties with a disaster event have an observation for a given month x year x hazard. ",
 "The `records` field reflects the number of events that were aggregated to ",
 "calculate the values reflected in the given observation."))
 
@@ -76,22 +77,22 @@ message(stringr::str_c(
 }
 
 utils::globalVariables(c(
-  "state_name", "county_fips", "unique_id", "GEOID", "county_name", "year", "month",
+  "state_name", "county_fips", "unique_id", "GEOID", "county_name", "year", "month", "hazard",
   "property_damage_adjusted_2023", "crop_damage_adjusted_2023", "crop_damage_per_capita_adjusted_2023",
   "property_damage_per_capita_adjusted_2023", "records", "benchmark_geographies",
   "STATE", "COUNTY", "."))
 
- test <- get_sheldus()
+test <- get_sheldus()
 
-# get_system_username = function() {
-#   here::here() |>
-#     stringr::str_match("Users/.*?/") |>
-#     stringr::str_remove_all("Users|/")
-# }
-#
-# get_box_path = function() {
-#   username = get_system_username()
-#   file.path(
-#     "C:", "Users", username, "Box", "METRO Climate and Communities Practice Area",
-#     "github-repository")
-# }
+get_system_username = function() {
+  here::here() |>
+    stringr::str_match("Users/.*?/") |>
+    stringr::str_remove_all("Users|/")
+}
+
+get_box_path = function() {
+  username = get_system_username()
+  file.path(
+    "C:", "Users", username, "Box", "METRO Climate and Communities Practice Area",
+    "github-repository")
+}
