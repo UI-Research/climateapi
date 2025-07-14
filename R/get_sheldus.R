@@ -54,6 +54,7 @@ get_sheldus = function(
 			county_name,
 			year,
 			month,
+			hazard,
 			### confirmed in data documentation the per capita values are calculated using the most recent year inflation
 			### all values are in the latest year's data
 			damage_property = property_damage_adjusted_2023,
@@ -61,7 +62,8 @@ get_sheldus = function(
 			damage_crop = crop_damage_adjusted_2023,
 			damage_crop_per_capita = crop_damage_per_capita,
 			dplyr::matches("injuries|fatalities"),
-			records) |>
+			records,
+			dplyr::everything()) |>
 		dplyr::arrange(GEOID, year, month) |>
 		dplyr::filter(GEOID %in% benchmark_geographies)
 
