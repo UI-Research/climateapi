@@ -5,11 +5,11 @@
 #' @param column_types The column types of the output dataframe. This is a `type_object` object from the `ellmer` package. Including descriptions of what each column represents improves accuracy.
 #' @param preprocess Should the text be preprocessed before it is passed to the LLM? Default is `TRUE`. This removes unneeded spaces, line breaks, and page numbers.
 #' @param read_warning Did the user read the function documentation?
-#' @param llm_company_name One of c("openai", "anthropic").  Default is "openai".
+#' @param llm_company_name One of c("openai", "anthropic"). Default is "openai".
 #' @param short_document Boolean; default is FALSE. If TRUE, it is assumed that the document is short enough that it can be processed in a single API call. If FALSE and the inputted `text` is a single item, the function throws an error. Note that multi-page documents should be broken into multi-item vectors/lists before being passed to `text`.
 #' @param required Boolean; default is FALSE. If TRUE, the LLM will be instructed to return values for all columns. If FALSE, `NULL` values are allowed. Generally, NULL values should be allowed unless you are certain that every value in the inputted text-table has a non-NULL value.
 #'
-#' @return A list of dataframes, with each item corresponding to one page of the inputted text. The dataframes have the same column names and types as specified in `column_types`. User `purrr::bind_rows()` to consolidate results into a single dataframe, if needed.
+#' @return A list of dataframes, with each item corresponding to one page of the inputted text. The dataframes have the same column names and types as specified in `column_types`. Use `purrr::bind_rows()` to consolidate results into a single dataframe, if needed.
 #' @export
 #' @examples
 #' \dontrun{
@@ -17,7 +17,7 @@
 #'  col1 = type_string("Zip code"),
 #'  col2 = type_integer("Number of buildings"))
 #'
-#' convert_table_text_to_df(
+#' convert_table_text_to_dataframe(
 #'  text = example_text,
 #'  column_types = column_types,
 #'  preprocess = TRUE,
