@@ -1,6 +1,7 @@
 #' Obtain County Business Patterns (CBP) Estimates per County
 #'
 #' @param year The vintage of CBP data desired. Data are available from 1986, though this function likely only supports more recent years (it it tested on 2022-vintage data only). Default is 2022.
+#' Might be worth specifying that data for 2023 does exist and can be pulled but not 2024; looks like new data came out a few days ago https://www.census.gov/newsroom/press-releases/2025/2023-county-business-patterns.html
 #' @param naics_code_digits One of c(2, 3). Default is 2. NAICS codes range in specificity; 2-digit codes describe the highest groupings of industries, while six-digit codes are exceedingly detailed. There are 20 2-digit NAICS codes and 196 3-digit codes.
 #' @param naics_codes A vector of NAICS codes to query. If NULL, the function will query all available codes with the specified number of digits. If not NULL, this argument overrides the `naics_code_digits` argument.
 #' @return A tibble with data on county-level employees, employers, and aggregate annual payrolls by industry and employer size
@@ -16,6 +17,28 @@
 #'  year = 2017,
 #'  naics_codes = c(221111, 221112))
 #' }
+
+
+#' Testing - IM
+#' County Business Patterns data is available now from 2023 - https://www.census.gov/newsroom/press-releases/2025/2023-county-business-patterns.html
+#' I think it might be worth including the actual codes themselves (but having the industry label is very helpful!)
+
+
+test <- get_business_patterns(
+   year = 2022,
+   naics_codes = c(221111, 221112))
+
+test1 <- get_business_patterns(
+  year = 2022,
+  naics_code_digits = c(2),
+  naics_codes = c(221111, 221112))
+
+test2 <- get_business_patterns(
+  year = 2022,
+  naics_code_digits = c(2),
+  naics_codes = c(52, 53))
+
+
 
 get_business_patterns = function(year = 2022, naics_code_digits = 2, naics_codes = NULL) {
   if (year < 1986) { stop("Year must be 1986 or later.") }
@@ -59,6 +82,7 @@ get_business_patterns = function(year = 2022, naics_code_digits = 2, naics_codes
     ## message, so we wrap this in a tryCatch(). this doesn't appear to be an
     ## error with our query--there's no data for these codes on data.census.gov
     ## either
+    ## IM comment: it might be worth noting this above - I ran test code for these 2 and do get 2 different errors (just as an FYI)
     ~ tryCatch({
       censusapi::getCensus(
         name = "cbp",
@@ -72,7 +96,7 @@ get_business_patterns = function(year = 2022, naics_code_digits = 2, naics_codes
         region = "county:*",
         NAICS2017 = .x)},
       error = function(e) {
-        message("Error in NAICS2017: ", .x)
+        message("Error in NAICS2017: ", .x) #do we want the NAICS 2022 label?
         return(tibble::tibble())})) %>%
     dplyr::select(
       state,

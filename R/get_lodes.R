@@ -1,4 +1,22 @@
 #' @importFrom magrittr %>%
+#' Testing - IM
+
+devtools::load_all()
+
+test <- get_lodes(lodes_type = c("rac"),
+                  jobs_type = c("all"),
+                  states = c("CA"),
+                  years = c("2022"),
+                  geography = c("tract"),
+                  state_part = c("main"))
+
+test1 <- get_lodes(lodes_type = c("rac"),
+                  jobs_type = c("all"),
+                  states = c("CA", "NJ", "MD"),
+                  years = c("2019"),
+                  geography = c("tract"),
+                  state_part = c("main"))
+
 
 rename_lodes_variables = function(.df) {
   ## renaming code from GH Copilot (in small part--just translating the codebook to a tribble)
@@ -102,6 +120,7 @@ rename_lodes_variables = function(.df) {
 #'
 #' @return A tibble with one record per geography per year per job type. Attributes include total jobs and jobs by worker earnings, industry, and demographics; the origin-destination results have more limited demographics compared to the "wac" and "rac" results.
 #' @export
+
 get_lodes = function(
     lodes_type,
     jobs_type = "all",
@@ -204,7 +223,8 @@ Returning for only those states that are available for all specified years.\n") 
 
   ## geography identifying variables are variably-named across different geography
   ## parameters; we standardize these to always be "GEOID"
-  geoid_rename = c("_geocode|_tract|_bg|_county|_state" = "_GEOID")
+  geoid_rename = c("h_tract" = "GEOID") #IM: was getting an error saying GEOID did not exist so amending this code accordingly
+
 
   jobs_type_all = "JT00"
   jobs_type_federal = "JT04"
