@@ -81,6 +81,7 @@ message(stringr::str_c(
 
 utils::globalVariables(c(
   "state_name", "county_fips", "unique_id", "GEOID", "county_name", "year", "month",
-  "damage_property", "damage_property_per_capita", "damage_crop",
-  "damage_crop_per_capita", "records", "benchmark_geographies",
+  "damage_property", "damage_property_per_capita", "damage_crop", "hazard",
+  "damage_crop_per_capita", "records", "benchmark_geographies", "property_damage_adjusted_2023",
+  "property_damage_per_capita", "crop_damage_adjusted_2023", "crop_damage_per_capita",
   "STATE", "COUNTY", "."))
