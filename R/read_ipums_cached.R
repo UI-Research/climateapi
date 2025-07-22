@@ -53,8 +53,12 @@ read_ipums_cached = function(filename, download_directory, extract_definition, r
     stop("The specified `download_directory` does not exist. Specify an existing directory
          relative to your root directory.") }
 
+  ## could be either a .xml (for microdata) or a .zip (nhigs, ihgis)
+  possible_files = here::here(download_directory, stringr::str_c(filename, c(".xml", ".zip")))
+  file_exists = any(file.exists(possible_files))
+
   ## if the file doesn't already exist, submit the extract definition to the api
-  if (!file.exists(here::here(download_directory, stringr::str_c(filename, ".xml"))) | refresh == TRUE) {
+  if (!file_exists | refresh == TRUE) {
 
     # submit the extract to IPUMS USA for processing
     submitted_extract <- ipumsr::submit_extract(extract_definition)
