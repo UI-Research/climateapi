@@ -3,7 +3,7 @@
 #' @title Get major disaster declarations by county
 #' @param file_path The path (on Box) to the file containing the raw data.
 #' @param api If TRUE (default), access data from the API. Else, read locally from `file_path`.
-#' @returns A dataframe comprising Major Disaster Declarations by month by year by county.
+#' @returns A dataframe comprising Major Disaster Declarations by month by year by county. Tribal declarations are stored as an attribute of the primary dataframe called `tribal_declarations`.
 #' @export
 #' @examples
 #' \dontrun{
@@ -65,48 +65,130 @@ get_fema_disaster_declarations = function(
 		## Major Disaster Declarations only
 		dplyr::filter(declaration_type == "DR") |>
 		## produce counts at the county x incident-type x year x month level
-		dplyr::group_by(GEOID, incident_type, year_declared, month_declared) |>
+		dplyr::group_by(fips_state_code, fips_county_code, GEOID, incident_type, year_declared, month_declared) |>
 			dplyr::summarise(
 			  count = dplyr::n(),
+			  place_code = dplyr::first(place_code),
+			  tribal_request = dplyr::first(tribal_request),
 			  declaration_title = paste(declaration_title, collapse = ", ")) |>
 			dplyr::ungroup() |>
 	  dplyr::arrange(GEOID, year_declared, month_declared) |>
+	  dplyr::mutate(id = dplyr::row_number()) |>
 		## widen the data so that there is one row per county x year x month, with
 		## incident-level counts in columns
 		tidyr::pivot_wider(names_from = incident_type, values_from = count, values_fill = list(count = 0), names_prefix = "incidents_") |>
 	  dplyr::rename_with(.cols = dplyr::matches("incidents_"), janitor::make_clean_names)
 
-	disaster_declarations = disaster_declarations2 |>
-	  dplyr::mutate(
-			unique_id = uuid::UUIDgenerate(n = nrow(disaster_declarations2)),
-			incidents_all = rowSums(dplyr::select(disaster_declarations2, dplyr::matches("incidents")), na.rm = TRUE),
-			incidents_natural_hazard = rowSums(dplyr::select(disaster_declarations2, dplyr::all_of(natural_hazards)), na.rm = TRUE)) |>
-	  dplyr::rename_with(.cols = -GEOID, .fn = ~ .x |> stringr::str_to_lower()) |>
-	  dplyr::select(
-			unique_id,
-			GEOID,
-			year_declared,
-			month_declared,
-			declaration_title,
-			incidents_all,
-			incidents_natural_hazard,
-			dplyr::everything()) |>
-	  dplyr::arrange(
-			GEOID,
-			year_declared,
-			month_declared) |>
+	## These are all non-tribal, statewide declarations
+	## For these records, we join them to a list of counties (by state) so that we
+	## can accurately measure declarations at the county level, including counties
+	## impacted by declarations that are declared statewide
+	##
+	## We omit tribal declarations here because these are fundamentally at a non-county
+	## level. Instead, we attach tribal declarations to the primary object returned by this
+	## function as an attribute so that users can work with these declarations in tandem
+	## and incorporate them into their analyses as appropriate
+	statewide_declarations1 = disaster_declarations2 |>
+	  dplyr::filter(fips_county_code == "000", tribal_request == FALSE) |>
+	  dplyr::select(-GEOID) |>
+	  dplyr::arrange(year_declared)
+
+	## all tribal declarations have fips_county_code == "000"
+	# disaster_declarations1 %>%
+	#   dplyr::filter(tribal_request == TRUE) %>%
+	#   dplyr::count(fips_county_code)
+
+	tribal_declarations1 = disaster_declarations2 |>
+	  dplyr::filter(fips_county_code == "000", tribal_request == TRUE) |>
+	  dplyr::mutate(GEOID = place_code) |>
+	  dplyr::arrange(year_declared)
+
+	statewide_declarations2 = statewide_declarations1 |>
+	  dplyr::left_join(
+	    tibble::tibble(GEOID = benchmark_geographies) |>
+	      dplyr::mutate(fips_state_code = stringr::str_sub(GEOID, 1, 2)),
+	    by = "fips_state_code",
+	    relationship = "many-to-many")
+
+	disaster_declarations3 = disaster_declarations2 |>
+	  dplyr::filter(!(id %in% c(statewide_declarations1$id))) |>
+	  dplyr::bind_rows(statewide_declarations2)
+
+	prep_data = function(data) {
+	  data |>
+  	  dplyr::mutate(
+  	    unique_id = uuid::UUIDgenerate(n = nrow(data)),
+  	    incidents_all = rowSums(
+  	      dplyr::select(data, dplyr::matches("incidents")), na.rm = TRUE),
+  	    incidents_natural_hazard = rowSums(
+  	      dplyr::select(data, dplyr::all_of(natural_hazards)), na.rm = TRUE)) |>
+  	    dplyr::rename_with(.cols = -GEOID, .fn = ~ .x |> stringr::str_to_lower()) |>
+  	    dplyr::select(
+  	      unique_id,
+  	      GEOID,
+  	      fips_state_code,
+  	      year_declared,
+  	      month_declared,
+  	      declaration_title,
+  	      incidents_all,
+  	      incidents_natural_hazard,
+  	      dplyr::everything()) |>
+  	    dplyr::arrange(
+  	      GEOID,
+  	      year_declared,
+  	      month_declared)
+	}
+
+	disaster_declarations_nontribal = disaster_declarations3 |>
+	  prep_data() |>
+	  dplyr::select(-dplyr::matches("fips")) |>
 	  dplyr::filter(GEOID %in% benchmark_geographies)
 
-	message(stringr::str_c(
+	disaster_declarations_tribal = tribal_declarations1 |>
+	  prep_data() |>
+	  dplyr::select(-fips_county_code)
+
+	colnames(disaster_declarations_tribal)
+	colnames(disaster_declarations_nontribal)
+
+
+
+	result = disaster_declarations_nontribal
+	attr(result, "tribal_declarations") = disaster_declarations_tribal
+
+warning(stringr::str_c(
+"Some counties have observations in the data but those counties no longer exist. ",
+"We drop those counties from the dataset and only include counties that existed in ",
+"either 2010 or 2020."))
+
+warning(stringr::str_c(
+"Records for disaster declarations for tribes are included as an attribute of the
+primary dataframe because these declarations do not pertain to counties (the primary unit
+of analysis). Users should ensure they include tribal declarations as appropriate, for
+example, for purposes of describing these data at the state level (tribal declarations
+are nested within states in these data). The `GEOID` column in this data contains a
+unique identifier created by FEMA for identifying tribes; across disasters, the same
+tribe should have the same GEOID. However, this GEOID will not connect to other
+identifiers in other datasets.
+
+To access tribal declarations: 	`attr(df, 'tribal_declarations')`"))
+
+warning(stringr::str_c(
+"Some disasters are declared for the entire state, but such events are not represented ",
+"at the county level in the raw data. We create records for each county in such cases, ",
+"but users should ensure that they reflect only the counties that actually existed at the ",
+"time, as it is possible that in our process we create records for counties that did not exist."))
+
+message(stringr::str_c(
 "The unit of observation is: county x year x month. ",
 "The `unique_id` field is a unique identifier for each observation. ",
 "Note that these data only describe Major Disaster Declarations."))
 
-	return(disaster_declarations)
+	return(result)
 }
 
 utils::globalVariables(c(
   "get_box_data_path", "fips_state_code", "fips_county_code", "declaration_date",
   "declaration_type", "incident_type", "GEOID", "year_declared", "month_declared",
   ".", "n", "count", "incidents_all", "incidents_natural_hazard", "benchmark_geographies",
-  "declaration_title"))
+  "declaration_title", "place_code", "tribal_request"))

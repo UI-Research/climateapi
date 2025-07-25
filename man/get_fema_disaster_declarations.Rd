@@ -16,7 +16,7 @@ get_fema_disaster_declarations(
 \item{api}{If TRUE (default), access data from the API. Else, read locally from \code{file_path}.}
 }
 \value{
-A dataframe comprising Major Disaster Declarations by month by year by county.
+A dataframe comprising Major Disaster Declarations by month by year by county. Tribal declarations are stored as an attribute of the primary dataframe called \code{tribal_declarations}.
 }
 \description{
 Get major disaster declarations by county
