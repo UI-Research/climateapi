@@ -17,6 +17,7 @@
 <url><loc>https://ui-research.github.io/climateapi/reference/get_government_finances.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/get_ihp_registrations.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/get_lodes.html</loc></url>
+<url><loc>https://ui-research.github.io/climateapi/reference/get_nfip_claims.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/get_nfip_policies.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/get_sba_loans.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/get_sheldus.html</loc></url>
@@ -30,7 +31,7 @@
 <url><loc>https://ui-research.github.io/climateapi/reference/qualtrics_format_metadata.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/qualtrics_get_metadata.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/qualtrics_plot_question.html</loc></url>
-<url><loc>https://ui-research.github.io/climateapi/reference/read_ipums_micro_cached.html</loc></url>
+<url><loc>https://ui-research.github.io/climateapi/reference/read_ipums_cached.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/read_xlsx_from_url.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/subdivide_linestring.html</loc></url>
 </urlset>
