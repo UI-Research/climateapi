@@ -43,14 +43,16 @@ get_fema_disaster_declarations = function(
 
 	## the data date back multiple decades, so there are some valid observations for counties that
 	## no longer exist as of 2010 or 2022; we drop those counties
-	## counties that exist in 2010 or 2022
-	benchmark_geographies = dplyr::bind_rows(
+	benchmark_geographies1 = dplyr::bind_rows(
 	  tigris::counties(cb = TRUE, year = 2010, progress_bar = FALSE) |>
-	    dplyr::transmute(GEOID = stringr::str_c(STATE, COUNTY)) |>
+	    dplyr::transmute(GEOID = stringr::str_c(STATE, COUNTY), year = 2010) |>
 	    sf::st_drop_geometry(),
 	  tigris::counties(cb = TRUE, year = 2022, progress_bar = FALSE) |>
-	    dplyr::select(GEOID) |>
-	    sf::st_drop_geometry()) |>
+	    dplyr::transmute(GEOID, year = 2022) |>
+	    sf::st_drop_geometry())
+
+	## counties that exist in 2010 or 2022
+	benchmark_geographies = benchmark_geographies1 |>
 	  dplyr::pull(GEOID) |>
 	  unique()
 
@@ -65,13 +67,12 @@ get_fema_disaster_declarations = function(
 		## Major Disaster Declarations only
 		dplyr::filter(declaration_type == "DR") |>
 		## produce counts at the county x incident-type x year x month level
-		dplyr::group_by(fips_state_code, fips_county_code, GEOID, incident_type, year_declared, month_declared) |>
-			dplyr::summarise(
-			  count = dplyr::n(),
-			  place_code = dplyr::first(place_code),
-			  tribal_request = dplyr::first(tribal_request),
-			  declaration_title = paste(declaration_title, collapse = ", ")) |>
-			dplyr::ungroup() |>
+		tidytable::summarise(
+		  .by = c(fips_state_code, fips_county_code, GEOID, incident_type, year_declared, month_declared),
+		  count = dplyr::n(),
+		  place_code = dplyr::first(place_code),
+		  tribal_request = dplyr::first(tribal_request),
+		  declaration_title = paste(declaration_title, collapse = ", ")) |>
 	  dplyr::arrange(GEOID, year_declared, month_declared) |>
 	  dplyr::mutate(id = dplyr::row_number()) |>
 		## widen the data so that there is one row per county x year x month, with
@@ -93,11 +94,6 @@ get_fema_disaster_declarations = function(
 	  dplyr::select(-GEOID) |>
 	  dplyr::arrange(year_declared)
 
-	## all tribal declarations have fips_county_code == "000"
-	# disaster_declarations1 %>%
-	#   dplyr::filter(tribal_request == TRUE) %>%
-	#   dplyr::count(fips_county_code)
-
 	tribal_declarations1 = disaster_declarations2 |>
 	  dplyr::filter(fips_county_code == "000", tribal_request == TRUE) |>
 	  dplyr::mutate(GEOID = place_code) |>
@@ -105,7 +101,10 @@ get_fema_disaster_declarations = function(
 
 	statewide_declarations2 = statewide_declarations1 |>
 	  dplyr::left_join(
-	    tibble::tibble(GEOID = benchmark_geographies) |>
+	    tibble::tibble(
+	      GEOID = benchmark_geographies1 %>%
+	        dplyr::filter(year == 2022) %>%
+	        dplyr::pull(GEOID)) |>
 	      dplyr::mutate(fips_state_code = stringr::str_sub(GEOID, 1, 2)),
 	    by = "fips_state_code",
 	    relationship = "many-to-many")
@@ -136,8 +135,7 @@ get_fema_disaster_declarations = function(
   	    dplyr::arrange(
   	      GEOID,
   	      year_declared,
-  	      month_declared)
-	}
+  	      month_declared) }
 
 	disaster_declarations_nontribal = disaster_declarations3 |>
 	  prep_data() |>
@@ -148,11 +146,6 @@ get_fema_disaster_declarations = function(
 	  prep_data() |>
 	  dplyr::select(-fips_county_code)
 
-	colnames(disaster_declarations_tribal)
-	colnames(disaster_declarations_nontribal)
-
-
-
 	result = disaster_declarations_nontribal
 	attr(result, "tribal_declarations") = disaster_declarations_tribal
 
@@ -160,6 +153,13 @@ warning(stringr::str_c(
 "Some counties have observations in the data but those counties no longer exist. ",
 "We drop those counties from the dataset and only include counties that existed in ",
 "either 2010 or 2020."))
+
+warning(stringr::str_c(
+  "Some disasters are declared for the entire state, but such events are not represented ",
+  "at the county level in the raw data. We create records for each county in such cases, ",
+  "but users should ensure that they reflect only the counties that actually existed at the ",
+  "time, as it is possible that in our process we create records for counties that did not exist, ",
+  "since we create records for counties that exist as of 2022."))
 
 warning(stringr::str_c(
 "Records for disaster declarations for tribes are included as an attribute of the
@@ -171,13 +171,7 @@ unique identifier created by FEMA for identifying tribes; across disasters, the 
 tribe should have the same GEOID. However, this GEOID will not connect to other
 identifiers in other datasets.
 
-To access tribal declarations: 	`attr(df, 'tribal_declarations')`"))
-
-warning(stringr::str_c(
-"Some disasters are declared for the entire state, but such events are not represented ",
-"at the county level in the raw data. We create records for each county in such cases, ",
-"but users should ensure that they reflect only the counties that actually existed at the ",
-"time, as it is possible that in our process we create records for counties that did not exist."))
+To access tribal declarations: `attr(df, 'tribal_declarations')`"))
 
 message(stringr::str_c(
 "The unit of observation is: county x year x month. ",

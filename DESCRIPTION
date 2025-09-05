@@ -43,6 +43,7 @@ Imports:
     tibble,
     tidycensus,
     tidyr,
+    tidytable,
     tigris,
     utils,
     uuid,
