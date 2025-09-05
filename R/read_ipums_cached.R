@@ -1,5 +1,4 @@
 ## Authors: Original code from Aaron R. Williams, extended by Will Curran-Groome
-## Last Updated: 07/21/2025
 
 #' @importFrom magrittr %>%
 
@@ -100,34 +99,35 @@ read_ipums_cached = function(filename, download_directory, extract_definition, r
     ## for some reason, nhgis data are downloaded to a different file type and using a slightly
     ## different naming convention
     if (collection_code %in% c("nhgis", "ihgis")) {
-        ## bizzarely, the collection code appears to sometimes (?) have one of three leading zeros removed
-        ## so we read in a corresponding file at the given location
-        file.rename(
-          from = here::here(
-            download_directory,
-            stringr::str_glue(
-              "{collection_code}{extract_number}_csv.zip",
-              extract_number = extract_number |> stringr::str_replace("000", "00"))),
-          to = here::here(download_directory, stringr::str_c(filename, ".zip")))
-      }
+      ## bizzarely, the collection code appears to sometimes (?) have one of three leading zeros removed
+      ## so we read in a corresponding file at the given location
+      file.rename(
+        from = here::here(
+          download_directory,
+          stringr::str_glue(
+            "{collection_code}{extract_number}_csv.zip",
+            extract_number = extract_number |> stringr::str_replace("000", "00"))),
+        to = here::here(download_directory, stringr::str_c(filename, ".zip")))
+    }
   } else {
     warning("Data are being read from a local path. If you have changed the arguments
             to your define_*_extract() call, you should delete the existing data
             file at the specified local path and then re-execute this function, which
             will then query the IPUMS API for the updated data and save it to disk.")
-    path_to_ddi_file <- here::here(download_directory, stringr::str_c(filename, ".xml"))
-  }
 
-  if (!collection_code %in% c("nhgis", "ihgis")) {
-    data = ipumsr::read_ipums_micro(
-      ddi = here::here(download_directory, stringr::str_c(filename, ".xml")),
-      data_file = here::here(download_directory, stringr::str_c(filename, ".dat.gz"))) }
-  if (collection_code %in% c("nhgis", "ihgis")) {
-    zip_path = here::here(download_directory, stringr::str_c(filename, ".zip"))
-    data = ipumsr::read_ipums_agg(data_file = zip_path) |>
-      ipumsr::set_ipums_var_attributes(
-        var_info = { if (collection_code == "nhgis") {
-          ipumsr::read_nhgis_codebook(zip_path) } else { ipumsr::read_ihgis_codebook(zip_path) }}) }
+    collection_code = extract_definition$collection
+
+    if (!collection_code %in% c("nhgis", "ihgis")) {
+      data = ipumsr::read_ipums_micro(
+        ddi = here::here(download_directory, stringr::str_c(filename, ".xml")),
+        data_file = here::here(download_directory, stringr::str_c(filename, ".dat.gz"))) }
+    if (collection_code %in% c("nhgis", "ihgis")) {
+      zip_path = here::here(download_directory, stringr::str_c(filename, ".zip"))
+      data = ipumsr::read_ipums_agg(data_file = zip_path) |>
+        ipumsr::set_ipums_var_attributes(
+          var_info = { if (collection_code == "nhgis") {
+            ipumsr::read_nhgis_codebook(zip_path) } else { ipumsr::read_ihgis_codebook(zip_path) }})
+    }}
 
   return(data)
 }
