@@ -18,6 +18,7 @@ reference:
   contents:
   - get_business_patterns
   - get_nfip_policies
+  - get_nfip_claims
   - get_fema_disaster_declarations
   - get_ihp_registrations
   - get_sheldus
@@ -29,6 +30,12 @@ reference:
   - estimate_zoning_envelope
   - estimate_units_per_parcel
   - interpolate_demographics
+- title: Surveys and Qualtrics
+  contents:
+  - qualtrics_format_metadata
+  - qualtrics_get_metadata
+  - qualtrics_plot_question
+  - qualtrics_define_missing
 - title: Utilities
   contents:
   - get_system_username
@@ -41,8 +48,3 @@ reference:
   - subdivide_linestring
   - polygons_to_linestring
   - read_ipums_cached
-  - qualtrics_format_metadata
-  - qualtrics_get_metadata
-  - qualtrics_plot_question
-  - qualtrics_define_missing
-
