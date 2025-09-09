@@ -4,7 +4,6 @@
 
 #' @title Get Individuals and Households Program (IHP) registrations
 #'
-#' @param geography Included only for API consistency; this must be NULL.
 #' @param state_fips A character vector of two-letter state abbreviations. If NULL (default), return data for all 51 states. Otherwise return data for the specified states.
 #' @param file_name The name (not the full path) of the Box file containing the raw data.
 #' @param api If TRUE (default), query the API.
@@ -21,10 +20,9 @@
 #' }
 
 get_ihp_registrations = function(
-    geography = NULL,
     state_fips = NULL,
-    file_name = "IndividualsAndHouseholdsProgramValidRegistrations_2025_06_10.csv",
-    api = TRUE,
+    file_name = "IndividualsAndHouseholdsProgramValidRegistrations_2025_06_10.parquet",
+    api = FALSE,
     outpath = NULL) {
 
     xwalks_path = file.path(get_box_path(), "crosswalks")
@@ -36,7 +34,7 @@ get_ihp_registrations = function(
       if (! file.exists(inpath)) {
         stop("The provided `file_name` is invalid.") }
 
-      if (! (stringr::str_detect(inpath, "parquet"))) {
+      if (! (stringr::str_detect(inpath, "parquet")) & !file.exists(inpath %>% stringr::str_replace("csv", "parquet"))) {
 
         convert_delimited_to_parquet(
           inpath = inpath,
@@ -46,8 +44,11 @@ get_ihp_registrations = function(
       if (is.null(state_fips)) {
         state_fips = c(datasets::state.abb, "DC") }
 
-      df1 = arrow::read_parquet(file = inpath) %>%
-        dplyr::select(dplyr::all_of(get_dataset_columns("ihp_registrations"))) %>%
+      if (!stringr::str_detect(inpath, "parquet")) { inpath = inpath %>% stringr::str_replace("csv", "parquet") }
+
+      df1 = arrow::read_parquet(
+        file = inpath,
+        col_select = get_dataset_columns("ihp_registrations")) %>%
         janitor::clean_names() %>%
         dplyr::filter(damaged_state_abbreviation %in% state_fips)
       } else {
@@ -119,7 +120,7 @@ get_ihp_registrations = function(
 
     warning("
 FEMA does not provide consistent county-level identifiers such as GEOIDs. As such, some 'counties'--in particular,
-independent cities and tribal lands, but also other non-county, sub-state geographies--have missing GEOIDs but valid
+tribal lands, but also other non-county, sub-state geographies--have missing GEOIDs but valid
 records of IHP registrations. Users have multiple options for summarizing data at various geographies:
 
 (1) Use relatively non-missing fields included in the raw data by FEMA, including state and zip code.

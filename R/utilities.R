@@ -261,3 +261,31 @@ read_xlsx_from_url = function(urls, directory, file_names = NULL, silent = TRUE)
 
   if (isTRUE(silent)) { return() } else return(result)
 }
+
+#' Get geography metadata about states or counties
+#'
+#' @param geography_type One of c("state", "county").
+#'
+#' @return A data frame containing metadata about the specified geography type and area.
+
+get_geography_metadata = function(
+    geography_type = c("state", "county")) {
+
+  geography_type = match.arg(geography_type)
+
+  df = tidycensus::fips_codes |>
+    dplyr::select(
+      state_abbreviation = state,
+      state_code,
+      state_name,
+      county_code,
+      county_name = county) |>
+    dplyr::mutate(
+      county_geoid = stringr::str_c(state_code, county_code))
+
+  if (geography_type == "state") {
+    df = df |> dplyr::distinct(state_abbreviation, state_code, state_name) }
+
+  return(df)
+}
+
