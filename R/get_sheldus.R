@@ -57,6 +57,7 @@ get_sheldus = function(
   ## the data date back to ~1960, so there are some valid observations for counties that
   ## no longer exist as of 2010; we drop those counties
   ## counties that exist in 2010 or 2022
+  ## ##
   benchmark_geographies = dplyr::bind_rows(
     tigris::counties(cb = TRUE, year = 2010) |>
       dplyr::transmute(GEOID = stringr::str_c(STATE, COUNTY)) |>
