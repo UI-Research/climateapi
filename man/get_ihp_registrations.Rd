@@ -16,12 +16,12 @@ get_ihp_registrations(
 
 \item{file_name}{The name (not the full path) of the Box file containing the raw data.}
 
-\item{api}{If TRUE (default), query the API.}
+\item{api}{If TRUE, query the API. If FALSE (default), read from disk.}
 
 \item{outpath}{The path to save the parquet-formatted datafile. Applicable only when \code{api = FALSE}.}
 }
 \value{
-A dataframe comprising county-level data on current NFIP policies
+A dataframe comprising IHP registrations
 }
 \description{
 Get Individuals and Households Program (IHP) registrations
