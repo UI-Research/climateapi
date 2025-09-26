@@ -295,7 +295,7 @@ IHP is intended to meet basic needs and supplement disaster recovery efforts.")
 #' @param county
 #'
 #' @return Cleaned county names more suitable for matching on
-#' @internal
+#' @noRd
 clean_county = function(county) {
 
   county %>%
