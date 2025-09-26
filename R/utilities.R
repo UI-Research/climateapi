@@ -261,3 +261,60 @@ read_xlsx_from_url = function(urls, directory, file_names = NULL, silent = TRUE)
 
   if (isTRUE(silent)) { return() } else return(result)
 }
+
+#' Inflation adjust dollar values using annual PCE Index
+#'
+#' The Personal Consumption Expenditures Price Index (PCE Index) is from the
+#' Federal Reserve Bank of St. Louis's FRED tool.
+#'
+#' @param df The dataframe with values to inflation-adjust
+#' @param year_variable The name of the column denoting the year that existing dollar-denominated figures are based in.
+#' @param dollar_variables The variables to inflation-adjust.
+#' @param base_year The year to use as the base for inflation adjustment. If NULL, defaults to the most recent year in the PCE index data.
+#' @param names_suffix A suffix to add to the names of the inflation-adjusted variables. If NULL, defaults to "_<base_year>". If "", columns are renamed in place.
+#'
+#' @return A dataframe with inflation-adjusted values
+#' @export
+#'
+#' @examples
+#' df = tibble::tribble(
+#'   ~ year, ~ amount,
+#'   1990, 1,
+#'   1991, 1,
+#'   1992, 1)
+#'
+#' df %>%
+#'   inflation_adjust(
+#'     year_variable = year,
+#'     dollar_variables = amount,
+#'     names_suffix = "inflation_adjusted")
+
+inflation_adjust = function(
+    df,
+    year_variable,
+    dollar_variables,
+    names_suffix = NULL,
+    base_year = 2024) {
+
+  inflation_data = readr::read_csv(here::here(
+    "data", "data-raw", "pce_index_annual_fred_2025_03_27.csv")) %>%
+    dplyr::transmute(
+      inflation_year_ = lubridate::year(observation_date) %>% as.numeric(),
+      pce_index = DPCERG3A086NBEA)
+
+  if (is.null(base_year)) base_year = max(inflation_data$year)
+  if (is.null(names_suffix)) names_suffix = paste0("_", base_year)
+
+  inflation_data = inflation_data %>%
+    dplyr::mutate(
+      inflation_factor = (pce_index[inflation_year_ == if_else(is.null(base_year), max(inflation_year_), base_year)]) / pce_index)
+
+  df1 = df %>%
+    dplyr::mutate(
+      inflation_year_ = .data[[year_variable]] %>% as.numeric) %>%
+    dplyr::left_join(inflation_data, by = c("inflation_year_")) %>%
+    dplyr::mutate(
+      across(.cols = dplyr::all_of(dollar_variables), ~ .x * inflation_factor, .names = "{.col}{names_suffix}")) %>%
+    dplyr::select(-pce_index, -inflation_year_, -inflation_factor)
+
+}
