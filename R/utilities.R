@@ -304,18 +304,17 @@ get_geography_metadata = function(
 #' @export
 #'
 #' @examples
+#' df = tibble::tribble(
+#'   ~ year, ~ amount,
+#'   1990, 1,
+#'   1991, 1,
+#'   1992, 1)
 #'
-# df = tibble::tribble(
-#   ~ year, ~ amount,
-#   1990, 1,
-#   1991, 1,
-#   1992, 1)
-#
-# df %>%
-#   inflation_adjust(
-#     year_variable = year,
-#     dollar_variables = amount,
-#     names_suffix = "inflation_adjusted")
+#' df %>%
+#'   inflation_adjust(
+#'     year_variable = year,
+#'     dollar_variables = amount,
+#'     names_suffix = "inflation_adjusted")
 
 inflation_adjust = function(
     df,
