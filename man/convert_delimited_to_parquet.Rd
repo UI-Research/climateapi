@@ -21,7 +21,7 @@ convert_delimited_to_parquet(
 
 \item{subsetted_columns}{The columns to include in the outputted parquet data.}
 
-\item{dataset}{One of c("nfip_policies", "ihp_registrations"). If not null, this will be used to select the columns that are returned.}
+\item{dataset}{NULL by default. Alternately, one of c("nfip_policies", "ihp_registrations"). If not null, this will be used to select the columns that are returned.}
 }
 \value{
 Nothing. Parquet data are written to local path.

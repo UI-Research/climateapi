@@ -23,6 +23,7 @@ reference:
   - get_nfip_claims
   - get_public_assistance
   - get_sheldus
+  - get_preliminary_damage_assessments
 - title: State data
   contents:
   - get_emergency_management_performance

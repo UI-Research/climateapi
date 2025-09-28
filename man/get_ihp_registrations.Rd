@@ -6,7 +6,7 @@
 \usage{
 get_ihp_registrations(
   state_fips = NULL,
-  file_name = "IndividualsAndHouseholdsProgramValidRegistrations_2025_06_10.parquet",
+  file_name = "IndividualsAndHouseholdsProgramValidRegistrationsV2_2025_09_26.parquet",
   api = FALSE,
   outpath = NULL
 )

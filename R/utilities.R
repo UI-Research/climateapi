@@ -1,5 +1,3 @@
-## Author: Will Curran-Groome
-
 #' @title Get the user's username
 #'
 #' @return The username of the user running the script
@@ -70,47 +68,47 @@ get_dataset_columns = function(dataset) {
 
   if (dataset == "ihp_registrations") {
     columns = c(
-      "incidentType",
+      "censusGeoid",
+      # "incidentType",
       "disasterNumber",
-      "declarationDate",
-      "county",
+      # "declarationDate",
+      #"county",
       "damagedStateAbbreviation",
-      "damagedCity",
+      #"damagedCity",
       "damagedZipCode",
       "householdComposition",
       "grossIncome",
       "ownRent",
       "residenceType",
-      "homeOwnersInsurance",
-      "floodInsurance",
+      # "homeOwnersInsurance",
+      # "floodInsurance",
       "ihpAmount",
       "fipAmount",
       "haAmount",
       "onaAmount",
       "homeDamage",
       "autoDamage",
-      "emergencyNeeds",
-      "foodNeed",
-      "shelterNeed",
-      "accessFunctionalNeeds",
-      "sbaApproved",
-      "rpfvl",
-      "ppfvl",
+      # "emergencyNeeds",
+      # "foodNeed",
+      # "shelterNeed",
+      # "accessFunctionalNeeds",
+      # "sbaApproved",
+      # "rpfvl",
+      # "ppfvl",
       "destroyed",
       "rentalAssistanceAmount",
       "repairAmount",
       "replacementAmount",
-      "personalPropertyAmount",
-      "ihpMax",
-      "haMax",
-      "onaMax",
-      "lastRefresh",
-      "id") }
+      "personalPropertyAmount"
+      # "ihpMax",
+      # "haMax",
+      # "onaMax",
+      # "lastRefresh",
+      # "id"
+      ) }
 
   return(columns)
 }
-
-# Author: Will Curran-Groome
 
 #' @title Convert raw data to parquet to conserve memory / speed subsequent operations
 #'
@@ -118,7 +116,7 @@ get_dataset_columns = function(dataset) {
 #' @param outpath The local path to write parquet data to.
 #' @param delimit_character The delimiting character of the raw data.
 #' @param subsetted_columns The columns to include in the outputted parquet data.
-#' @param dataset One of c("nfip_policies", "ihp_registrations"). If not null, this will be used to select the columns that are returned.
+#' @param dataset NULL by default. Alternately, one of c("nfip_policies", "ihp_registrations"). If not null, this will be used to select the columns that are returned.
 #'
 #' @returns Nothing. Parquet data are written to local path.
 convert_delimited_to_parquet = function(
@@ -147,8 +145,8 @@ convert_delimited_to_parquet = function(
     subsetted_columns = get_dataset_columns("nfip_policies") }
   if (is.null(dataset)) {
     subsetted_columns = colnames(raw_txt_test_delimit_character) }
-  if (!(dataset %in% c("ihp_registrations", "nfip_policies", "ia_registrations"))) {
-    stop("The `dataset` argument must be one of c('ihp_registrations', 'nfip_policies', 'ia_registrations')") }
+  if (!(dataset %in% c("ihp_registrations", "nfip_policies"))) {
+    stop("The `dataset` argument must be one of c('ihp_registrations', 'nfip_policies').") }
 
   ## a quick test prior to reading in full file
   raw_txt_test_subsetted_columns = tryCatch(
@@ -221,7 +219,6 @@ get_spatial_extent_census = function(data, return_geometry = FALSE, projection =
   return(result)
 }
 
-
 #' Download a .xlsx file(s) from a URL(s)
 #'
 #' @param urls A character vector of URLs of length one or greater.
@@ -265,23 +262,38 @@ read_xlsx_from_url = function(urls, directory, file_names = NULL, silent = TRUE)
 #' Get geography metadata about states or counties
 #'
 #' @param geography_type One of c("state", "county").
+#' @param year The year for which to obtain state/county metadata. Cannot be greater than the most recent year supported by `library(tidycensus)` for the 5-year ACS.
 #'
 #' @return A data frame containing metadata about the specified geography type and area.
 
 get_geography_metadata = function(
-    geography_type = c("state", "county")) {
+    geography_type = c("state", "county"),
+    year = 2023) {
 
   geography_type = match.arg(geography_type)
 
-  df = tidycensus::fips_codes |>
-    dplyr::select(
-      state_abbreviation = state,
-      state_code,
-      state_name,
-      county_code,
-      county_name = county) |>
-    dplyr::mutate(
-      county_geoid = stringr::str_c(state_code, county_code))
+  suppressMessages({
+    df = tidycensus::get_acs(
+        year = year,
+        output = "wide",
+        variables = "B01003_001",
+        geography = "county") |>
+      tidyr::separate_wider_delim(NAME, delim = ", ", names = c("county_name", "state_name")) |>
+      dplyr::transmute(
+        state_code = stringr::str_sub(GEOID, 1, 2),
+        state_name,
+        county_code = GEOID,
+        county_name,
+        county_population = B01003_001E) |>
+      dplyr::left_join(
+        tidycensus::fips_codes %>%
+          dplyr::select(state_abbreviation = state, state_code) %>%
+          dplyr::distinct(),
+        by = "state_code") |>
+      dplyr::mutate(
+        .by = c(state_code),
+        state_population = sum(county_population, na.rm = TRUE)) |>
+    dplyr::select(dplyr::matches("state"), dplyr::matches("county")) })
 
   if (geography_type == "state") {
     df = df |> dplyr::distinct(state_abbreviation, state_code, state_name) }
@@ -289,3 +301,28 @@ get_geography_metadata = function(
   return(df)
 }
 
+#' Convert named month-including dates to standardized date-type variables
+#'
+#' @param date_string A text-based date of the form January 01 2000
+#'
+#' @return A date-type variable
+#' @noRd
+date_string_to_date = function(date_string) {
+  date_string %>%
+    stringr::str_replace_all(c(
+      "January" = "01",
+      "February" = "02",
+      "March" = "03",
+      "April" = "04",
+      "May" = "05",
+      "June" = "06",
+      "July" = "07",
+      "August" = "08",
+      "September" = "09",
+      "October" = "10",
+      "November" = "11",
+      "December" = "12",
+      " " = "-")) %>%
+    stringr::str_extract("[0-9]{2}-[0-9]{1,2}-[0-9]{4}") %>%
+    lubridate::mdy()
+}
