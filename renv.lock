@@ -74,7 +74,7 @@
       "NeedsCompilation": "no",
       "Author": "R Special Interest Group on Databases (R-SIG-DB) [aut], Hadley Wickham [aut], Kirill Müller [aut, cre] (<https://orcid.org/0000-0002-1416-3412>), R Consortium [fnd]",
       "Maintainer": "Kirill Müller <kirill@cynkra.com>",
-      "Repository": "RSPM"
+      "Repository": "https://packagemanager.posit.co/cran/latest"
     },
     "KernSmooth": {
       "Package": "KernSmooth",
@@ -206,7 +206,7 @@
       "NeedsCompilation": "no",
       "Author": "Winston Chang [aut, cre], Posit Software, PBC [cph, fnd]",
       "Maintainer": "Winston Chang <winston@posit.co>",
-      "Repository": "CRAN"
+      "Repository": "https://packagemanager.posit.co/cran/latest"
     },
     "RColorBrewer": {
       "Package": "RColorBrewer",
@@ -223,7 +223,8 @@
       "Description": "Provides color schemes for maps (and other graphics) designed by Cynthia Brewer as described at http://colorbrewer2.org.",
       "License": "Apache License 2.0",
       "NeedsCompilation": "no",
-      "Repository": "CRAN"
+      "Repository": "https://packagemanager.posit.co/cran/latest",
+      "Encoding": "UTF-8"
     },
     "RSQLite": {
       "Package": "RSQLite",
@@ -308,7 +309,7 @@
       "NeedsCompilation": "yes",
       "Author": "Dirk Eddelbuettel [aut, cre] (ORCID: <https://orcid.org/0000-0001-6419-907X>), Romain Francois [aut] (ORCID: <https://orcid.org/0000-0002-2444-4226>), JJ Allaire [aut] (ORCID: <https://orcid.org/0000-0003-0174-9868>), Kevin Ushey [aut] (ORCID: <https://orcid.org/0000-0003-2880-7407>), Qiang Kou [aut] (ORCID: <https://orcid.org/0000-0001-6786-5453>), Nathan Russell [aut], Iñaki Ucar [aut] (ORCID: <https://orcid.org/0000-0001-6403-5550>), Doug Bates [aut] (ORCID: <https://orcid.org/0000-0001-8316-9503>), John Chambers [aut]",
       "Maintainer": "Dirk Eddelbuettel <edd@debian.org>",
-      "Repository": "CRAN"
+      "Repository": "https://packagemanager.posit.co/cran/latest"
     },
     "RcppProgress": {
       "Package": "RcppProgress",
@@ -5306,6 +5307,41 @@
       "NeedsCompilation": "yes",
       "Author": "Lionel Henry [aut, cre], Hadley Wickham [aut], Posit Software, PBC [cph, fnd]",
       "Maintainer": "Lionel Henry <lionel@posit.co>",
+      "Repository": "CRAN"
+    },
+    "tidytable": {
+      "Package": "tidytable",
+      "Version": "0.11.2",
+      "Source": "Repository",
+      "Title": "Tidy Interface to 'data.table'",
+      "Authors@R": "c( person(\"Mark\", \"Fairbanks\", role = c(\"aut\", \"cre\"), email = \"mark.t.fairbanks@gmail.com\"), person(\"Abdessabour\", \"Moutik\", role = \"ctb\"), person(\"Matt\", \"Carlson\", role = \"ctb\"), person(\"Ivan\", \"Leung\", role = \"ctb\"), person(\"Ross\", \"Kennedy\", role = \"ctb\"), person(\"Robert\", \"On\", role = \"ctb\"), person(\"Alexander\", \"Sevostianov\", role = \"ctb\"), person(\"Koen\", \"ter Berg\", role = \"ctb\") )",
+      "Description": "A tidy interface to 'data.table', giving users the speed of 'data.table' while using tidyverse-like syntax.",
+      "License": "MIT + file LICENSE",
+      "Encoding": "UTF-8",
+      "Imports": [
+        "data.table (>= 1.16.0)",
+        "glue (>= 1.4.0)",
+        "lifecycle (>= 1.0.3)",
+        "magrittr (>= 2.0.3)",
+        "pillar (>= 1.8.0)",
+        "rlang (>= 1.1.0)",
+        "tidyselect (>= 1.2.0)",
+        "vctrs (>= 0.6.0)"
+      ],
+      "RoxygenNote": "7.3.2",
+      "Config/testthat/edition": "3",
+      "URL": "https://markfairbanks.github.io/tidytable/, https://github.com/markfairbanks/tidytable",
+      "BugReports": "https://github.com/markfairbanks/tidytable/issues",
+      "Suggests": [
+        "testthat (>= 2.1.0)",
+        "bit64",
+        "knitr",
+        "rmarkdown",
+        "crayon"
+      ],
+      "NeedsCompilation": "no",
+      "Author": "Mark Fairbanks [aut, cre], Abdessabour Moutik [ctb], Matt Carlson [ctb], Ivan Leung [ctb], Ross Kennedy [ctb], Robert On [ctb], Alexander Sevostianov [ctb], Koen ter Berg [ctb]",
+      "Maintainer": "Mark Fairbanks <mark.t.fairbanks@gmail.com>",
       "Repository": "CRAN"
     },
     "tidyverse": {

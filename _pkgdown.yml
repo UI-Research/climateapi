@@ -17,11 +17,16 @@ reference:
 - title: County data
   contents:
   - get_business_patterns
-  - get_nfip_policies
-  - get_nfip_claims
   - get_fema_disaster_declarations
   - get_ihp_registrations
+  - get_nfip_policies
+  - get_nfip_claims
+  - get_public_assistance
   - get_sheldus
+  - get_preliminary_damage_assessments
+- title: State data
+  contents:
+  - get_emergency_management_performance
 - title: Event boundaries
   contents:
   - get_current_fire_perimeters
@@ -41,6 +46,7 @@ reference:
   - get_system_username
   - get_box_path
   - get_dataset_columns
+  - get_geography_metadata
   - convert_delimited_to_parquet
   - convert_table_text_to_dataframe
   - get_spatial_extent_census

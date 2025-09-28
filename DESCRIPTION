@@ -12,7 +12,10 @@ Authors@R: c(
         family = "Lloyd",
         given = "Kameron",
         role = c("aut")))
-Description: This packages combines a set of utilities for acquiring and processing climate and climate-adjacent datasets under a consistent API. It takes opinionated stances on how to manipulate raw data in an effort to produce standard workflows that enable project teams to devote more time to substantive analysis and inference-making.
+Description: This packages combines a set of utilities for acquiring and processing 
+    climate and climate-adjacent datasets under a consistent API. It takes opinionated 
+    stances on how to manipulate raw data in an effort to produce standard workflows 
+    that enable project teams to devote more time to substantive analysis and inference-making.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
@@ -23,6 +26,7 @@ Imports:
     dplyr,
     esri2sf (>= 0.1.1),
     ellmer,
+    glue,
     ggplot2,
     here,
     ipumsr,
@@ -31,6 +35,7 @@ Imports:
     lubridate,
     magrittr,
     openxlsx,
+    pdftools,
     purrr,
     readr,
     readxl,

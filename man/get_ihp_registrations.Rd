@@ -5,26 +5,23 @@
 \title{Get Individuals and Households Program (IHP) registrations}
 \usage{
 get_ihp_registrations(
-  geography = NULL,
   state_fips = NULL,
-  file_name = "IndividualsAndHouseholdsProgramValidRegistrations_2025_06_10.csv",
-  api = TRUE,
+  file_name = "IndividualsAndHouseholdsProgramValidRegistrationsV2_2025_09_26.parquet",
+  api = FALSE,
   outpath = NULL
 )
 }
 \arguments{
-\item{geography}{Included only for API consistency; this must be NULL.}
-
 \item{state_fips}{A character vector of two-letter state abbreviations. If NULL (default), return data for all 51 states. Otherwise return data for the specified states.}
 
 \item{file_name}{The name (not the full path) of the Box file containing the raw data.}
 
-\item{api}{If TRUE (default), query the API.}
+\item{api}{If TRUE, query the API. If FALSE (default), read from disk.}
 
 \item{outpath}{The path to save the parquet-formatted datafile. Applicable only when \code{api = FALSE}.}
 }
 \value{
-A dataframe comprising county-level data on current NFIP policies
+A dataframe comprising IHP registrations
 }
 \description{
 Get Individuals and Households Program (IHP) registrations
