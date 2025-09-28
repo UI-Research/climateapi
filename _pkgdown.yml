@@ -54,3 +54,4 @@ reference:
   - subdivide_linestring
   - polygons_to_linestring
   - read_ipums_cached
+  - inflation_adjust

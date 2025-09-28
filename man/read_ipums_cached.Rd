@@ -2,7 +2,7 @@
 % Please edit documentation in R/read_ipums_cached.R
 \name{read_ipums_cached}
 \alias{read_ipums_cached}
-\title{Read cached IPUMS data}
+\title{Read IPUMS data leveraging a local cache}
 \usage{
 read_ipums_cached(
   filename,
@@ -21,10 +21,20 @@ read_ipums_cached(
 \item{refresh}{If true, execute the API query, even if data are already stored locally. Defaults to FALSE}
 }
 \value{
-A dataframe corresponding to the supplied extract_definition
+A dataframe corresponding to the supplied \code{extract_definition}
 }
 \description{
-Read cached IPUMS data
+This script wraps a standard ipumsr::read_ipums*() query workflow, addressing
+two common challenges:
+(1) the default workflow downloads arbitrarily named raw data files that
+are sequentially numbered and dependent on the total number of extracts
+submitted by a given user; and
+(2) the default workflow does not provide an inbuilt capacity to check for
+a local version of the query before re-submitting to the API.
+
+This script addresses these challenges by taking a user-supplied filename and
+file directory, checking if there is an existing file at that path, and otherwise
+downloading the extract (again user-specified) to the given filepath.
 }
 \examples{
 \dontrun{
