@@ -131,14 +131,14 @@ get_public_assistance= function(
         ct_county_crosswalk,
         by = c("county_fips" = "county_fips_2020"),
         relationship = "many-to-many") |>
-      tidytable::summarize(
+      dplyr::summarize(
         .by = c("id"),
-        tidytable::across(
-          .cols = tidytable::all_of(interpolate_columns),
+        dplyr::across(
+          .cols = dplyr::all_of(interpolate_columns),
           .fns = \(x) base::sum(x * allocation_factor, na.rm = TRUE)),
-        tidytable::across(
-          .cols = -tidytable::all_of(interpolate_columns),
-          .fns = \(x) tidytable::first(x))) |>
+        dplyr::across(
+          .cols = -dplyr::all_of(interpolate_columns),
+          .fns = \(x) dplyr::first(x))) |>
       tibble::as_tibble() |>
       dplyr::select(-county_fips) |>
       dplyr::rename(county_fips = county_fips_2022)
