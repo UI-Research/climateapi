@@ -135,10 +135,10 @@ get_public_assistance= function(
         .by = c("id"),
         tidytable::across(
           .cols = tidytable::all_of(interpolate_columns),
-          .fns = ~ sum(.x * allocation_factor, na.rm = TRUE)),
+          .fns = \(x) base::sum(x * allocation_factor, na.rm = TRUE)),
         tidytable::across(
           .cols = -tidytable::all_of(interpolate_columns),
-          .fns = ~ tidytable::first(.x))) |>
+          .fns = \(x) tidytable::first(x))) |>
       tibble::as_tibble() |>
       dplyr::select(-county_fips) |>
       dplyr::rename(county_fips = county_fips_2022)
