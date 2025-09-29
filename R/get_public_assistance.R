@@ -66,9 +66,6 @@ get_public_assistance= function(
       "PublicAssistanceFundedProjectsDetailsV2_2025_09_26.parquet"),
     state_abbreviations = NULL) {
 
-  public_assistance_6  %>%
-    dplyr::count(damage_category_description)
-
   if (is.null(state_abbreviations)) { state_abbreviations = c(state.abb, "DC") }
   if (any(!state_abbreviations %in% c(state.abb, "DC"))) { stop("Only the 50 states and DC are supported at this time.") }
 

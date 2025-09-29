@@ -325,6 +325,7 @@ date_string_to_date = function(date_string) {
       " " = "-")) %>%
     stringr::str_extract("[0-9]{2}-[0-9]{1,2}-[0-9]{4}") %>%
     lubridate::mdy()
+}
 
 #' Inflation adjust dollar values using annual PCE Index
 #'
@@ -341,17 +342,19 @@ date_string_to_date = function(date_string) {
 #' @export
 #'
 #' @examples
+#' \dontrun{
 #' df = tibble::tribble(
 #'   ~ year, ~ amount,
 #'   1990, 1,
 #'   1991, 1,
 #'   1992, 1)
 #'
-#' df %>%
+#' df |>
 #'   inflation_adjust(
 #'     year_variable = year,
 #'     dollar_variables = amount,
 #'     names_suffix = "inflation_adjusted")
+#' }
 
 inflation_adjust = function(
     df,
@@ -371,13 +374,17 @@ inflation_adjust = function(
 
   inflation_data = inflation_data %>%
     dplyr::mutate(
-      inflation_factor = (pce_index[inflation_year_ == if_else(is.null(base_year), max(inflation_year_), base_year)]) / pce_index)
+      inflation_factor = (pce_index[inflation_year_ == dplyr::if_else(is.null(base_year), max(inflation_year_), base_year)]) / pce_index)
 
   df1 = df %>%
     dplyr::mutate(
       inflation_year_ = .data[[year_variable]] %>% as.numeric) %>%
     dplyr::left_join(inflation_data, by = c("inflation_year_")) %>%
     dplyr::mutate(
-      across(.cols = dplyr::all_of(dollar_variables), ~ .x * inflation_factor, .names = "{.col}{names_suffix}")) %>%
+      dplyr::across(.cols = dplyr::all_of(dollar_variables), ~ .x * inflation_factor, .names = "{.col}{names_suffix}")) %>%
     dplyr::select(-pce_index, -inflation_year_, -inflation_factor)
 }
+
+utils::globalVariables(c(
+  "DPCERG3A086NBEA", "crop_damage_adjusted_2023", "inflation_factor", "inflation_year_",
+  "pce_index", "property_damage_adjusted_2023"))
