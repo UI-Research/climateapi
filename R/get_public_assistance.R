@@ -1,3 +1,4 @@
+#' @importFrom magrittr %>%
 #' Get FEMA Public Assistance (PA) funding
 #'
 #' Project- and county-level data on PA funding over time
@@ -74,9 +75,9 @@ get_public_assistance= function(
     dplyr::pull(state_code)
 
   ## data on counties and their populations
-  suppressMessages({
+  suppressMessagessuppressWarnings({({
     state_county_xwalk = get_geography_metadata(geography_type = "county") %>%
-      dplyr::filter(state_code %in% state_fips) })
+      dplyr::filter(state_code %in% state_fips) })})
 
   public_assistance_raw = arrow::read_parquet(file_path) |>
     janitor::clean_names() |>
