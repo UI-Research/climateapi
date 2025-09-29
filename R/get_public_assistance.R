@@ -20,16 +20,6 @@
 #'       characterizations of PA projects and funding, using the `_split`-suffixed
 #'       variables to calculate funding totals. For example, this might look like:
 #'
-#'   \code{
-#'   df |>
-#'   tidytable::summarize(
-#'     .by = county_fips,
-#'     ## note that dplyr::n() is not appropriate for counting county-level projects
-#'     ## because this will produce inflated counts reflecting crosswalked statewide projects
-#'     count_county_level_projects = dplyr::n_distinct(id[statewide_flag == 0]),
-#'     federal_funding_obligated = sum(pa_federal_funding_obligated_split, na.rm = TRUE))
-#'     }
-#'
 #' The attribution of statewide projects to the county level occurs by proportionally attributing
 #' project costs based on county-level populations. For example, in a fictional state with two
 #' counties, one of population 10 and one of population 90, 10% of a statewide project's funding
@@ -323,7 +313,7 @@ get_public_assistance= function(
   test = public_assistance_5 %>%
     tidytable::summarize(
       .by = c("state_fips", "id"),
-      pa_federal_funding_obligated = dplyr::first(pa_federal_funding_obligated),
+      pa_federal_funding_obligated = tidytable::first(pa_federal_funding_obligated),
       pa_federal_funding_obligated_split = base::sum(pa_federal_funding_obligated_split, na.rm = TRUE))
 
   ## ensure that we haven't lost any projects
@@ -369,20 +359,6 @@ get_public_assistance= function(
     dplyr::arrange(dplyr::desc(distinct_state_records_per_id)) %>%
     dplyr::slice(1) %>%
     dplyr::pull(distinct_state_records_per_id) == 1)
-
-  # temp1 = public_assistance_6 |>
-  #   tidytable::summarize(
-  #     .by = county_fips,
-  #     ## note that `dplyr::n()` is not appropriate for counting county-level projects
-  #     ## because this will produce inflated counts reflecting crosswalked statewide projects
-  #     count_county_level_projects = dplyr::n_distinct(id[statewide_flag == 0]),
-  #     federal_funding_obligated = sum(pa_federal_funding_obligated_split, na.rm = TRUE))
-  #
-  # sum(temp1$count_county_level_projects, na.rm = TRUE) == (
-  #   public_assistance_6 %>%
-  #     dplyr::filter(statewide_flag == 0) %>%
-  #     dplyr::pull(id) %>% unique() %>% length())
-
 
   message(glue::glue("Public assistance records are filtered to include only 'natural' `incident_type`
   values, with records from the years {min(years)}-{max(years)}, inclusive. Tribal records are not included."))
