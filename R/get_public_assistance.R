@@ -50,6 +50,8 @@
 #'   get_public_assistance(state_abbreviations = "NJ")
 #' }
 
+.datatable.aware=TRUE
+
 get_public_assistance= function(
     file_path = file.path(
       get_box_path(), "hazards", "fema", "public-assistance", "raw",
