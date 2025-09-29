@@ -39,10 +39,9 @@
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">get_ihp_registrations</span><span class="op">(</span></span>
-<span>  geography <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  state_fips <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  file_name <span class="op">=</span> <span class="st">"IndividualsAndHouseholdsProgramValidRegistrations_2025_06_10.csv"</span>,</span>
-<span>  api <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  file_name <span class="op">=</span> <span class="st">"IndividualsAndHouseholdsProgramValidRegistrationsV2_2025_09_26.parquet"</span>,</span>
+<span>  api <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  outpath <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -51,11 +50,7 @@
     <h2 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a></h2>
 
 
-<dl><dt id="arg-geography">geography<a class="anchor" aria-label="anchor" href="#arg-geography"></a></dt>
-<dd><p>Included only for API consistency; this must be NULL.</p></dd>
-
-
-<dt id="arg-state-fips">state_fips<a class="anchor" aria-label="anchor" href="#arg-state-fips"></a></dt>
+<dl><dt id="arg-state-fips">state_fips<a class="anchor" aria-label="anchor" href="#arg-state-fips"></a></dt>
 <dd><p>A character vector of two-letter state abbreviations. If NULL (default), return data for all 51 states. Otherwise return data for the specified states.</p></dd>
 
 
@@ -64,7 +59,7 @@
 
 
 <dt id="arg-api">api<a class="anchor" aria-label="anchor" href="#arg-api"></a></dt>
-<dd><p>If TRUE (default), query the API.</p></dd>
+<dd><p>If TRUE, query the API. If FALSE (default), read from disk.</p></dd>
 
 
 <dt id="arg-outpath">outpath<a class="anchor" aria-label="anchor" href="#arg-outpath"></a></dt>
@@ -73,7 +68,7 @@
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A dataframe comprising county-level data on current NFIP policies</p>
+    <p>A dataframe comprising IHP registrations</p>
     </div>
 
     <div class="section level2">

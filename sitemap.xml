@@ -13,12 +13,17 @@
 <url><loc>https://ui-research.github.io/climateapi/reference/get_business_patterns.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/get_current_fire_perimeters.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/get_dataset_columns.html</loc></url>
+<url><loc>https://ui-research.github.io/climateapi/reference/get_emergency_management_performance.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/get_fema_disaster_declarations.html</loc></url>
+<url><loc>https://ui-research.github.io/climateapi/reference/get_geography_metadata.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/get_government_finances.html</loc></url>
+<url><loc>https://ui-research.github.io/climateapi/reference/get_hazard_mitigation_assistance.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/get_ihp_registrations.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/get_lodes.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/get_nfip_claims.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/get_nfip_policies.html</loc></url>
+<url><loc>https://ui-research.github.io/climateapi/reference/get_preliminary_damage_assessments.html</loc></url>
+<url><loc>https://ui-research.github.io/climateapi/reference/get_public_assistance.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/get_sba_loans.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/get_sheldus.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/get_spatial_extent_census.html</loc></url>
