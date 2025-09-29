@@ -189,32 +189,6 @@ clean_ihp = function(data) {
       dplyr::everything())
 }
 
-#' Standardize county names for matching, to the extent possible
-#'
-#' @param county
-#'
-#' @return Cleaned county names more suitable for matching on
-#' @noRd
-clean_county = function(county) {
-
-  county %>%
-    stringr::str_to_lower() %>%
-    stringr::str_remove_all("parish|county|\\.|\\(|\\)|municipality|city and borough|borough|\\|in pmsa.*|'") %>%
-    stringr::str_replace_all(c(
-      "census area" = "ca",
-      "^e " = "east ",
-      "^w " = "west ",
-      "de kalb" = "dekalb",
-      "la salle" = "lasalle",
-      "la porte" = "laporte",
-      "prince of wales-hyder" = "prince of wales-hyder ca",
-      "prince of wales-outer" = "prince of wales-outer ca",
-      "state wide" = "statewide",
-      "ca ca" = "ca")) %>%
-    stringr::str_trim() %>%
-    stringr::str_squish()
-}
-
 utils::globalVariables(c(
   "substate_geography", "state_abbreviation", "city_name", "zip_code", "househole_residents",
   "household_income_gross", "household_tenure", "amount_individual_housing_program",

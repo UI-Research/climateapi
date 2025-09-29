@@ -24,6 +24,7 @@ reference:
   - get_public_assistance
   - get_sheldus
   - get_preliminary_damage_assessments
+  - get_hazard_mitigation_assistance
 - title: State data
   contents:
   - get_emergency_management_performance

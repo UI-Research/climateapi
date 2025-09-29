@@ -86,8 +86,6 @@ get_sheldus = function(
       year,
       month,
       hazard,
-      ### confirmed in data documentation the per capita values are calculated using the most recent year inflation
-      ### all values are in the latest year's data
       damage_property = property_damage_adjusted_2023,
       # damage_property_per_capita = property_damage_per_capita,
       damage_crop = crop_damage_adjusted_2023,
@@ -121,7 +119,7 @@ get_sheldus = function(
   df4 = df3 %>%
     dplyr::mutate(
       unique_id = uuid::UUIDgenerate(n = nrow(df3))) %>%
-    dplyr::select(unique_id, everything())
+    dplyr::select(unique_id, dplyr::everything())
 
   message(stringr::str_c(
     "The unit of observation is: county x year x month x hazard. ",
@@ -130,13 +128,13 @@ get_sheldus = function(
     "That is, only counties with a disaster event have an observation for a given month x year x hazard. ",
     "The `records` field reflects the number of events that were aggregated to ",
     "calculate the values reflected in the given observation.",
-    "All dollar-denominated values are in 2023 dollars.")) ## note this should be updated to reflect the programmatic input
+    "All dollar-denominated values are in 2023 dollars."))
 
   return(df4)
 }
 
 utils::globalVariables(c(
   "state_name", "county_fips", "unique_id", "GEOID", "county_name", "year", "month",
-  "damage_property", "damage_property_per_capita", "damage_crop",
-  "damage_crop_per_capita", "records", "benchmark_geographies",
+  "damage_property", "damage_property_per_capita", "damage_crop", "property_damage_adjusted_2023",
+  "damage_crop_per_capita", "records", "benchmark_geographies", "crop_damage_adjusted_2023",
   "STATE", "COUNTY", "."))
