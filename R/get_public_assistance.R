@@ -127,14 +127,14 @@ get_public_assistance= function(
 
     ct_county_crosswalk = ct_county_crosswalk1 %>%
       dplyr::left_join(ct_tract_populations, by = "tract_fips_2020") %>%
-      tidytable::summarize(
+      dplyr::summarize(
         .by = c("county_fips_2020", "county_fips_2022"),
         population_2020 = sum(population_2020)) %>%
-      tidytable::mutate(
+      dplyr::mutate(
         .by = "county_fips_2020",
         population_2020_total = sum(population_2020, na.rm = TRUE)) %>%
-      tidytable::mutate(allocation_factor = population_2020 / population_2020_total) %>%
-      tidytable::select(-dplyr::matches("population"))
+      dplyr::mutate(allocation_factor = population_2020 / population_2020_total) %>%
+      dplyr::select(-dplyr::matches("population"))
 
     crosswalked_ct_counties = public_assistance_raw %>%
       dplyr::filter(state_fips == "09") %>%
