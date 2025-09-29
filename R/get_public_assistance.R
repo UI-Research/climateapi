@@ -324,7 +324,7 @@ get_public_assistance= function(
     tidytable::summarize(
       .by = c("state_fips", "id"),
       pa_federal_funding_obligated = dplyr::first(pa_federal_funding_obligated),
-      pa_federal_funding_obligated_split = sum(pa_federal_funding_obligated_split, na.rm = TRUE))
+      pa_federal_funding_obligated_split = base::sum(pa_federal_funding_obligated_split, na.rm = TRUE))
 
   ## ensure that we haven't lost any projects
   stopifnot(nrow(test) == nrow(public_assistance3b))
