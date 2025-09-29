@@ -75,7 +75,7 @@ get_public_assistance= function(
     dplyr::pull(state_code)
 
   ## data on counties and their populations
-  suppressMessagessuppressWarnings({({
+  suppressMessages({suppressWarnings({
     state_county_xwalk = get_geography_metadata(geography_type = "county") %>%
       dplyr::filter(state_code %in% state_fips) })})
 
