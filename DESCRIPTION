@@ -23,6 +23,7 @@ RoxygenNote: 7.3.2
 Imports: 
     arrow,
     censusapi,
+    data.table,
     dplyr,
     esri2sf (>= 0.1.1),
     ellmer,
