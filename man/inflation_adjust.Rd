@@ -31,15 +31,17 @@ The Personal Consumption Expenditures Price Index (PCE Index) is from the
 Federal Reserve Bank of St. Louis's FRED tool.
 }
 \examples{
+\dontrun{
 df = tibble::tribble(
   ~ year, ~ amount,
   1990, 1,
   1991, 1,
   1992, 1)
 
-df \%>\%
+df |>
   inflation_adjust(
     year_variable = year,
     dollar_variables = amount,
     names_suffix = "inflation_adjusted")
+}
 }

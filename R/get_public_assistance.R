@@ -1,4 +1,3 @@
-#' @importFrom magrittr %>%
 #' Get FEMA Public Assistance (PA) funding
 #'
 #' Project- and county-level data on PA funding over time
@@ -60,13 +59,13 @@ get_public_assistance= function(
   if (is.null(state_abbreviations)) { state_abbreviations = c(state.abb, "DC") }
   if (any(!state_abbreviations %in% c(state.abb, "DC"))) { stop("Only the 50 states and DC are supported at this time.") }
 
-  state_fips = get_geography_metadata("state") %>%
-    dplyr::filter(state_abbreviation %in% state_abbreviations) %>%
+  state_fips = get_geography_metadata("state") |>
+    dplyr::filter(state_abbreviation %in% state_abbreviations) |>
     dplyr::pull(state_code)
 
   ## data on counties and their populations
   suppressMessages({suppressWarnings({
-    state_county_xwalk = get_geography_metadata(geography_type = "county") %>%
+    state_county_xwalk = get_geography_metadata(geography_type = "county") |>
       dplyr::filter(state_code %in% state_fips) })})
 
   public_assistance_raw = arrow::read_parquet(file_path) |>
@@ -85,7 +84,7 @@ get_public_assistance= function(
       damage_category_code,
       damage_category_description = damage_category_descrip,
       pa_category = stringr::str_c(damage_category_code, damage_category_description, sep = " - "),
-      pa_federal_funding_obligated = federal_share_obligated) %>%
+      pa_federal_funding_obligated = federal_share_obligated) |>
     dplyr::filter(state_fips %in% !!state_fips, as.numeric(state_fips) < 60)
 
   interpolate_columns = c("pa_federal_funding_obligated")
@@ -94,8 +93,8 @@ get_public_assistance= function(
   ## equivalents (planning regions)
   if ("09" %in% state_fips) {
     ct_county_crosswalk1 = readr::read_csv(
-      file.path(get_box_path(), "crosswalks", "ctdata_2022_tractcrosswalk_connecticut.csv")) %>%
-      janitor::clean_names() %>%
+      file.path(get_box_path(), "crosswalks", "ctdata_2022_tractcrosswalk_connecticut.csv")) |>
+      janitor::clean_names() |>
       dplyr::select(
         ## each tract has a single observation
         tract_fips_2020,
@@ -110,43 +109,44 @@ get_public_assistance= function(
         geography = "tract",
         state = "CT",
         variable = "B01003_001",
-        output = "wide") %>%
+        output = "wide") |>
         dplyr::select(
           tract_fips_2020 = GEOID,
           population_2020 = B01003_001E) })
 
-    ct_county_crosswalk = ct_county_crosswalk1 %>%
-      dplyr::left_join(ct_tract_populations, by = "tract_fips_2020") %>%
+    ct_county_crosswalk = ct_county_crosswalk1 |>
+      dplyr::left_join(ct_tract_populations, by = "tract_fips_2020") |>
       dplyr::summarize(
         .by = c("county_fips_2020", "county_fips_2022"),
-        population_2020 = sum(population_2020)) %>%
+        population_2020 = sum(population_2020)) |>
       dplyr::mutate(
         .by = "county_fips_2020",
-        population_2020_total = sum(population_2020, na.rm = TRUE)) %>%
-      dplyr::mutate(allocation_factor = population_2020 / population_2020_total) %>%
+        population_2020_total = sum(population_2020, na.rm = TRUE)) |>
+      dplyr::mutate(allocation_factor = population_2020 / population_2020_total) |>
       dplyr::select(-dplyr::matches("population"))
 
-    crosswalked_ct_counties = public_assistance_raw %>%
-      dplyr::filter(state_fips == "09") %>%
+    crosswalked_ct_counties = public_assistance_raw |>
+      dplyr::filter(state_fips == "09") |>
       dplyr::left_join(
         ct_county_crosswalk,
         by = c("county_fips" = "county_fips_2020"),
-        relationship = "many-to-many") %>%
+        relationship = "many-to-many") |>
       tidytable::summarize(
         .by = c("id"),
-        dplyr::across(
-          .cols = dplyr::all_of(interpolate_columns),
+        tidytable::across(
+          .cols = tidytable::all_of(interpolate_columns),
           .fns = ~ sum(.x * allocation_factor, na.rm = TRUE)),
-        dplyr::across(
-          .cols = -dplyr::all_of(interpolate_columns),
-          .fns = ~ dplyr::first(.x))) %>%
-      dplyr::select(-county_fips) %>%
+        tidytable::across(
+          .cols = -tidytable::all_of(interpolate_columns),
+          .fns = ~ tidytable::first(.x))) |>
+      tibble::as_tibble() |>
+      dplyr::select(-county_fips) |>
       dplyr::rename(county_fips = county_fips_2022)
 
     #joining the non CT states with the CT crosswalk to create the updated dataset
-    public_assistance1 = public_assistance_raw %>%
-      dplyr::filter(state_fips != "09") %>%
-      dplyr::bind_rows(crosswalked_ct_counties) %>%
+    public_assistance1 = public_assistance_raw |>
+      dplyr::filter(state_fips != "09") |>
+      dplyr::bind_rows(crosswalked_ct_counties) |>
       dplyr::select(-allocation_factor) } else { public_assistance1 = public_assistance_raw }
 
   public_assistance2 <- public_assistance1 |>
@@ -180,7 +180,7 @@ get_public_assistance= function(
         county_population,
         county_name) })
 
-  public_assistance3a = public_assistance2 %>%
+  public_assistance3a = public_assistance2 |>
     dplyr::mutate(
       county_fips = dplyr::case_when(
         ## aligning now-dissolved counties with their contemporary counterparts,
@@ -227,17 +227,17 @@ get_public_assistance= function(
       ## have no county attributes
       county_fips = dplyr::case_when(
         statewide_flag == 1 ~ NA,
-        TRUE ~ county_fips)) %>%
-    dplyr::select(-county_name) %>%
+        TRUE ~ county_fips)) |>
+    dplyr::select(-county_name) |>
     dplyr::left_join(
-      county_populations %>% dplyr::select(county_fips, county_population),
+      county_populations |> dplyr::select(county_fips, county_population),
       by = "county_fips",
       relationship = "many-to-one")
 
   imputed_statewide_projects = sum(public_assistance3a$imputed_statewide_flag, na.rm = TRUE)
-  dropped_projects = public_assistance3a %>%
+  dropped_projects = public_assistance3a |>
     dplyr::filter(
-      is.na(state_fips)) %>%
+      is.na(state_fips)) |>
     dplyr::pull(id)
 
   if (imputed_statewide_projects > 0) {
@@ -248,25 +248,25 @@ get_public_assistance= function(
     message(stringr::str_c(
       length(dropped_projects), " projects have been omitted due to missing state-level identifiers.")) }
 
-  public_assistance3b = public_assistance3a %>%
+  public_assistance3b = public_assistance3a |>
     dplyr::filter(!id %in% dropped_projects)
 
-  public_assistance_4a = public_assistance3b %>%
-    dplyr::select(-county_population, -imputed_statewide_flag) %>%
-    dplyr::filter(statewide_flag == 0) %>%
+  public_assistance_4a = public_assistance3b |>
+    dplyr::select(-county_population, -imputed_statewide_flag) |>
+    dplyr::filter(statewide_flag == 0) |>
     dplyr::left_join(
-      state_county_xwalk %>%
+      state_county_xwalk |>
         dplyr::transmute(
           county_fips = county_code,
           county_population),
       by = c("county_fips"))
 
-  public_assistance_4b = public_assistance3b %>%
-    dplyr::select(-county_population, -county_fips, -imputed_statewide_flag) %>%
-    dplyr::filter(statewide_flag == 1) %>%
+  public_assistance_4b = public_assistance3b |>
+    dplyr::select(-county_population, -county_fips, -imputed_statewide_flag) |>
+    dplyr::filter(statewide_flag == 1) |>
     ## we join all counties in the state to projects that are listed as "statewide"
     dplyr::left_join(
-      state_county_xwalk %>%
+      state_county_xwalk |>
         dplyr::transmute(
           state_fips = state_code,
           county_fips = county_code,
@@ -277,24 +277,25 @@ get_public_assistance= function(
 
   public_assistance_5 = dplyr::bind_rows(
       public_assistance_4a,
-      public_assistance_4b) %>%
+      public_assistance_4b) |>
     ## obtain a count of counties per project and then create a denominator for summed
     ## county populations across all the counties per project
     tidytable::mutate(
       .by = "id",
       county_count = dplyr::n_distinct(county_fips, na.rm = TRUE),
-      project_counties_population = sum(county_population, na.rm = TRUE)) %>%
+      project_counties_population = sum(county_population, na.rm = TRUE)) |>
     ## this is how we attribute project-level costs to  statewide awards
     ## it's 1 for the given county when a project is only in one county
-    dplyr::mutate(
-      allocation_factor = county_population / project_counties_population) %>%
+    tidytable::mutate(
+      allocation_factor = county_population / project_counties_population) |>
     ## and these are our project costs attributed to the county level, with observations
     ## representing one record per project-county (but potentially multiple records per project)
     tidytable::mutate(
       .by = c("id", "county_fips"),
-      dplyr::across(
-        .cols = dplyr::all_of(interpolate_columns),
-        .fns = ~ .x * allocation_factor, .names = "{.col}_split")) %>%
+      tidytable::across(
+        .cols = tidytable::all_of(interpolate_columns),
+        .fns = ~ .x * allocation_factor, .names = "{.col}_split")) |>
+    tibble::as_tibble() |>
     dplyr::select(
       id,
       state_fips,
@@ -310,54 +311,56 @@ get_public_assistance= function(
       dplyr::matches("amount"))
 
   ## checking for records that don't align -- there should be none
-  test = public_assistance_5 %>%
+  test = public_assistance_5 |>
     tidytable::summarize(
       .by = c("state_fips", "id"),
       pa_federal_funding_obligated = tidytable::first(pa_federal_funding_obligated),
-      pa_federal_funding_obligated_split = base::sum(pa_federal_funding_obligated_split, na.rm = TRUE))
+      pa_federal_funding_obligated_split = base::sum(pa_federal_funding_obligated_split, na.rm = TRUE)) |>
+    tibble::as_tibble()
 
   ## ensure that we haven't lost any projects
   stopifnot(nrow(test) == nrow(public_assistance3b))
 
   ## total project costs are the same across both formulations (original and county-level)
-  nonaligned_ids = test %>%
+  nonaligned_ids = test |>
     dplyr::filter(
       !dplyr::near(
         pa_federal_funding_obligated,
-        pa_federal_funding_obligated_split)) %>%
+        pa_federal_funding_obligated_split)) |>
     dplyr::mutate(
-      difference = abs(pa_federal_funding_obligated - pa_federal_funding_obligated_split)) %>%
-    dplyr::filter(difference > 1) %>%
+      difference = abs(pa_federal_funding_obligated - pa_federal_funding_obligated_split)) |>
+    dplyr::filter(difference > 1) |>
     dplyr::pull(id)
 
   stopifnot(length(nonaligned_ids) == 0)
 
-  years = public_assistance_5 %>% dplyr::pull(declaration_year)
+  years = public_assistance_5 |> dplyr::pull(declaration_year)
 
-  public_assistance_6 = public_assistance_5 %>%
+  public_assistance_6 = public_assistance_5 |>
     dplyr::left_join(
-      state_county_xwalk %>% dplyr::select(county_fips = county_code, county_name, state_name, state_abbreviation),
+      state_county_xwalk |> dplyr::select(county_fips = county_code, county_name, state_name, state_abbreviation),
       by = "county_fips",
-      relationship = "many-to-one") %>%
-    dplyr::relocate(dplyr::matches("county"), .after = id) %>%
+      relationship = "many-to-one") |>
+    dplyr::relocate(dplyr::matches("county"), .after = id) |>
     dplyr::relocate(dplyr::matches("state_"), .after = id)
 
   ## checking row counts
   stopifnot(
-    public_assistance_6 %>% dplyr::distinct(id) %>% nrow() == (
-      public_assistance_4a %>% nrow() + ## non-statewide projects
-      public_assistance_4b %>% dplyr::distinct(id) %>% nrow()))
+    public_assistance_6 |> dplyr::distinct(id) |> nrow() == (
+      public_assistance_4a |> nrow() + ## non-statewide projects
+      public_assistance_4b |> dplyr::distinct(id) |> nrow()))
 
   ## there should always be the same number of observations per id for statewide project
   ## ids within the same state
   stopifnot(
-    public_assistance_4b %>%
-    dplyr::count(id, state_fips, sort = TRUE) %>%
+    public_assistance_4b |>
+    dplyr::count(id, state_fips, sort = TRUE) |>
     tidytable::summarize(
       .by = state_fips,
-      distinct_state_records_per_id = dplyr::n_distinct(n)) %>%
-    dplyr::arrange(dplyr::desc(distinct_state_records_per_id)) %>%
-    dplyr::slice(1) %>%
+      distinct_state_records_per_id = dplyr::n_distinct(n)) |>
+    tibble::as_tibble() |>
+    dplyr::arrange(dplyr::desc(distinct_state_records_per_id)) |>
+    dplyr::slice(1) |>
     dplyr::pull(distinct_state_records_per_id) == 1)
 
   message(glue::glue("Public assistance records are filtered to include only 'natural' `incident_type`
@@ -369,21 +372,10 @@ get_public_assistance= function(
 
   Analysts thus have two options for working with these data:
   (1) De-select the variables suffixed with `_split` and then run `distinct(df)`.
-      This will provide unique observations for projects; projects are both county-level
-      and statewide. These data can be aggregated to the state level but cannot be
-      comprehensively aggregated to the county level.
+      This will provide unique observations for projects.
   (2) Group the data at the county level and summarize to produce county-level
       characterizations of PA projects and funding, using the `_split`-suffixed
-      variables to calculate funding totals. For example, this might look like:
-
-      df |>
-        tidytable::summarize(
-          .by = county_fips,
-          ## note that `dplyr::n()` is not appropriate for counting county-level projects
-          ## because this will produce inflated counts reflecting crosswalked statewide projects
-          count_county_level_projects = dplyr::n_distinct(id[statewide_flag == 0]),
-          federal_funding_obligated = sum(pa_federal_funding_obligated_split, na.rm = TRUE))
-
+      variables to calculate funding totals.
   "))
 
   return(public_assistance_6)

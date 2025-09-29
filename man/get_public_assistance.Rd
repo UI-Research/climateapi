@@ -51,16 +51,6 @@ comprehensively aggregated to the county level.
 characterizations of PA projects and funding, using the \verb{_split}-suffixed
 variables to calculate funding totals. For example, this might look like:
 
-\code{
-  df |>
-  tidytable::summarize(
-    .by = county_fips,
-    ## note that dplyr::n() is not appropriate for counting county-level projects
-    ## because this will produce inflated counts reflecting crosswalked statewide projects
-    count_county_level_projects = dplyr::n_distinct(id[statewide_flag == 0]),
-    federal_funding_obligated = sum(pa_federal_funding_obligated_split, na.rm = TRUE))
-    }
-
 The attribution of statewide projects to the county level occurs by proportionally attributing
 project costs based on county-level populations. For example, in a fictional state with two
 counties, one of population 10 and one of population 90, 10\% of a statewide project's funding
