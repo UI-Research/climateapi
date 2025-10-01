@@ -64,7 +64,7 @@ get_hazard_mitigation_assistance = function(
   hma_projects00 = arrow::read_parquet(file_path_old_grant_system) %>%
     janitor::clean_names()
 
-  hma_projects0 = hma_project00 %>%
+  hma_projects0 = hma_projects00 %>%
     dplyr::select(
       project_id = project_identifier,
       project_program_area = program_area,
@@ -170,7 +170,8 @@ get_hazard_mitigation_assistance = function(
       county_name != "Statewide") %>%
     nrow()
 
-  message(stringr::str_c(no_county_match_projects, " projects do not have valid county identifiers and are treated as if they were statewide projects."))
+  message(stringr::str_c(
+    no_county_match_projects, " projects do not have valid county identifiers and are treated as if they were statewide projects."))
 
   hma_projects1b = hma_projects1a %>%
     dplyr::mutate(
@@ -246,9 +247,7 @@ get_hazard_mitigation_assistance = function(
       hma_projects2 %>%
       dplyr::summarize(dplyr::n_distinct(project_id)) %>% nrow())
 
-
   ####FEMA GO APPLICATIONS####
-
   ## FEMA GO Applications
   femago_df1 = arrow::read_parquet(file.path(file_path_new_grant_system)) %>%
     janitor::clean_names() %>%
@@ -258,14 +257,15 @@ get_hazard_mitigation_assistance = function(
       counties = benefiting_counties,
       state_name = subapplicant_state,
       fiscal_year,
+      selection_status,
       ## the amount approved during the selection phase -- this appears to be the
       ## most accurate reflection of intended federal funding
       selection_federal_share_amount,
       disaster_number,
-      project_id = id)
+      project_id = id) %>%
+    dplyr::filter(state_abbreviation %in% !!state_abbreviations)
 
   femago_df2 = femago_df1  %>%
-    dplyr::filter(state_abbreviation %in% !!state_abbreviations) %>%
     ## convert comma-separate values into new rows
     tidyr::separate_longer_delim(counties, delim = ",") %>%
     dplyr::mutate(
@@ -347,7 +347,9 @@ get_hazard_mitigation_assistance = function(
     femago_df3 = femago_df2 %>%
       dplyr::filter(state_abbreviation != "CT") %>%
       dplyr::bind_rows(crosswalked_ct_counties) %>%
-      dplyr::select(-allocation_factor) } else { femago_df3 = femago_df2 }
+      dplyr::select(-allocation_factor) } else {
+
+    femago_df3 = femago_df2 }
 
   femago_df4 = femago_df3 %>%
     ## join county codes and populations
@@ -378,7 +380,8 @@ get_hazard_mitigation_assistance = function(
     ## representing one record per project-county
     dplyr::mutate(
       .by = c("project_id", "county_code"),
-      selection_federal_share_amount_split = selection_federal_share_amount * allocation_factor)
+      selection_federal_share_amount_split = selection_federal_share_amount * allocation_factor) %>%
+    dplyr::rename(county_geoid = county_code)
 
   ## ensure the same number of projects
   stopifnot(
@@ -386,25 +389,29 @@ get_hazard_mitigation_assistance = function(
 
   all_hma_projects = dplyr::bind_rows(
     hma_projects2 %>%
-      dplyr::select(
+      dplyr::transmute(
+        data_source = "hma-projects",
         project_id,
-        disaster_number,
+        disaster_number = as.character(disaster_number),
         project_program_area,
         project_fiscal_year,
         state_name,
         county_geoid,
         county_population,
+        project_status = status,
         project_cost_federal,
         project_cost_federal_split),
     femago_df5 %>%
-      dplyr::select(
+      dplyr::transmute(
+        data_source = "hma-subapplications",
         project_id,
-        disaster_number,
+        disaster_number = as.character(disaster_number),
         project_program_area = program,
         project_fiscal_year = fiscal_year,
         state_name,
         county_geoid,
         county_population,
+        project_status = selection_status,
         project_cost_federal = selection_federal_share_amount,
         project_cost_federal_split = selection_federal_share_amount_split))
 
