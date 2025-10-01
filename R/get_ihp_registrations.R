@@ -98,12 +98,15 @@ get_ihp_registrations = function(
           ## in which case we assume we attribute all of the given record to non-missing county
           is.na(allocation_factor_zcta_to_county) & !is.na(geoid_county) ~ 1,
           TRUE ~ allocation_factor_zcta_to_county),
-        state_name, state_abbreviation, state_code,
         geoid_county = dplyr::if_else(is.na(geoid_county), county_code, geoid_county),
-        zcta_code = zip_code, geoid_tract, geoid_block_group,
+        zcta_code = zip_code, geoid_tract, geoid_block_group, disaster_number,
         amount_individual_housing_program, amount_housing_assistance, amount_other_needs_assistance,
         amount_rental_assistance, amount_repairs, amount_replacement, amount_personal_property,
-        amount_flood_insurance_premium_paid_by_fema)
+        amount_flood_insurance_premium_paid_by_fema) %>%
+      dplyr::left_join(
+        tidycensus::fips_codes %>%
+          dplyr::select(state_name, state_abbreviation = state, state_code, geoid_county = county_code) %>%
+          dplyr::mutate(geoid_county = stringr::str_c(state_code, geoid_county)))
 
     warning("
 County identifiers in the raw data from FEMA have high missingness. For this reason, the data returned by this function reflect a many-to-many
@@ -117,7 +120,6 @@ What your workflow should look like:
 
     df |>
       dplyr::group_by(geoid_county) |>
-      dplyr::mutate(afact = dplyr::if_else(is.na(afact), 1, afact)) |>
       dplyr::summarize(valid_registrations = sum(afact, na.rm = TRUE))")
 
     message("
@@ -202,6 +204,6 @@ utils::globalVariables(c(
   "fip_amount", "food_need", "gross_income", "ha_amount", "ha_max", "household_composition",
   "ihp_amount", "ihp_max", "last_refresh", "ona_amount", "ona_max", "own_rent", "personal_property_amount",
   "ppfvl", "rpfvl", "repair_amount", "replacement_amount", "rental_assistance_amount", "shelter_need",
-  "uuid", "zip_name", "zcta", "pop20", "state.abb", "ihp_registrations",
+  "uuid", "zip_name", "zcta", "pop20", "state.abb", "ihp_registrations", "disaster_number",
   "amount_other_needs_assistance", "census_geoid",  "geoid_block_group", "geoid_county",
   "geoid_tract", "zcta_code"))
