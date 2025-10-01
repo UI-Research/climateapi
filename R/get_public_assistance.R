@@ -133,7 +133,7 @@ get_public_assistance= function(
         ct_county_crosswalk,
         by = c("county_fips" = "county_fips_2020"),
         relationship = "many-to-many") |>
-      dplyr::summarize(
+      tidytable::summarize(
         .by = c("id"),
         dplyr::across(
           .cols = dplyr::all_of(interpolate_columns),
