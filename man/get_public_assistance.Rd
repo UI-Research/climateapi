@@ -18,20 +18,25 @@ get_public_assistance(
 \value{
 A dataframe of project-level funding requests and awards, along with variables that can be aggregated to the county level.
 \describe{
-\item{id}{A unique identifier for each project in the raw data. This field is not unique in the returned data due to crosswalking statewide projects to the county level. Refer to the details for additional information}
+\item{id}{A unique identifier for each project in the raw data.
+This field is not unique in the returned data due to crosswalking
+statewide projects to the county level. Refer to the details for additional information}
 \item{state_fips}{A two-digit state identifier.}
 \item{state_name}{The name of the state.}
 \item{state_abbreviation}{The two-character USPS abbreviation for the state.}
 \item{county_fips}{A five-digit county identifier.}
 \item{county_name}{The name of the county.}
 \item{declaration_year}{The year when the authorizing disaster declaration was made.}
-\item{disaster_number}{The FEMA-created disaster number. This is unique at the disaster-state level; for example, Hurricane Helene has multiple disaster numbers associated with it, one per state that received an associated disaster declaration.}
+\item{disaster_number}{The FEMA-created disaster number. This is unique
+at the disaster-state level; for example, Hurricane Helene has multiple
+disaster numbers associated with it, one per state that received an associated disaster declaration.}
 \item{incident_type}{The type of disaster, e.g., "Hurricane".}
 \item{project_status}{The current status of the funded PA project, e.g., "Active".}
 \item{damage_category_code}{A letter code identifying the category of damages/what funds may be used for.}
 \item{damage_category_description}{A descriptive characteristization of the damage category.}
 \item{pa_federal_funding_obligated}{Obligated federal funding at the project \code{id} level.}
-\item{pa_federal_funding_obligated_split}{Obligated federal attributed to the \code{id}-by-county level. Refer to the details for additional information.}
+\item{pa_federal_funding_obligated_split}{Obligated federal attributed
+to the \code{id}-by-county level. Refer to the details for additional information.}
 }
 }
 \description{
