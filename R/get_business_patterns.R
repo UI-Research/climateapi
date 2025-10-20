@@ -26,7 +26,9 @@ get_business_patterns = function(year = 2022, naics_code_digits = 2, naics_codes
     name = "cbp",
     vintage = "2022",
     type = "variables",
-    include_values = TRUE)
+    include_values = TRUE) %>%
+    dplyr::filter(!stringr::str_starts(values_code, "92|95")) ## BC: filter out codes 92 and 95 which do not appear to have data associated and don't appear on the census list of naics codes https://www2.census.gov/programs-surveys/cbp/technical-documentation/reference/naics-descriptions/naics2017.txt
+
 
   if (!is.null(naics_codes)) {
     naics_code_check = naics_codes_metadata %>%
@@ -62,7 +64,7 @@ get_business_patterns = function(year = 2022, naics_code_digits = 2, naics_codes
     ~ tryCatch({
       censusapi::getCensus(
         name = "cbp",
-        vintage = 2022,
+        vintage = year,
         vars = c(
           "EMP",
           "ESTAB",
@@ -70,7 +72,8 @@ get_business_patterns = function(year = 2022, naics_code_digits = 2, naics_codes
           "EMPSZES",
           "NAICS2017_LABEL"),
         region = "county:*",
-        NAICS2017 = .x)},
+        NAICS2017 = .x) %>%
+        mutate(naics_code = .x)},
       error = function(e) {
         message("Error in NAICS2017: ", .x)
         return(tibble::tibble())})) %>%
@@ -81,11 +84,13 @@ get_business_patterns = function(year = 2022, naics_code_digits = 2, naics_codes
       employers = ESTAB,
       annual_payroll = PAYANN,
       employee_size_range = EMPSZES,
-      industry = NAICS2017_LABEL) %>%
+      industry = NAICS2017_LABEL,
+      naics_code) %>%
     dplyr::mutate(
       industry = industry %>%
         stringr::str_to_lower() %>%
         stringr::str_replace_all(c(" " = "_", ",|\\(|\\)|_for_all_sectors|and_" = "")),
+      year = year,
       ## this recoding is mapped from: https://www2.census.gov/programs-surveys/bds/technical-documentation/label_empszes.csv
       employee_size_range_label = dplyr::case_when(
         employee_size_range == "001" ~ "All establishments",
@@ -137,7 +142,7 @@ get_business_patterns = function(year = 2022, naics_code_digits = 2, naics_codes
         stringr::str_extract(employee_size_range_label, "[0-9]{4}") %>% as.numeric >= 1000 ~ "1000+",
         TRUE ~ employee_size_range_label)) %>%
     dplyr::rename(employee_size_range_code = employee_size_range) %>%
-    dplyr::select(state, county, employees, employers, annual_payroll, industry, employee_size_range_label, employee_size_range_code)
+    dplyr::select(year, state, county, employees, employers, annual_payroll, industry, employee_size_range_label, employee_size_range_code, naics_code)
 
   return(cbp)
 }

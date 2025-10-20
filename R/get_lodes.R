@@ -255,8 +255,13 @@ as NA.\n") }
       dplyr::select(-dplyr::matches("create")) })})
 
   join_by = c("year", "GEOID")
+
   if (lodes_type == "od") {
-    join_by = c("year", "w_GEOID", "h_GEOID") }
+    join_by = c("year", "w_GEOID", "h_GEOID") } else if (lodes_type == "rac") {
+      join_by = c("year", "h_GEOID")
+    } else if (lodes_type == "wac") {
+      join_by = c("year", "w_GEOID")
+  }
 
   ## both all jobs and all federal jobs
   lodes_all_nonfederal_jobs = lodes_all_jobs %>%
