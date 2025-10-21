@@ -93,14 +93,26 @@ rename_lodes_variables = function(.df) {
 #' Get LEHD Origin-Destination Employment Statistics (LODES) data
 #' Returned data are from LODES Version 8, which is enumerated in 2020-vintage geometries.
 #'
-#' @param lodes_type One of c("rac", "wac", "od"). "rac" = Residence Area Characteristics, where jobs are associated with employees' residences. "wac" = Workplace Area Characteristics, where jobs are associated with employees' workplaces. "od" = Origin-Destination data, where jobs are associated with both workers' residences and their workplaces.
-#' @param jobs_type One of c("all", "primary"). Default is "all", which includes multiple jobs for workers with multiple jobs. "primary" includes only the highest-paying job per worker.
+#' @param lodes_type One of c("rac", "wac", "od"). "rac" = Residence Area
+#'     Characteristics, where jobs are associated with employees' residences.
+#'     "wac" = Workplace Area Characteristics, where jobs are associated with
+#'     employees' workplaces. "od" = Origin-Destination data, where jobs are associated
+#'     with both workers' residences and their workplaces.
+#' @param jobs_type One of c("all", "primary"). Default is "all", which includes
+#'     multiple jobs for workers with multiple jobs. "primary" includes only the
+#'     highest-paying job per worker.
 #' @param states A vector of state abbreviations.
 #' @param years A vector of years.
-#' @param geography One of c("block", "block group", "tract", "county", "state"). Default is "tract".
-#' @param state_part One of c("main", "aux"). Default is "main", which includes only workers who reside inside the state where they work. "aux" returns only workers who work in the specified state but live outside of that state.
+#' @param geography One of c("block", "block group", "tract", "county", "state").
+#'     Default is "tract".
+#' @param state_part One of c("main", "aux"). Default is "main", which includes
+#'     only workers who reside inside the state where they work. "aux" returns
+#'     only workers who work in the specified state but live outside of that state.
 #'
-#' @return A tibble with one record per geography per year per job type. Attributes include total jobs and jobs by worker earnings, industry, and demographics; the origin-destination results have more limited demographics compared to the "wac" and "rac" results.
+#' @return A tibble with one record per geography per year per job type. Attributes
+#'     include total jobs and jobs by worker earnings, industry, and demographics;
+#'     the origin-destination results have more limited demographics compared to
+#'     the "wac" and "rac" results.
 #' @export
 get_lodes = function(
     lodes_type,
@@ -202,7 +214,7 @@ Returning for only those states that are available for all specified years.\n") 
 
   #https://lehd.ces.census.gov/doc/help/onthemap/LODESDataNote-FedEmp2015.pdf
 
-  ## geography identifying variables are variably-named across different geography
+  ## geography-identifying variables are variably named across different geography
   ## parameters; we standardize these to always be "GEOID"
   geoid_rename = c("_geocode|_tract|_bg|_county|_state" = "_GEOID")
 
@@ -212,12 +224,7 @@ Returning for only those states that are available for all specified years.\n") 
     jobs_type_all = "JT01"
     jobs_type_federal = "JT05" }
 
-  # states = "TX"
-  # years = 2022
-  # agg_geo = "tract"
-  # lodes_type = "od"
-
-  ## else this is noisy
+  ## supress messages/warnings else this is noisy
   suppressWarnings({suppressMessages({
     lodes_all_jobs = lehdr::grab_lodes(
         state = states,

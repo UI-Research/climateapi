@@ -1,9 +1,18 @@
 #' Obtain County Business Patterns (CBP) Estimates per County
 #'
-#' @param year The vintage of CBP data desired. Data are available from 1986, though this function likely only supports more recent years (it it tested on 2022-vintage data only). Default is 2022.
-#' @param naics_code_digits One of c(2, 3). Default is 2. NAICS codes range in specificity; 2-digit codes describe the highest groupings of industries, while six-digit codes are exceedingly detailed. There are 20 2-digit NAICS codes and 196 3-digit codes.
-#' @param naics_codes A vector of NAICS codes to query. If NULL, the function will query all available codes with the specified number of digits. If not NULL, this argument overrides the `naics_code_digits` argument.
-#' @return A tibble with data on county-level employees, employers, and aggregate annual payrolls by industry and employer size
+#' @param year The vintage of CBP data desired. Data are available from 1986,
+#'     though this function likely only supports more recent years (it it tested on 2022-vintage data only).
+#'     Default is 2022.
+#' @param naics_code_digits One of c(2, 3). Default is 2. NAICS codes range in
+#'     specificity; 2-digit codes describe the highest groupings of industries,
+#'     while six-digit codes are exceedingly detailed. There are 20 2-digit NAICS
+#'     codes and 196 3-digit codes. If more specific codes are desired, leave this
+#'     argument as NULL and supply the desired codes as the argument to `naics_codes`.
+#' @param naics_codes A vector of NAICS codes to query. If NULL, the function will
+#'     query all available codes with the specified number of digits. If not NULL,
+#'     this argument overrides the `naics_code_digits` argument.
+#' @return A tibble with data on county-level employees, employers, and aggregate
+#'     annual payrolls by industry and employer size
 #' @export
 #'
 #' @examples
@@ -23,12 +32,14 @@ get_business_patterns = function(year = 2022, naics_code_digits = 2, naics_codes
     stop("`naics_code_digits` must be one of c(2, 3). For more detailed codes, explicitly pass desired codes to the `naics_codes` parameter.") }
 
   naics_codes_metadata = censusapi::listCensusMetadata(
-    name = "cbp",
-    vintage = "2022",
-    type = "variables",
-    include_values = TRUE) %>%
-    dplyr::filter(!stringr::str_starts(values_code, "92|95")) ## BC: filter out codes 92 and 95 which do not appear to have data associated and don't appear on the census list of naics codes https://www2.census.gov/programs-surveys/cbp/technical-documentation/reference/naics-descriptions/naics2017.txt
-
+      name = "cbp",
+      vintage = "2022",
+      type = "variables",
+      include_values = TRUE) %>%
+    #filter out codes 92 and 95 which do not appear to have data associated and
+    #don't appear on the census list of naics codes at
+    #https://www2.census.gov/programs-surveys/cbp/technical-documentation/reference/naics-descriptions/naics2017.txt
+    dplyr::filter(!stringr::str_starts(values_code, "92|95"))
 
   if (!is.null(naics_codes)) {
     naics_code_check = naics_codes_metadata %>%
@@ -150,4 +161,4 @@ get_business_patterns = function(year = 2022, naics_code_digits = 2, naics_codes
 utils::globalVariables(
   c("EMP", "EMPSZES", "ESTAB", "NAICS2017_LABEL", "PAYANN", "annual_payroll",
     "employee_size_range", "employee_size_range_code", "employee_size_range_label",
-    "employees", "employers", "industry", "values_code"))
+    "employees", "employers", "industry", "values_code", "naics_code"))
