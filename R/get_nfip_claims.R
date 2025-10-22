@@ -13,7 +13,7 @@
 #' dataset includes the 50 states + DC and the following territories: Puerto Rico,
 #' US Virgin Islands, and Guam.
 #'
-#' In order to filter to residential claims, filter out occupancy types 4, 6, 17, 18, 19.
+#' In order to filter to residential claims, filter out occupancy type: "non-residential".
 #'
 #' Some claims (from multi-unit buildings / condos) are associated with multiple insured units.
 #' When calculating the number of units covered by a claim, the analyst should use the count_units_insured column.
@@ -54,7 +54,7 @@
 #' test <- get_nfip_claims(county_geoids = c("01001", "48201")) %>%
 #'   filter(
 #'     year_of_loss >= 2015,  ### in the past 10 years
-#'     !occupancy_type %in% c(4, 6, 17, 18, 19)) %>% ### only residential claims
+#'     !occupancy_type %in% c("non-residential")) %>% ### only residential claims
 #'   summarize(
 #'     .by = county_geoid,
 #'     across(matches("payment"), sum, na.rm = TRUE),
@@ -86,7 +86,7 @@ get_nfip_claims = function(
         dataset = "nfip_claims") }
 
     ## read the parquet file
-    df1a = arrow::read_parquet(file = inpath) %>%
+    df1a = arrow::read_parquet(file = inpath) |>
       janitor::clean_names()
 
   } else {
@@ -108,7 +108,7 @@ get_nfip_claims = function(
       ~ rfema::open_fema(
         data_set = "fimanfippolicies",
         filters = list(countyCode = .x),
-        ask_before_call = FALSE) %>%
+        ask_before_call = FALSE) |>
         janitor::clean_names())
   }
 
@@ -140,15 +140,47 @@ get_nfip_claims = function(
       state_abbreviation = state,
       county_geoid,
       county_name,
-      occupancy_type,
+      occupancy_type = case_when(occupancy_type %in% c(1, 11, 14) ~ "single family",
+                                 occupancy_type %in% c(2, 12) ~ "2-4 units",
+                                 occupancy_type %in% c(3, 13, 16, 15) ~ "5+ units",
+                                 occupancy_type %in% c(14) ~ "mobile/manufactured home",
+                                 occupancy_type %in% c(4, 6, 17, 18, 19) ~ "non-residential"),
       year_loss = year_of_loss,
       year_construction = lubridate::year(original_construction_date),
       count_units_insured = policy_count, ## number of insured units associated with the claim
       #cause_of_damage,
       #flood_event_name = flood_event,
       #flood_zone_firm_current = flood_zone_current,
-      deductible_building = building_deductible_code,
-      deductible_contents = contents_deductible_code,
+      deductible_building = case_when(building_deductible_code == "0" ~ 500,
+                                      building_deductible_code == "1" ~ 1000,
+                                      building_deductible_code == "2" ~ 2000,
+                                      building_deductible_code == "3" ~ 3000,
+                                      building_deductible_code == "4" ~ 4000,
+                                      building_deductible_code == "5" ~ 5000,
+                                      building_deductible_code == "9" ~ 750,
+                                      building_deductible_code == "A" ~ 10000,
+                                      building_deductible_code == "B" ~ 15000,
+                                      building_deductible_code == "C" ~ 20000,
+                                      building_deductible_code == "D" ~ 25000,
+                                      building_deductible_code == "E" ~ 50000,
+                                      building_deductible_code == "F" ~ 1250,
+                                      building_deductible_code == "G" ~ 500,
+                                      building_deductible_code == "H" ~ 200),
+      deductible_contents = case_when(contents_deductible_code == "0" ~ 500,
+                                      contents_deductible_code == "1" ~ 1000,
+                                      contents_deductible_code == "2" ~ 2000,
+                                      contents_deductible_code == "3" ~ 3000,
+                                      contents_deductible_code == "4" ~ 4000,
+                                      contents_deductible_code == "5" ~ 5000,
+                                      contents_deductible_code == "9" ~ 750,
+                                      contents_deductible_code == "A" ~ 10000,
+                                      contents_deductible_code == "B" ~ 15000,
+                                      contents_deductible_code == "C" ~ 20000,
+                                      contents_deductible_code == "D" ~ 25000,
+                                      contents_deductible_code == "E" ~ 50000,
+                                      contents_deductible_code == "F" ~ 1250,
+                                      contents_deductible_code == "G" ~ 500,
+                                      contents_deductible_code == "H" ~ 200),
       value_building = building_property_value,
       value_contents = contents_property_value,
       replacement_cost_building = building_replacement_cost,
