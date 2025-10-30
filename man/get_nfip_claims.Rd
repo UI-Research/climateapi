@@ -2,11 +2,11 @@
 % Please edit documentation in R/get_nfip_claims.R
 \name{get_nfip_claims}
 \alias{get_nfip_claims}
-\title{Access county-level data on NFIP policies}
+\title{Access county-level data on NFIP claims}
 \usage{
 get_nfip_claims(
   county_geoids = NULL,
-  file_name = "fima_nfip_claims_2025_06_08.parquet",
+  file_name = "fima_nfip_claims_2025_09_09.parquet",
   api = FALSE
 )
 }
@@ -18,15 +18,61 @@ get_nfip_claims(
 \item{api}{If TRUE, query the API. FALSE by default.}
 }
 \value{
-A dataframe comprising county-level data on current NFIP policies
+A data frame comprising county-level data on current NFIP policies
+\describe{
+\item{state_fips}{A two-digit state identifier.}
+\item{state_abbreviation}{The name of the state.}
+\item{county_geoid}{A five-digit county identifier.}
+\item{county_name}{The name of the county.}
+\item{year_construction}{The original year of the construction of the building.}
+\item{year_loss}{The year in which the flood loss occurred.}
+\item{occupancy_type}{The occupancy type of the primary building associated with the claim.}
+\item{count_units_insured}{The number of insured units associated with the claim.}
+\item{deductible_building}{The total deductible for buildings, main and appurtenant.}
+\item{deductible_contents}{The total deductible for contents.}
+\item{value_building}{The value of the main building as estimated by an adjuster.}
+\item{value_contents}{The value of the contents as estimated by an adjuster.}
+\item{replacement_cost_building}{Estimated cost to replace the building as reported by the insurer.}
+\item{replacement_cost_contents}{Estimated cost to replace the contents as reported by the insurer.}
+\item{insurance_coverage_building}{The total insurance amount on the building.}
+\item{insurance_coverage_contents}{The total insurance amount on the contents.}
+\item{damage_building}{The amount of damage to a main property.}
+\item{damage_contents}{The value of damage to contents.}
+\item{net_payment_building}{Net building payment amount.}
+\item{net_payment_contents}{Net contents payment amount.}
+\item{net_payment_increased_compliance}{Net Increased Cost of Compliance (ICC) payment amount.}
+}
 }
 \description{
-Access county-level data on NFIP policies
+Access county-level data on NFIP claims
+}
+\details{
+These data are from: https://www.fema.gov/openfema-data-page/fima-nfip-redacted-claims-v2.
+Per FEMA: This data set represents more than 2,000,000 NFIP claims transactions. It is
+derived from the NFIP system of record, staged in the NFIP reporting platform and
+redacted to protect policy holder personally identifiable information. The
+dataset includes the 50 states + DC and the following territories: Puerto Rico,
+US Virgin Islands, and Guam.
+
+In order to filter to residential claims, filter out occupancy type: "non-residential".
+
+Some claims (from multi-unit buildings / condos) are associated with multiple insured units.
+When calculating the number of units covered by a claim, the analyst should use the count_units_insured column.
+
+The example below illustrates and example of how the data set can be summarized to show the total
+number of residential claims submitted in two different counties, as well as the total damages
+and payments in the same time period.
 }
 \examples{
 \dontrun{
-get_nfip_claims(
-   county_geoids = c("01001", "01003"),
-   api = TRUE)
+
+test <- get_nfip_claims(county_geoids = c("01001", "48201")) |>
+  dplyr::filter(
+    year_of_loss >= 2015,  ### in the past 10 years
+    !occupancy_type \%in\% c("non-residential")) |> ### only residential claims
+  dplyr::summarize(
+    .by = county_geoid,
+    dplyr::across(dplyr::matches("payment"), sum, na.rm = TRUE),
+    residential_claims = dplyr::n_distinct(nfip_claim_id))
 }
 }
