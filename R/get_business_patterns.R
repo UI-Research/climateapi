@@ -1,9 +1,18 @@
 #' Obtain County Business Patterns (CBP) Estimates per County
 #'
-#' @param year The vintage of CBP data desired. Data are available from 1986, though this function likely only supports more recent years (it it tested on 2022-vintage data only). Default is 2022.
-#' @param naics_code_digits One of c(2, 3). Default is 2. NAICS codes range in specificity; 2-digit codes describe the highest groupings of industries, while six-digit codes are exceedingly detailed. There are 20 2-digit NAICS codes and 196 3-digit codes.
-#' @param naics_codes A vector of NAICS codes to query. If NULL, the function will query all available codes with the specified number of digits. If not NULL, this argument overrides the `naics_code_digits` argument.
-#' @return A tibble with data on county-level employees, employers, and aggregate annual payrolls by industry and employer size
+#' @param year The vintage of CBP data desired. Data are available from 1986,
+#'     though this function likely only supports more recent years (it it tested on 2022-vintage data only).
+#'     Default is 2022.
+#' @param naics_code_digits One of c(2, 3). Default is 2. NAICS codes range in
+#'     specificity; 2-digit codes describe the highest groupings of industries,
+#'     while six-digit codes are exceedingly detailed. There are 20 2-digit NAICS
+#'     codes and 196 3-digit codes. If more specific codes are desired, leave this
+#'     argument as NULL and supply the desired codes as the argument to `naics_codes`.
+#' @param naics_codes A vector of NAICS codes to query. If NULL, the function will
+#'     query all available codes with the specified number of digits. If not NULL,
+#'     this argument overrides the `naics_code_digits` argument.
+#' @return A tibble with data on county-level employees, employers, and aggregate
+#'     annual payrolls by industry and employer size
 #' @export
 #'
 #' @examples
@@ -23,10 +32,14 @@ get_business_patterns = function(year = 2022, naics_code_digits = 2, naics_codes
     stop("`naics_code_digits` must be one of c(2, 3). For more detailed codes, explicitly pass desired codes to the `naics_codes` parameter.") }
 
   naics_codes_metadata = censusapi::listCensusMetadata(
-    name = "cbp",
-    vintage = "2022",
-    type = "variables",
-    include_values = TRUE)
+      name = "cbp",
+      vintage = "2022",
+      type = "variables",
+      include_values = TRUE) %>%
+    #filter out codes 92 and 95 which do not appear to have data associated and
+    #don't appear on the census list of naics codes at
+    #https://www2.census.gov/programs-surveys/cbp/technical-documentation/reference/naics-descriptions/naics2017.txt
+    dplyr::filter(!stringr::str_starts(values_code, "92|95"))
 
   if (!is.null(naics_codes)) {
     naics_code_check = naics_codes_metadata %>%
@@ -62,7 +75,7 @@ get_business_patterns = function(year = 2022, naics_code_digits = 2, naics_codes
     ~ tryCatch({
       censusapi::getCensus(
         name = "cbp",
-        vintage = 2022,
+        vintage = year,
         vars = c(
           "EMP",
           "ESTAB",
@@ -70,7 +83,8 @@ get_business_patterns = function(year = 2022, naics_code_digits = 2, naics_codes
           "EMPSZES",
           "NAICS2017_LABEL"),
         region = "county:*",
-        NAICS2017 = .x)},
+        NAICS2017 = .x) %>%
+        mutate(naics_code = .x)},
       error = function(e) {
         message("Error in NAICS2017: ", .x)
         return(tibble::tibble())})) %>%
@@ -81,11 +95,13 @@ get_business_patterns = function(year = 2022, naics_code_digits = 2, naics_codes
       employers = ESTAB,
       annual_payroll = PAYANN,
       employee_size_range = EMPSZES,
-      industry = NAICS2017_LABEL) %>%
+      industry = NAICS2017_LABEL,
+      naics_code) %>%
     dplyr::mutate(
       industry = industry %>%
         stringr::str_to_lower() %>%
         stringr::str_replace_all(c(" " = "_", ",|\\(|\\)|_for_all_sectors|and_" = "")),
+      year = year,
       ## this recoding is mapped from: https://www2.census.gov/programs-surveys/bds/technical-documentation/label_empszes.csv
       employee_size_range_label = dplyr::case_when(
         employee_size_range == "001" ~ "All establishments",
@@ -137,7 +153,7 @@ get_business_patterns = function(year = 2022, naics_code_digits = 2, naics_codes
         stringr::str_extract(employee_size_range_label, "[0-9]{4}") %>% as.numeric >= 1000 ~ "1000+",
         TRUE ~ employee_size_range_label)) %>%
     dplyr::rename(employee_size_range_code = employee_size_range) %>%
-    dplyr::select(state, county, employees, employers, annual_payroll, industry, employee_size_range_label, employee_size_range_code)
+    dplyr::select(year, state, county, employees, employers, annual_payroll, industry, employee_size_range_label, employee_size_range_code, naics_code)
 
   return(cbp)
 }
@@ -145,4 +161,4 @@ get_business_patterns = function(year = 2022, naics_code_digits = 2, naics_codes
 utils::globalVariables(
   c("EMP", "EMPSZES", "ESTAB", "NAICS2017_LABEL", "PAYANN", "annual_payroll",
     "employee_size_range", "employee_size_range_code", "employee_size_range_label",
-    "employees", "employers", "industry", "values_code"))
+    "employees", "employers", "industry", "values_code", "naics_code"))
