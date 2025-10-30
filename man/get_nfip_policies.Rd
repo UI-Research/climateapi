@@ -5,28 +5,65 @@
 \title{Access county-level data on NFIP policies}
 \usage{
 get_nfip_policies(
-  county_geoids,
-  file_name = "fima_nfip_policies_2024_10_13.parquet",
-  api = TRUE
+  state_abbreviation,
+  county_geoids = NULL,
+  file_name = "fima_nfip_policies_2025_10_14.parquet",
+  api = FALSE
 )
 }
 \arguments{
+\item{state_abbreviation}{A 2 letter state abbreviation (e.g. TX).}
+
 \item{county_geoids}{A character vector of five-digit county codes.}
 
 \item{file_name}{The name (not the full path) of the Box file containing the raw data.}
 
-\item{api}{If TRUE (default), query the API.}
+\item{api}{If TRUE, query the API. If FALSE (default), read from \code{file_name}.}
 }
 \value{
-A dataframe comprising county-level data on current NFIP policies
+A dataframe of project-level funding requests and awards, along with variables that can be aggregated to the county level.
+\describe{
+\item{state_fips}{A two-digit state identifier.}
+\item{state_abbreviation}{The two-character abbreviation of the state.}
+\item{county_code}{The five-digit county identifier.}
+\item{county_name}{The name of the county.}
+\item{census_tract}{The 11-digit census tract code.}
+\item{policy_cost}{The cost of the policy summing the calculated premium,
+reserve fund assessment, federal policy fee, and HFIAA surcharge.}
+\item{policy_count}{The number of insured units in active status associated with the policy.}
+\item{policy_rated_flood_zone}{The NFIP flood zone.}
+\item{policy_premium_total_cost}{The policy premium; negative values indicate a refund.}
+\item{policy_date_termination}{The date when the policy is no longer in effect,
+either because it was cancelled or lapsed.}
+\item{policy_date_effective}{The effective date of the flood policy.}
+\item{building_occupancy_type}{The occupancy type of the building.}
+\item{building_replacement_cost}{The insurer's estimated cost to replace the building.}
+}
 }
 \description{
 Access county-level data on NFIP policies
 }
+\details{
+The following dataset houses information on NFIP policies (both historic and current).
+In order to filter to current policies, the analyst will need to filter on the
+policy_date_termination and policy_date_effective columns.
+
+The dataset also contains both residential and commercial policies. In order to filter
+to residential policies, the analyst can filter out the "non-residential" occupancy type.
+}
 \examples{
 \dontrun{
-get_nfip_policies(
-   county_geoids = c("01001", "01003"),
-   api = TRUE)
+ test <- get_nfip_policies(
+      state_abbreviation = "TX",
+      county_geoids = c("48201"),
+      file_name = "fima_nfip_policies_2025_10_14.parquet",
+      api = FALSE) |>
+    dplyr::filter(
+      !occupancy_type \%in\% c("non-residential"), ### only residential claims,
+      policy_date_termination >= as.Date("2025-10-15"),
+      policy_date_effective <= as.Date("2025-10-15")) |>
+    dplyr::group_by(county_geoid)|>
+    dplyr::summarise(avg_policy_cost = mean(policy_cost))
 }
+
 }
