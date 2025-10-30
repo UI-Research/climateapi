@@ -1,5 +1,3 @@
-#' @importFrom magrittr %>%
-
 #' @title Access county-level data on NFIP claims
 #' @param county_geoids A character vector of five-digit county codes. NULL by default; must be non-NULL if `api = TRUE`.
 #' @param file_name The name (not the full path) of the Box file containing the raw data.
@@ -51,14 +49,14 @@
 #' @examples
 #' \dontrun{
 #'
-#' test <- get_nfip_claims(county_geoids = c("01001", "48201")) %>%
-#'   filter(
+#' test <- get_nfip_claims(county_geoids = c("01001", "48201")) |>
+#'   dplyr::filter(
 #'     year_of_loss >= 2015,  ### in the past 10 years
-#'     !occupancy_type %in% c("non-residential")) %>% ### only residential claims
-#'   summarize(
+#'     !occupancy_type %in% c("non-residential")) |> ### only residential claims
+#'   dplyr::summarize(
 #'     .by = county_geoid,
-#'     across(matches("payment"), sum, na.rm = TRUE),
-#'     residential_claims = n_distinct(nfip_claim_id))
+#'     dplyr::across(dplyr::matches("payment"), sum, na.rm = TRUE),
+#'     residential_claims = dplyr::n_distinct(nfip_claim_id))
 #'}
 
 get_nfip_claims = function(
@@ -106,7 +104,7 @@ get_nfip_claims = function(
     df1a = purrr::map_dfr(
       county_geoids,
       ~ rfema::open_fema(
-        data_set = "fimanfippolicies",
+        data_set = "fimaNfipClaims",
         filters = list(countyCode = .x),
         ask_before_call = FALSE) |>
         janitor::clean_names())
@@ -137,11 +135,11 @@ get_nfip_claims = function(
     dplyr::transmute(
       #nfip_claim_id = id,
       state_fips,
-      state_abbreviation = state,
+      #state_abbreviation = state, ## this is unreliable--other fields appear to be more consistent
       county_geoid,
       county_name,
-      occupancy_type = dplyr::case_when(occupancy_type %in% c(1, 11, 14) ~ "single family",
-                                        occupancy_type %in% c(2, 12, 3, 13, 16, 15) ~ "multi-family",
+      occupancy_type = dplyr::case_when(occupancy_type %in% c(1, 11) ~ "single family",
+                                        occupancy_type %in% c(2, 3, 12, 13, 16, 15) ~ "multi-family",
                                         occupancy_type %in% c(14) ~ "mobile/manufactured home",
                                         occupancy_type %in% c(4, 6, 17, 18, 19) ~ "non-residential"),
       year_loss = year_of_loss,
@@ -165,7 +163,7 @@ get_nfip_claims = function(
                                       building_deductible_code == "F" ~ 1250,
                                       building_deductible_code == "G" ~ 500,
                                       building_deductible_code == "H" ~ 200),
-      deductible_contents = case_when(contents_deductible_code == "0" ~ 500,
+      deductible_contents = dplyr::case_when(contents_deductible_code == "0" ~ 500,
                                       contents_deductible_code == "1" ~ 1000,
                                       contents_deductible_code == "2" ~ 2000,
                                       contents_deductible_code == "3" ~ 3000,
@@ -190,7 +188,7 @@ get_nfip_claims = function(
       damage_contents = contents_damage_amount,
       net_payment_building = net_building_payment_amount,
       net_payment_contents = net_contents_payment_amount,
-      net_icc_payment_amount)
+      net_payment_icc = net_icc_payment_amount)
 
   return(result)
 }

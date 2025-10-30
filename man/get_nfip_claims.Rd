@@ -54,7 +54,7 @@ redacted to protect policy holder personally identifiable information. The
 dataset includes the 50 states + DC and the following territories: Puerto Rico,
 US Virgin Islands, and Guam.
 
-In order to filter to residential claims, filter out occupancy types 4, 6, 17, 18, 19.
+In order to filter to residential claims, filter out occupancy type: "non-residential".
 
 Some claims (from multi-unit buildings / condos) are associated with multiple insured units.
 When calculating the number of units covered by a claim, the analyst should use the count_units_insured column.
@@ -66,13 +66,13 @@ and payments in the same time period.
 \examples{
 \dontrun{
 
-test <- get_nfip_claims(county_geoids = c("01001", "48201")) \%>\%
-  filter(
+test <- get_nfip_claims(county_geoids = c("01001", "48201")) |>
+  dplyr::filter(
     year_of_loss >= 2015,  ### in the past 10 years
-    !occupancy_type \%in\% c(4, 6, 17, 18, 19)) \%>\% ### only residential claims
-  summarize(
+    !occupancy_type \%in\% c("non-residential")) |> ### only residential claims
+  dplyr::summarize(
     .by = county_geoid,
-    across(matches("payment"), sum, na.rm = TRUE),
-    residential_claims = n_distinct(nfip_claim_id))
+    dplyr::across(dplyr::matches("payment"), sum, na.rm = TRUE),
+    residential_claims = dplyr::n_distinct(nfip_claim_id))
 }
 }
