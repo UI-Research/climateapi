@@ -1,0 +1,398 @@
+# climateapi
+
+The goal of
+[`library(climateapi)`](https://ui-research.github.io/climateapi/) is to
+minimize repeated data cleaning and wrangling to enable project teams to
+devote more time to substantive analysis and inference-making. The
+package works toward this goal by creating a unified interface to common
+datasets and data manipulation tasks. Functions (will) support both
+climate-specific datasets as well as those that are climate-adjacent.
+
+## Installation
+
+You can install the development version of climateapi from
+[GitHub](https://github.com/) with:
+
+``` r
+# install.packages("renv")
+renv::install("UI-Research/climateapi")
+```
+
+## The `climateapi` package at work:
+
+``` r
+library(climateapi)
+library(urbnindicators)
+library(sf)
+library(tidyverse)
+library(urbnthemes)
+set_urbn_defaults(style = "print")
+```
+
+### ACS Housing and Demographics
+
+Capacity for interacting with data from the American Community Survey is
+housed in an adjacent package, `urbnindicators`.
+
+Visit that package’s [webpage and
+documentation](https://ui-research.github.io/urbnindicators/) to learn
+more.
+
+### Major Disaster Declarations
+
+``` r
+county_disaster_declarations = get_fema_disaster_declarations_county(api = TRUE)
+
+county_disaster_declarations %>%
+  filter(stringr::str_detect(GEOID, "^01")) %>% ## Alabama
+  group_by(year_declared) %>%
+    summarize(annual_incidents = sum(incidents_all, na.rm = TRUE)) %>%
+  ggplot() +
+    geom_col(aes(x = year_declared, y = annual_incidents)) +
+    annotate("text", x = 2016.5, y = 132, label = "COVID-19 pandemic" %>% str_wrap(10), fontface = "bold") +
+    labs(
+      title = "COVID Results in a Spike of Counties with Disaster Declarations in 2020",
+      subtitle = "Sum of major disaster declarations per Alabama county, by year",
+      x = "",
+      y = "") +
+    theme_urbn_print()
+```
+
+![](reference/figures/README-unnamed-chunk-2-1.png)
+
+### Wildfire Perimeters and Structures
+
+``` r
+## take the largest active fire
+wildfire_perimeters = get_current_fire_perimeters() %>%
+  dplyr::arrange(desc(incident_size_acres)) %>%
+  dplyr::slice(1) %>%
+  sf::st_transform(5070) %>%
+  sf::st_make_valid()
+
+## a two-item list
+## the first item contains tract-level structure estimates
+## the second contains the structure points
+impacted_structures = get_structures(
+  boundaries = wildfire_perimeters,
+  geography = "tract",
+  keep_structures = TRUE)
+#>   |                                                                              |                                                                      |   0%  |                                                                              |==                                                                    |   2%  |                                                                              |====                                                                  |   5%  |                                                                              |====                                                                  |   6%  |                                                                              |=====                                                                 |   7%  |                                                                              |=====                                                                 |   8%  |                                                                              |======                                                                |   8%  |                                                                              |======                                                                |   9%  |                                                                              |=======                                                               |  10%  |                                                                              |=======                                                               |  11%  |                                                                              |========                                                              |  11%  |                                                                              |========                                                              |  12%  |                                                                              |=========                                                             |  13%  |                                                                              |=========                                                             |  14%  |                                                                              |==========                                                            |  14%  |                                                                              |==========                                                            |  15%  |                                                                              |===========                                                           |  15%  |                                                                              |===========                                                           |  16%  |                                                                              |============                                                          |  17%  |                                                                              |============                                                          |  18%  |                                                                              |=============                                                         |  18%  |                                                                              |=============                                                         |  19%  |                                                                              |==============                                                        |  20%  |                                                                              |==============                                                        |  21%  |                                                                              |===============                                                       |  21%  |                                                                              |===============                                                       |  22%  |                                                                              |================                                                      |  23%  |                                                                              |=================                                                     |  24%  |                                                                              |=================                                                     |  25%  |                                                                              |==================                                                    |  25%  |                                                                              |==================                                                    |  26%  |                                                                              |====================                                                  |  29%  |                                                                              |=======================                                               |  32%  |                                                                              |========================                                              |  34%  |                                                                              |=========================                                             |  35%  |                                                                              |=========================                                             |  36%  |                                                                              |==========================                                            |  37%  |                                                                              |===========================                                           |  38%  |                                                                              |==============================                                        |  44%  |                                                                              |================================                                      |  45%  |                                                                              |================================                                      |  46%  |                                                                              |=================================                                     |  47%  |                                                                              |==================================                                    |  48%  |                                                                              |===================================                                   |  50%  |                                                                              |====================================                                  |  51%  |                                                                              |====================================                                  |  52%  |                                                                              |=====================================                                 |  53%  |                                                                              |=======================================                               |  55%  |                                                                              |==========================================                            |  61%  |                                                                              |============================================                          |  62%  |                                                                              |============================================                          |  63%  |                                                                              |=============================================                         |  64%  |                                                                              |===============================================                       |  67%  |                                                                              |================================================                      |  68%  |                                                                              |================================================                      |  69%  |                                                                              |=================================================                     |  70%  |                                                                              |==================================================                    |  71%  |                                                                              |==================================================                    |  72%  |                                                                              |===================================================                   |  72%  |                                                                              |=====================================================                 |  76%  |                                                                              |======================================================                |  77%  |                                                                              |======================================================                |  78%  |                                                                              |=======================================================               |  78%  |                                                                              |=======================================================               |  79%  |                                                                              |========================================================              |  79%  |                                                                              |========================================================              |  80%  |                                                                              |=========================================================             |  81%  |                                                                              |=========================================================             |  82%  |                                                                              |===========================================================           |  84%  |                                                                              |===========================================================           |  85%  |                                                                              |============================================================          |  85%  |                                                                              |============================================================          |  86%  |                                                                              |=============================================================         |  87%  |                                                                              |==============================================================        |  88%  |                                                                              |===============================================================       |  90%  |                                                                              |================================================================      |  91%  |                                                                              |=================================================================     |  92%  |                                                                              |=================================================================     |  93%  |                                                                              |==================================================================    |  94%  |                                                                              |==================================================================    |  95%  |                                                                              |===================================================================   |  95%  |                                                                              |====================================================================  |  96%  |                                                                              |======================================================================| 100%
+#> Reading layer `AZ_Structures' from data source 
+#>   `C:\Users\wcurrangroome\Box\METRO Climate and Communities Practice Area\github-repository\built-environment\housing-units\usa-structures\raw\AZ\Deliverable20230502AZ\AZ_Structures.gdb' 
+#>   using driver `OpenFileGDB'
+#> Simple feature collection with 2701791 features and 28 fields
+#> Geometry type: MULTIPOLYGON
+#> Dimension:     XY
+#> Bounding box:  xmin: -114.8118 ymin: 31.33255 xmax: -109.0454 ymax: 37.00252
+#> Geodetic CRS:  WGS 84
+#>   |                                                                              |                                                                      |   0%  |                                                                              |==                                                                    |   3%  |                                                                              |=====                                                                 |   7%  |                                                                              |======                                                                |   8%  |                                                                              |======                                                                |   9%  |                                                                              |=======                                                               |  10%  |                                                                              |========                                                              |  11%  |                                                                              |========                                                              |  12%  |                                                                              |=========                                                             |  13%  |                                                                              |=================                                                     |  24%  |                                                                              |==================                                                    |  26%  |                                                                              |=====================                                                 |  30%  |                                                                              |=======================                                               |  33%  |                                                                              |========================                                              |  34%  |                                                                              |=========================                                             |  35%  |                                                                              |==========================                                            |  37%  |                                                                              |============================                                          |  41%  |                                                                              |===============================                                       |  45%  |                                                                              |================================                                      |  46%  |                                                                              |==================================                                    |  49%  |                                                                              |===================================                                   |  50%  |                                                                              |=====================================                                 |  53%  |                                                                              |======================================                                |  54%  |                                                                              |===========================================                           |  61%  |                                                                              |==============================================                        |  65%  |                                                                              |================================================                      |  68%  |                                                                              |================================================                      |  69%  |                                                                              |=================================================                     |  71%  |                                                                              |====================================================                  |  75%  |                                                                              |=====================================================                 |  76%  |                                                                              |=======================================================               |  79%  |                                                                              |=========================================================             |  81%  |                                                                              |==========================================================            |  83%  |                                                                              |===========================================================           |  84%  |                                                                              |============================================================          |  86%  |                                                                              |==============================================================        |  88%  |                                                                              |===============================================================       |  90%  |                                                                              |================================================================      |  91%  |                                                                              |=================================================================     |  92%  |                                                                              |===================================================================   |  95%  |                                                                              |====================================================================  |  96%  |                                                                              |====================================================================  |  98%  |                                                                              |======================================================================| 100%
+
+us_tracts_sf = tigris::tracts(cb = TRUE, year = 2023, progress_bar = FALSE) %>%
+  sf::st_transform(5070)
+
+tracts_sf = us_tracts_sf %>%
+  sf::st_filter(wildfire_perimeters %>% st_transform(5070) %>% st_buffer(100000)) %>%
+  dplyr::select(GEOID) %>%
+  dplyr::left_join(
+    impacted_structures[[1]] %>% 
+      dplyr::filter(occupancy_class == "Residential") %>%
+      dplyr::group_by(GEOID) %>%
+      dplyr::summarize(residential_units = sum(count, na.rm = TRUE)), 
+    by = "GEOID") %>%
+  dplyr::mutate(county_fips = stringr::str_sub(GEOID, 1, 5)) %>%
+  dplyr::left_join(
+    tidycensus::fips_codes %>% 
+      dplyr::mutate(county_fips = stringr::str_c(state_code, county_code)), 
+    by = c("county_fips"))
+
+counties_sf = tracts_sf %>%
+  dplyr::group_by(county_fips, county) %>% 
+  dplyr::summarize() %>%
+  dplyr::ungroup() %>%
+  dplyr::mutate(county = county %>% stringr::str_remove((" County")))
+
+ggplot2::ggplot() +
+  geom_sf(data = tracts_sf, ggplot2::aes(fill = residential_units), linewidth = .6) +
+    ggplot2::scale_fill_continuous(na.value = "darkgrey") +
+  ggplot2::geom_sf(data = counties_sf, fill = NA, color = "black", linewidth = .75) +
+  ggplot2::geom_sf_text(data = counties_sf, color = "black", ggplot2::aes(label = county), fontface = "bold", size = 3) +
+  ggplot2::geom_sf(data = wildfire_perimeters, fill = NA, color = "red", linewidth = 1) +
+  ggplot2::labs(
+    title = "Estimated Residential Units within Wildfire Boundaries, by Tract",
+    subtitle = stringr::str_c(
+      "Incident Name: ", wildfire_perimeters$incident_name, " (", 
+      paste(
+        tracts_sf %>% 
+          dplyr::filter(!is.na(residential_units)) %>% 
+          dplyr::distinct(state_name) %>%
+          dplyr::pull(), collapse = ", "), ") \n",
+      "Incident Size: ", (round(wildfire_perimeters$incident_size_acres, 0) %>% scales::comma()), " acres", "\n"),
+    fill = "Residential units") +
+  urbnthemes::theme_urbn_map()
+```
+
+![](reference/figures/README-unnamed-chunk-3-1.png)
+
+### SBA Disaster Loans
+
+``` r
+sba_disaster_declarations = get_sba_loans()
+
+sba_disaster_declarations %>%
+  dplyr::mutate(
+    fiscal_year = as.numeric(fiscal_year),
+    sba_approved = dplyr::if_else(approved_amount_total > 0, 1, 0)) %>%
+  ## some records, especially those from 2020 onwards, have NA values for approved fields
+  ## for that reason, we'll only look at years predating 2020
+  ## we're also going to exclude FY 2000--there are records for this year, but none
+  ## for the following three years, suggesting some... irregularities in the data
+  dplyr::filter(
+    !is.na(sba_approved),
+    fiscal_year > 2000, 
+    fiscal_year < 2020) %>%
+  dplyr::group_by(loan_type, sba_approved, fiscal_year) %>%
+  dplyr::summarize(count = dplyr::n()) %>%
+  dplyr::ungroup() %>%
+  dplyr::mutate(
+    fill = dplyr::case_when(
+      loan_type == "business" & sba_approved == 1 ~ "Business loans approved",
+      loan_type == "business" & sba_approved == 0 ~ "Business loans not approved",
+      loan_type == "residential" & sba_approved == 1 ~ "Residential loans approved",
+      loan_type == "residential" & sba_approved == 0 ~ "Residential loans not approved")) %>%
+  ggplot2::ggplot() +
+  ggplot2::geom_col(ggplot2::aes(x = fiscal_year, y = count, fill = fill)) +
+  ggplot2::labs(
+    title = "The Small Business Administration (SBA) Makes Many Residential Loans Post-Disaster",
+    x = "Fiscal year", 
+    y = "Toal loan applications") +
+  ggplot2::scale_fill_manual(
+    values = c(
+      "Business loans approved" = palette_urbn_cyan[5] %>% as.character,
+      "Business loans not approved" = palette_urbn_cyan[3] %>% as.character,
+      "Residential loans approved" = palette_urbn_yellow[5] %>% as.character,
+      "Residential loans not approved" = palette_urbn_yellow[3] %>% as.character)) +
+  ggplot2::scale_y_continuous(labels = scales::comma) +
+  ggplot2::scale_x_continuous(breaks = seq(2004, 2019, 3)) +
+  ggplot2::guides(fill = ggplot2::guide_legend(nrow = 2, byrow = TRUE))
+```
+
+![](reference/figures/README-unnamed-chunk-4-1.png)
+
+### County Business Patterns
+
+``` r
+business_patterns = get_business_patterns()
+
+business_patterns %>%
+  dplyr::filter(employee_size_range_code == "001") %>% ## all sizes
+  dplyr::group_by(state, county) %>%
+    dplyr::mutate(
+      industry_share_payroll = annual_payroll / annual_payroll[industry == "total"]) %>%
+    dplyr::filter(industry != "total") %>%
+  dplyr::ungroup() %>%
+  dplyr::filter(state == "01", county == "001") %>%
+  dplyr::mutate(industry = industry %>% janitor::make_clean_names(case = "sentence") %>% stringr::str_wrap(40)) %>%
+  ggplot2::ggplot() +
+    ggplot2::geom_col(ggplot2::aes(y = stats::reorder(industry, industry_share_payroll), x = industry_share_payroll)) +
+    ggplot2::labs(
+      x = "Share of total payroll",
+       y = "Industry",
+       title = "Autauga County, AL's Industries (NAICS Codes) by Payroll Share")
+```
+
+![](reference/figures/README-unnamed-chunk-5-1.png)
+
+### Government Expenses
+
+``` r
+government_finances = get_government_finances()
+
+government_finances %>%
+  dplyr::filter(state_code == "01", county_code == "001") %>%
+  dplyr::group_by(government_type) %>%
+    dplyr::summarize(
+      amount_millions = sum(amount_thousands, na.rm = TRUE) / 1000,
+      count = dplyr::n()) %>%
+  ggplot2::ggplot(aes(y = stats::reorder(government_type, amount_millions) %>% stringr::str_wrap(30), x = amount_millions)) +
+  ggplot2::geom_col() +
+  ggplot2::geom_text(ggplot2::aes(label = stringr::str_c("(N = ", count, ")")), hjust = -.25) +
+  ggplot2::labs(x = "Total annual expenditures (millions, USD)",
+       y = "",
+       title = "Autauga County, AL's Expenditures by Government Unit Class",
+       subtitle = "Government unit counts in parentheses") +
+  ggplot2::scale_x_continuous(labels = scales::dollar, limits = c(0, 500)) +
+  ggplot2::theme(panel.grid.major = ggplot2::element_blank())
+```
+
+![](reference/figures/README-unnamed-chunk-6-1.png)
+
+### LEHD Origin Destination Employment Statistics (LODES)
+
+``` r
+lodes = get_lodes(
+    lodes_type = "od",
+    jobs_type = "all",
+    states = "AL",
+    years = 2022,
+    geography = "tract",
+    ## for simplicity, considering only workers who live and work in AL
+    state_part = "main") %>%
+  ## federal jobs are broken out separately in case users need to standardize
+  ## all-jobs counts over time, but this doesn't apply here
+  dplyr::filter(job_type == "all")
+
+al_tracts = us_tracts_sf %>%
+  dplyr::filter(GEOID %>% str_sub(1,2) == "01") %>%
+  dplyr::select(GEOID) %>%
+  sf::st_transform(5070)
+
+al_centroids = al_tracts %>%
+  sf::st_centroid() %>%
+  sf::st_transform(5070) %>%
+  sf::st_coordinates() %>%
+  tibble::as_tibble() %>%
+  cbind(al_tracts$GEOID) %>%
+  dplyr::rename(
+    x = X,
+    y = Y,
+    GEOID = 3)
+
+major_al_cities = tidycensus::get_acs(
+    geography = "place",
+    variables = c(population = "B01003_001"),
+    year = 2022,
+    output = "wide",
+    state = "AL",
+    geometry = TRUE) %>%
+  dplyr::slice_max(populationE, n = 5) %>%
+  dplyr::transmute(
+    NAME = NAME %>% 
+      stringr::str_remove_all("CDP|city|town|,|Alabama") %>% 
+      stringr::str_squish() %>% 
+      stringr::str_trim())
+#>   |                                                                              |                                                                      |   0%  |                                                                              |======                                                                |   9%  |                                                                              |====================                                                  |  28%  |                                                                              |=================================                                     |  47%  |                                                                              |===============================================                       |  67%  |                                                                              |============================================================          |  86%  |                                                                              |======================================================================| 100%
+
+lodes %>%
+  dplyr::select(dplyr::matches("GEOID"), total_jobs) %>%
+  dplyr::left_join(al_centroids, by = c("h_GEOID" = "GEOID")) %>%
+  dplyr::left_join(al_centroids %>% dplyr::rename(xend = x, yend = y), by = c("w_GEOID" = "GEOID")) %>%
+  filter(total_jobs > 20) %>%
+  ggplot() +
+    geom_sf(data = al_tracts, fill = "lightgrey", color = "darkgrey", linewidth = .5) +
+    geom_segment(
+      aes(x = x, y = y, xend = xend, yend = yend), color = palette_urbn_main[1], alpha = .1) +
+    geom_sf(data = major_al_cities, fill = NA, color = "black") +
+    geom_sf_text(data = major_al_cities, aes(label = NAME), size = 3, , fontface = "bold", color = "black", vjust = -2) +
+    theme_urbn_map() +
+  labs(title = "Employment Commuting Patterns by Tract in Alabama (2022)")
+```
+
+![](reference/figures/README-unnamed-chunk-7-1.png)
+
+# Package index
+
+## Point data
+
+- [`get_structures()`](https://ui-research.github.io/climateapi/reference/get_structures.md)
+  : Estimate counts of hazard-impacted structures by structure type
+
+## Block data
+
+- [`get_lodes()`](https://ui-research.github.io/climateapi/reference/get_lodes.md)
+  : Get LEHD Origin-Destination Employment Statistics (LODES) data
+  Returned data are from LODES Version 8, which is enumerated in
+  2020-vintage geometries.
+
+## Cities data
+
+- [`get_sba_loans()`](https://ui-research.github.io/climateapi/reference/get_sba_loans.md)
+  : Access SBA data on disaster loans
+
+## Government unit data
+
+- [`get_government_finances()`](https://ui-research.github.io/climateapi/reference/get_government_finances.md)
+  : Get government unit-level expenses from the Census of Governments
+
+## County data
+
+- [`get_business_patterns()`](https://ui-research.github.io/climateapi/reference/get_business_patterns.md)
+  : Obtain County Business Patterns (CBP) Estimates per County
+- [`get_fema_disaster_declarations()`](https://ui-research.github.io/climateapi/reference/get_fema_disaster_declarations.md)
+  : Get major disaster declarations by county
+- [`get_ihp_registrations()`](https://ui-research.github.io/climateapi/reference/get_ihp_registrations.md)
+  : Get Individuals and Households Program (IHP) registrations
+- [`get_nfip_policies()`](https://ui-research.github.io/climateapi/reference/get_nfip_policies.md)
+  : Access county-level data on NFIP policies
+- [`get_nfip_claims()`](https://ui-research.github.io/climateapi/reference/get_nfip_claims.md)
+  : Access county-level data on NFIP claims
+- [`get_public_assistance()`](https://ui-research.github.io/climateapi/reference/get_public_assistance.md)
+  : Get FEMA Public Assistance (PA) funding
+- [`get_sheldus()`](https://ui-research.github.io/climateapi/reference/get_sheldus.md)
+  : Access temporal county-level SHELDUS hazard damage data.
+- [`get_preliminary_damage_assessments()`](https://ui-research.github.io/climateapi/reference/get_preliminary_damage_assessments.md)
+  : Get Data from Preliminary Damage Assessments Submitted to FEMA for
+  Disaster Declarations
+- [`get_hazard_mitigation_assistance()`](https://ui-research.github.io/climateapi/reference/get_hazard_mitigation_assistance.md)
+  : Get Hazard Mitigation Assistance (HMA) Project Details
+
+## State data
+
+- [`get_emergency_management_performance()`](https://ui-research.github.io/climateapi/reference/get_emergency_management_performance.md)
+  : Get EMPG data
+
+## Event boundaries
+
+- [`get_current_fire_perimeters()`](https://ui-research.github.io/climateapi/reference/get_current_fire_perimeters.md)
+  : Acquire wildfire perimeters
+
+## Land use
+
+- [`estimate_zoning_envelope()`](https://ui-research.github.io/climateapi/reference/estimate_zoning_envelope.md)
+  : Calculate the number of units allowed on a parcel
+- [`estimate_units_per_parcel()`](https://ui-research.github.io/climateapi/reference/estimate_units_per_parcel.md)
+  : Estimate the number and types of structures per parcel
+- [`interpolate_demographics()`](https://ui-research.github.io/climateapi/reference/interpolate_demographics.md)
+  : Interpolate tract-level sociodemographic data to zoning polygons
+
+## Surveys and Qualtrics
+
+- [`qualtrics_format_metadata()`](https://ui-research.github.io/climateapi/reference/qualtrics_format_metadata.md)
+  : Prep Qualtrics metadata
+- [`qualtrics_get_metadata()`](https://ui-research.github.io/climateapi/reference/qualtrics_get_metadata.md)
+  : Access Qualtrics metadata
+- [`qualtrics_plot_question()`](https://ui-research.github.io/climateapi/reference/qualtrics_plot_question.md)
+  : Plot responses to Qualtrics survey questions
+- [`qualtrics_define_missing()`](https://ui-research.github.io/climateapi/reference/qualtrics_define_missing.md)
+  : Fill in missing and non-missing values across interrelated survey
+  questions
+
+## Utilities
+
+- [`get_system_username()`](https://ui-research.github.io/climateapi/reference/get_system_username.md)
+  : Get the user's username
+- [`get_box_path()`](https://ui-research.github.io/climateapi/reference/get_box_path.md)
+  : Get the path to the C&C Box folder
+- [`get_dataset_columns()`](https://ui-research.github.io/climateapi/reference/get_dataset_columns.md)
+  : Get the raw column names for a specified dataset
+- [`get_geography_metadata()`](https://ui-research.github.io/climateapi/reference/get_geography_metadata.md)
+  : Get geography metadata about states or counties
+- [`convert_delimited_to_parquet()`](https://ui-research.github.io/climateapi/reference/convert_delimited_to_parquet.md)
+  : Convert raw data to parquet to conserve memory / speed subsequent
+  operations
+- [`convert_table_text_to_dataframe()`](https://ui-research.github.io/climateapi/reference/convert_table_text_to_dataframe.md)
+  : Use an LLM to Convert Table Text to a Dataframe
+- [`get_spatial_extent_census()`](https://ui-research.github.io/climateapi/reference/get_spatial_extent_census.md)
+  : Get the Census geographies that overlap with the input spatial
+  dataset
+- [`read_xlsx_from_url()`](https://ui-research.github.io/climateapi/reference/read_xlsx_from_url.md)
+  : Download a .xlsx file(s) from a URL(s)
+- [`subdivide_linestring()`](https://ui-research.github.io/climateapi/reference/subdivide_linestring.md)
+  : Subdivide a linestring into segments of a specified length
+- [`polygons_to_linestring()`](https://ui-research.github.io/climateapi/reference/polygons_to_linestring.md)
+  : Convert polygons into their component linestrings
+- [`read_ipums_cached()`](https://ui-research.github.io/climateapi/reference/read_ipums_cached.md)
+  : Read IPUMS data leveraging a local cache
+- [`inflation_adjust()`](https://ui-research.github.io/climateapi/reference/inflation_adjust.md)
+  : Inflation adjust dollar values using annual PCE Index
+
