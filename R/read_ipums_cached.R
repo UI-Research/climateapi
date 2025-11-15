@@ -1,7 +1,5 @@
 ## Authors: Original code from Aaron R. Williams, extended by Will Curran-Groome
 
-#' @importFrom magrittr %>%
-
 #' @title Read IPUMS data leveraging a local cache
 #'
 #' @description
@@ -17,10 +15,10 @@
 #' file directory, checking if there is an existing file at that path, and otherwise
 #' downloading the extract (again user-specified) to the given filepath.
 #'
-#' @param filename The name of the file (not the full file path)
-#' @param download_directory A relative path specifying where to download the data
-#' @param extract_definition A `define_extract_micro()` or `define_extract_agg()` object
-#' @param refresh If true, execute the API query, even if data are already stored locally. Defaults to FALSE
+#' @param filename The name of the file (not the full file path).
+#' @param download_directory A path specifying where to download the data.
+#' @param extract_definition A `define_extract_micro()` or `define_extract_agg()` object.
+#' @param refresh If true, execute the API query, even if data are already stored locally. Defaults to FALSE.
 #'
 #' @return A dataframe corresponding to the supplied `extract_definition`
 #' @export
@@ -29,16 +27,15 @@
 #' \dontrun{
 #' read_ipums_cached(
 #'   filename = "acs_insurance_race_2022_1yr_repweights",
-#'   download_directory = "data",
-#'   extract_definition = define_extract_micro(
+#'   download_directory = file.path("data"),
+#'   extract_definition = ipumsr::define_extract_micro(
 #'     collection = "usa",
 #'     description = "2022 ACS 1-year sample with replicate weights - insurance and race",
 #'     samples = c("us2022a"),
 #'     variables = list(
 #'       "HCOVANY",
-#'       var_spec("RACE", case_selections = c("1", "2")),
-#'       "REPWT"),
-#'   refresh = FALSE))
+#'       ipumsr::var_spec("RACE", case_selections = c("1", "2")))),
+#'   refresh = FALSE)
 #' }
 
 read_ipums_cached = function(filename, download_directory, extract_definition, refresh = FALSE) {
@@ -49,12 +46,12 @@ read_ipums_cached = function(filename, download_directory, extract_definition, r
     stop("The `download_directory` argument must be a character string.") }
   if (!is.logical(refresh)) {
     stop("The `refresh` argument must be either `TRUE` or `FALSE`.") }
-  if (!dir.exists(here::here(download_directory))) {
+  if (!dir.exists(file.path(download_directory))) {
     stop("The specified `download_directory` does not exist. Specify an existing directory
          relative to your root directory.") }
 
   ## could be either a .xml (for microdata) or a .zip (nhigs, ihgis)
-  possible_files = here::here(download_directory, stringr::str_c(filename, c(".xml", ".zip")))
+  possible_files = file.path(download_directory, stringr::str_c(filename, c(".xml", ".zip")))
   file_exists = any(file.exists(possible_files))
 
   ## the code for the "collection", e.g., "usa", "cps", etc.
@@ -85,17 +82,17 @@ read_ipums_cached = function(filename, download_directory, extract_definition, r
     if (!(collection_code %in% c("nhgis", "ihgis"))) {
       ## rename the data file
       file.rename(
-        from = here::here(
+        from = file.path(
           download_directory,
           stringr::str_glue("{collection_code}_{extract_number}.dat.gz", extract_number = extract_number)),
-        to = here::here(download_directory, stringr::str_c(filename, ".dat.gz")))
+        to = file.path(download_directory, stringr::str_c(filename, ".dat.gz")))
 
       ## rename the ddi file
       file.rename(
-        from = here::here(
+        from = file.path(
           download_directory,
           stringr::str_glue("{collection_code}_{extract_number}.xml", extract_number = extract_number)),
-        to = here::here(download_directory, stringr::str_c(filename, ".xml"))) }
+        to = file.path(download_directory, stringr::str_c(filename, ".xml"))) }
 
     ## for some reason, nhgis data are downloaded to a different file type and using a slightly
     ## different naming convention
@@ -103,12 +100,12 @@ read_ipums_cached = function(filename, download_directory, extract_definition, r
       ## bizzarely, the collection code appears to sometimes (?) have one of three leading zeros removed
       ## so we read in a corresponding file at the given location
       file.rename(
-        from = here::here(
+        from = file.path(
           download_directory,
           stringr::str_glue(
             "{collection_code}{extract_number}_csv.zip",
             extract_number = extract_number |> stringr::str_replace("000", "00"))),
-        to = here::here(download_directory, stringr::str_c(filename, ".zip"))) }
+        to = file.path(download_directory, stringr::str_c(filename, ".zip"))) }
   }
 
   ## if the file exists pre-download, we alert the user we're reading this existing file
@@ -120,10 +117,10 @@ read_ipums_cached = function(filename, download_directory, extract_definition, r
 
   if (!collection_code %in% c("nhgis", "ihgis")) {
     data = ipumsr::read_ipums_micro(
-      ddi = here::here(download_directory, stringr::str_c(filename, ".xml")),
-      data_file = here::here(download_directory, stringr::str_c(filename, ".dat.gz"))) }
+      ddi = file.path(download_directory, stringr::str_c(filename, ".xml")),
+      data_file = file.path(download_directory, stringr::str_c(filename, ".dat.gz"))) }
   if (collection_code %in% c("nhgis", "ihgis")) {
-    zip_path = here::here(download_directory, stringr::str_c(filename, ".zip"))
+    zip_path = file.path(download_directory, stringr::str_c(filename, ".zip"))
     data = ipumsr::read_ipums_agg(data_file = zip_path) |>
       ipumsr::set_ipums_var_attributes(
         var_info = { if (collection_code == "nhgis") {

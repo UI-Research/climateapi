@@ -12,13 +12,13 @@ read_ipums_cached(
 )
 }
 \arguments{
-\item{filename}{The name of the file (not the full file path)}
+\item{filename}{The name of the file (not the full file path).}
 
-\item{download_directory}{A relative path specifying where to download the data}
+\item{download_directory}{A path specifying where to download the data.}
 
-\item{extract_definition}{A \code{define_extract_micro()} or \code{define_extract_agg()} object}
+\item{extract_definition}{A \code{define_extract_micro()} or \code{define_extract_agg()} object.}
 
-\item{refresh}{If true, execute the API query, even if data are already stored locally. Defaults to FALSE}
+\item{refresh}{If true, execute the API query, even if data are already stored locally. Defaults to FALSE.}
 }
 \value{
 A dataframe corresponding to the supplied \code{extract_definition}
@@ -40,15 +40,14 @@ downloading the extract (again user-specified) to the given filepath.
 \dontrun{
 read_ipums_cached(
   filename = "acs_insurance_race_2022_1yr_repweights",
-  download_directory = "data",
-  extract_definition = define_extract_micro(
+  download_directory = file.path("data"),
+  extract_definition = ipumsr::define_extract_micro(
     collection = "usa",
     description = "2022 ACS 1-year sample with replicate weights - insurance and race",
     samples = c("us2022a"),
     variables = list(
       "HCOVANY",
-      var_spec("RACE", case_selections = c("1", "2")),
-      "REPWT"),
-  refresh = FALSE))
+      ipumsr::var_spec("RACE", case_selections = c("1", "2")))),
+  refresh = FALSE)
 }
 }
