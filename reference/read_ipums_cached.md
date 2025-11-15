@@ -27,20 +27,20 @@ read_ipums_cached(
 
 - filename:
 
-  The name of the file (not the full file path)
+  The name of the file (not the full file path).
 
 - download_directory:
 
-  A relative path specifying where to download the data
+  A path specifying where to download the data.
 
 - extract_definition:
 
-  A `define_extract_micro()` or `define_extract_agg()` object
+  A `define_extract_micro()` or `define_extract_agg()` object.
 
 - refresh:
 
   If true, execute the API query, even if data are already stored
-  locally. Defaults to FALSE
+  locally. Defaults to FALSE.
 
 ## Value
 
@@ -52,15 +52,14 @@ A dataframe corresponding to the supplied `extract_definition`
 if (FALSE) { # \dontrun{
 read_ipums_cached(
   filename = "acs_insurance_race_2022_1yr_repweights",
-  download_directory = "data",
-  extract_definition = define_extract_micro(
+  download_directory = file.path("data"),
+  extract_definition = ipumsr::define_extract_micro(
     collection = "usa",
     description = "2022 ACS 1-year sample with replicate weights - insurance and race",
     samples = c("us2022a"),
     variables = list(
       "HCOVANY",
-      var_spec("RACE", case_selections = c("1", "2")),
-      "REPWT"),
-  refresh = FALSE))
+      ipumsr::var_spec("RACE", case_selections = c("1", "2")))),
+  refresh = FALSE)
 } # }
 ```
