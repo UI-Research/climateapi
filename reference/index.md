@@ -103,3 +103,5 @@
   : Read IPUMS data leveraging a local cache
 - [`inflation_adjust()`](https://ui-research.github.io/climateapi/reference/inflation_adjust.md)
   : Inflation adjust dollar values using annual PCE Index
+- [`cache_it()`](https://ui-research.github.io/climateapi/reference/cache_it.md)
+  : Cache an object to a parquet file; optionally read from disk
