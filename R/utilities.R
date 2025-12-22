@@ -71,7 +71,7 @@ get_dataset_columns = function(dataset) {
       "censusGeoid",
       # "incidentType",
       "disasterNumber",
-      # "declarationDate",
+      "declarationDate",
       #"county",
       "damagedStateAbbreviation",
       #"damagedCity",

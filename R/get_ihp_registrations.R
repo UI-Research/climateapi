@@ -99,7 +99,7 @@ get_ihp_registrations = function(
           is.na(allocation_factor_zcta_to_county) & !is.na(geoid_county) ~ 1,
           TRUE ~ allocation_factor_zcta_to_county),
         geoid_county = dplyr::if_else(is.na(geoid_county), county_code, geoid_county),
-        zcta_code = zip_code, geoid_tract, geoid_block_group, disaster_number,
+        zcta_code = zip_code, geoid_tract, geoid_block_group, disaster_number, declaration_date,
         amount_individual_housing_program, amount_housing_assistance, amount_other_needs_assistance,
         amount_rental_assistance, amount_repairs, amount_replacement, amount_personal_property,
         amount_flood_insurance_premium_paid_by_fema) %>%
@@ -149,6 +149,7 @@ clean_ihp = function(data) {
   data %>%
     dplyr::select(
       disaster_number,
+      declaration_date,
       geoid_block_group = census_geoid,
       #substate_geography = county,
       state_abbreviation = damaged_state_abbreviation,
@@ -206,4 +207,4 @@ utils::globalVariables(c(
   "ppfvl", "rpfvl", "repair_amount", "replacement_amount", "rental_assistance_amount", "shelter_need",
   "uuid", "zip_name", "zcta", "pop20", "state.abb", "ihp_registrations", "disaster_number",
   "amount_other_needs_assistance", "census_geoid",  "geoid_block_group", "geoid_county",
-  "geoid_tract", "zcta_code"))
+  "geoid_tract", "zcta_code", "declaration_date"))
