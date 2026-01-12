@@ -15,7 +15,7 @@ get_fema_disaster_declarations = function(
 		"raw", "fema_disaster_declarations_county_2024_10_25.csv"),
 	api = TRUE) {
 
-	## is the file path valid/accessible?
+  ## is the file path valid/accessible?
 	if (!file.exists(file_path) & !api) {
 		stop(stringr::str_c(
 			"The path to the dataset does not point to a valid file. ",
@@ -23,7 +23,8 @@ get_fema_disaster_declarations = function(
 
 	if (!api) {
 		disaster_declarations1 <- readr::read_csv(file_path) |>
-			janitor::clean_names()
+			janitor::clean_names() %>%
+		  dplyr::filter(declaration_type == "DR")
 	} else {
 		disaster_declarations1 = rfema::open_fema(
 				data_set = "DisasterDeclarationsSummaries",
@@ -32,7 +33,7 @@ get_fema_disaster_declarations = function(
 				ask_before_call = FALSE) |>
 			janitor::clean_names() }
 
-	# Defining natural hazards so we can filter out disaster declarations for things like terrorist attacks/biological
+	# Defining natural hazards for an aggregated all-natural-hazards column
 	natural_hazards <- paste0(
 		  "incidents_",
 		  c(
@@ -56,28 +57,52 @@ get_fema_disaster_declarations = function(
 	  dplyr::pull(GEOID) |>
 	  unique()
 
-	# Counting disaster declarations by county by year and month
+	# Prepping column names
 	disaster_declarations2 <- disaster_declarations1 |>
 		dplyr::mutate(
 			fips_state_code = stringr::str_pad(as.character(fips_state_code), width = 2, side = "left", pad = "0"),
 			fips_county_code = stringr::str_pad(as.character(fips_county_code), width = 3, side = "left", pad = "0"),
 			GEOID = stringr::str_c(fips_state_code, fips_county_code),
 			year_declared = lubridate::year(declaration_date),
-			month_declared = lubridate::month(declaration_date)) |>
-		## Major Disaster Declarations only
-		dplyr::filter(declaration_type == "DR") |>
-		## produce counts at the county x incident-type x year x month level
-		tidytable::summarise(
-		  .by = c(fips_state_code, fips_county_code, GEOID, incident_type, year_declared, month_declared),
-		  count = dplyr::n(),
-		  place_code = dplyr::first(place_code),
-		  tribal_request = dplyr::first(tribal_request),
-		  declaration_title = paste(declaration_title, collapse = ", ")) |>
+			month_declared = lubridate::month(declaration_date))
+
+	# NOTE: these data have some... interesting design choices in terms of how distinct
+	# records are defined and structured. Important edge cases include:
+	#   - Statewide declarations have a county code of "000" AND a designated area of "Statewide"
+	#   - Tribal designations are not just those where tribal_request == TRUE but are
+	#     rather all records what fips_county_code == "000" AND place_code != "0"
+	#   - There are valid fips_county_codes associated with the same event reflected across multiple
+	#     records (e.g., for townships within counties, or for "WELS" codes in Maine associated with
+	#     a single county.) These require deduplication to prevent overcounting at the county level.
+
+	disaster_declarations3 = disaster_declarations2 |>
+		dplyr::filter(
+		  fips_county_code != "000", ## drop statewide and tribal-lands-specific records
+		  declaration_type == "DR") |> ## major disaster declarations only
+		## produce counts at the county x incident level under the assertion that a county
+		## can receive only a single declaration per incident
+	  tidytable::summarise(
+		  .by = c("fips_state_code", "fips_county_code", "incident_id"),
+		  across(
+		    .cols = c("GEOID", "incident_type", "year_declared", "month_declared", "declaration_title", "fema_declaration_string"),
+		    .fns = ~ dplyr::first(.x))) |>
+	  ## then we get to our county x incident_type x year x month counts
+	  ## (there could be multiple, e.g., hurricane declarations in a given county-month, for example)
+	  tidytable::summarize(
+	    .by = c("fips_state_code", "fips_county_code", "GEOID", "incident_type", "year_declared", "month_declared"),
+	    count = tidytable::n(),
+	    across(
+	      .cols = c("incident_id", "declaration_title", "fema_declaration_string"),
+	      .fns = ~ stringr::str_c(.x, collapse = "; "))) |>
 	  dplyr::arrange(GEOID, year_declared, month_declared) |>
 	  dplyr::mutate(id = dplyr::row_number()) |>
 		## widen the data so that there is one row per county x year x month, with
 		## incident-level counts in columns
-		tidyr::pivot_wider(names_from = incident_type, values_from = count, values_fill = list(count = 0), names_prefix = "incidents_") |>
+		tidyr::pivot_wider(
+		  names_from = incident_type,
+		  values_from = count,
+		  values_fill = list(count = 0),
+		  names_prefix = "incidents_") |>
 	  dplyr::rename_with(.cols = dplyr::matches("incidents_"), janitor::make_clean_names)
 
 	## These are all non-tribal, statewide declarations
@@ -90,13 +115,19 @@ get_fema_disaster_declarations = function(
 	## function as an attribute so that users can work with these declarations in tandem
 	## and incorporate them into their analyses as appropriate
 	statewide_declarations1 = disaster_declarations2 |>
-	  dplyr::filter(fips_county_code == "000", tribal_request == FALSE) |>
+	  dplyr::filter(fips_county_code == "000", place_code == "0" | designated_area == "Statewide") |>
 	  dplyr::select(-GEOID) |>
 	  dplyr::arrange(year_declared)
 
+	## there should only be a single statewide observation per declaration
+	stopifnot(
+	  statewide_declarations1 %>%
+  	  dplyr::count(fema_declaration_string, sort = TRUE) %>%
+  	  dplyr::filter(n > 1) %>% nrow() == 0)
+
 	tribal_declarations1 = disaster_declarations2 |>
-	  dplyr::filter(fips_county_code == "000", tribal_request == TRUE) |>
-	  dplyr::mutate(GEOID = place_code) |>
+	  dplyr::filter(fips_county_code == "000", place_code != "0") |>
+	  dplyr::select(-GEOID) |>
 	  dplyr::arrange(year_declared)
 
 	statewide_declarations2 = statewide_declarations1 |>
@@ -108,6 +139,13 @@ get_fema_disaster_declarations = function(
 	      dplyr::mutate(fips_state_code = stringr::str_sub(GEOID, 1, 2)),
 	    by = "fips_state_code",
 	    relationship = "many-to-many")
+
+	statewide_declarations %>%
+	  dplyr::filter(fema_declaration_string %in% disaster_declarations3$fema_declaration_string) %>%
+	  View()
+
+	disaster_declarations1 %>%
+	  dplyr::filter(fema_declaration_string == "DR-1485-PA") %>% View()
 
 	disaster_declarations3 = disaster_declarations2 |>
 	  dplyr::filter(!(id %in% c(statewide_declarations1$id))) |>
@@ -137,10 +175,23 @@ get_fema_disaster_declarations = function(
   	      year_declared,
   	      month_declared) }
 
+	disaster_declarations3 %>%
+	  dplyr::filter(fema_declaration_string == "DR-4527-SD") %>%
+    View()
+	  dplyr::filter(year_declared == 2022, month_declared == 3, GEOID == "53001") %>% View()
+
+	statewide_declarations1 %>%
+	  dplyr::filter(year_declared == 2022, month_declared == 3) %>%
+	  View()
+
 	disaster_declarations_nontribal = disaster_declarations3 |>
 	  prep_data() |>
 	  dplyr::select(-dplyr::matches("fips")) |>
 	  dplyr::filter(GEOID %in% benchmark_geographies)
+
+	disaster_declarations_nontribal %>%
+	  dplyr::filter(year_declared == 2022, stringr::str_detect(GEOID, "^53")) %>%
+	  dplyr::arrange(dplyr::desc(incidents_all))
 
 	disaster_declarations_tribal = tribal_declarations1 |>
 	  prep_data() |>
