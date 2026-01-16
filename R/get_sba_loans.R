@@ -3,8 +3,27 @@
 #' @importFrom magrittr %>%
 
 #' @title Access SBA data on disaster loans
-
-#' @returns A dataframe comprising city- and zip-level data on SBA loanmaking
+#' @description Retrieves Small Business Administration (SBA) disaster loan data
+#'   for both home and business loans at the city and zip code level.
+#'
+#' @details Data are sourced from the SBA's disaster loan reports. See
+#'   \url{https://www.sba.gov/funding-programs/disaster-assistance}.
+#'
+#' @returns A dataframe comprising city- and zip-level data on SBA loanmaking.
+#'   Columns include:
+#'   \describe{
+#'     \item{fiscal_year}{The federal fiscal year of the loan.}
+#'     \item{disaster_number_fema}{FEMA disaster number associated with the loan.}
+#'     \item{disaster_number_sba_physical}{SBA physical disaster declaration number.}
+#'     \item{disaster_number_sba_eidl}{SBA Economic Injury Disaster Loan (EIDL) declaration number.}
+#'     \item{damaged_property_zip_code}{ZIP code of the damaged property.}
+#'     \item{damaged_property_city_name}{City name of the damaged property.}
+#'     \item{damaged_property_state_code}{Two-letter state abbreviation.}
+#'     \item{verified_loss_total}{Total verified loss amount in dollars.}
+#'     \item{approved_amount_total}{Total approved loan amount in dollars.}
+#'     \item{approved_amount_real_estate}{Approved loan amount for real estate in dollars.}
+#'     \item{loan_type}{Type of loan: "residential" or "business".}
+#'   }
 #' @export
 #'
 #' @examples

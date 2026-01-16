@@ -1,10 +1,15 @@
 #' @title Access county-level data on NFIP claims
-#' @param county_geoids A character vector of five-digit county codes. NULL by default; must be non-NULL if `api = TRUE`.
+#'
+#' @description Retrieves National Flood Insurance Program (NFIP) claims data at
+#'   the county level, including damage amounts, payments, and building characteristics.
+#'
+#' @param county_geoids A character vector of five-digit county codes. NULL by default;
+#'   must be non-NULL if `api = TRUE`.
 #' @param file_name The name (not the full path) of the Box file containing the raw data.
 #' @param api If TRUE, query the API. FALSE by default.
 #'
-#' @details
-#' These data are from: https://www.fema.gov/openfema-data-page/fima-nfip-redacted-claims-v2.
+#' @details Data are from FEMA's OpenFEMA API. See
+#'   \url{https://www.fema.gov/openfema-data-page/fima-nfip-redacted-claims-v2}.
 #' Per FEMA: This data set represents more than 2,000,000 NFIP claims transactions. It is
 #' derived from the NFIP system of record, staged in the NFIP reporting platform and
 #' redacted to protect policy holder personally identifiable information. The
@@ -114,7 +119,8 @@ get_nfip_claims = function(
   df1b = df1a |>
     tidytable::mutate(
       ### taking county_code if it exists, if not extract from census_tract
-      county_geoid = tidytable::if_else(!is.na(county_code), county_code, stringr::str_sub(census_tract, 1, 5)))
+      county_geoid = tidytable::if_else(
+        !is.na(county_code), county_code, stringr::str_sub(census_tract, 1, 5)))
 
   if (!is.null(county_geoids)) {
     df1b = df1b |>
@@ -138,46 +144,49 @@ get_nfip_claims = function(
       #state_abbreviation = state, ## this is unreliable--other fields appear to be more consistent
       county_geoid,
       county_name,
-      occupancy_type = dplyr::case_when(occupancy_type %in% c(1, 11) ~ "single family",
-                                        occupancy_type %in% c(2, 3, 12, 13, 16, 15) ~ "multi-family",
-                                        occupancy_type %in% c(14) ~ "mobile/manufactured home",
-                                        occupancy_type %in% c(4, 6, 17, 18, 19) ~ "non-residential"),
+      occupancy_type = dplyr::case_when(
+        occupancy_type %in% c(1, 11) ~ "single family",
+        occupancy_type %in% c(2, 3, 12, 13, 16, 15) ~ "multi-family",
+        occupancy_type %in% c(14) ~ "mobile/manufactured home",
+        occupancy_type %in% c(4, 6, 17, 18, 19) ~ "non-residential"),
       year_loss = year_of_loss,
       year_construction = lubridate::year(original_construction_date),
       count_units_insured = policy_count, ## number of insured units associated with the claim
       #cause_of_damage,
       #flood_event_name = flood_event,
       #flood_zone_firm_current = flood_zone_current,
-      deductible_building = dplyr::case_when(building_deductible_code == "0" ~ 500,
-                                      building_deductible_code == "1" ~ 1000,
-                                      building_deductible_code == "2" ~ 2000,
-                                      building_deductible_code == "3" ~ 3000,
-                                      building_deductible_code == "4" ~ 4000,
-                                      building_deductible_code == "5" ~ 5000,
-                                      building_deductible_code == "9" ~ 750,
-                                      building_deductible_code == "A" ~ 10000,
-                                      building_deductible_code == "B" ~ 15000,
-                                      building_deductible_code == "C" ~ 20000,
-                                      building_deductible_code == "D" ~ 25000,
-                                      building_deductible_code == "E" ~ 50000,
-                                      building_deductible_code == "F" ~ 1250,
-                                      building_deductible_code == "G" ~ 500,
-                                      building_deductible_code == "H" ~ 200),
-      deductible_contents = dplyr::case_when(contents_deductible_code == "0" ~ 500,
-                                      contents_deductible_code == "1" ~ 1000,
-                                      contents_deductible_code == "2" ~ 2000,
-                                      contents_deductible_code == "3" ~ 3000,
-                                      contents_deductible_code == "4" ~ 4000,
-                                      contents_deductible_code == "5" ~ 5000,
-                                      contents_deductible_code == "9" ~ 750,
-                                      contents_deductible_code == "A" ~ 10000,
-                                      contents_deductible_code == "B" ~ 15000,
-                                      contents_deductible_code == "C" ~ 20000,
-                                      contents_deductible_code == "D" ~ 25000,
-                                      contents_deductible_code == "E" ~ 50000,
-                                      contents_deductible_code == "F" ~ 1250,
-                                      contents_deductible_code == "G" ~ 500,
-                                      contents_deductible_code == "H" ~ 200),
+      deductible_building = dplyr::case_when(
+        building_deductible_code == "0" ~ 500,
+        building_deductible_code == "1" ~ 1000,
+        building_deductible_code == "2" ~ 2000,
+        building_deductible_code == "3" ~ 3000,
+        building_deductible_code == "4" ~ 4000,
+        building_deductible_code == "5" ~ 5000,
+        building_deductible_code == "9" ~ 750,
+        building_deductible_code == "A" ~ 10000,
+        building_deductible_code == "B" ~ 15000,
+        building_deductible_code == "C" ~ 20000,
+        building_deductible_code == "D" ~ 25000,
+        building_deductible_code == "E" ~ 50000,
+        building_deductible_code == "F" ~ 1250,
+        building_deductible_code == "G" ~ 500,
+        building_deductible_code == "H" ~ 200),
+      deductible_contents = dplyr::case_when(
+        contents_deductible_code == "0" ~ 500,
+        contents_deductible_code == "1" ~ 1000,
+        contents_deductible_code == "2" ~ 2000,
+        contents_deductible_code == "3" ~ 3000,
+        contents_deductible_code == "4" ~ 4000,
+        contents_deductible_code == "5" ~ 5000,
+        contents_deductible_code == "9" ~ 750,
+        contents_deductible_code == "A" ~ 10000,
+        contents_deductible_code == "B" ~ 15000,
+        contents_deductible_code == "C" ~ 20000,
+        contents_deductible_code == "D" ~ 25000,
+        contents_deductible_code == "E" ~ 50000,
+        contents_deductible_code == "F" ~ 1250,
+        contents_deductible_code == "G" ~ 500,
+        contents_deductible_code == "H" ~ 200),
       value_building = building_property_value,
       value_contents = contents_property_value,
       replacement_cost_building = building_replacement_cost,

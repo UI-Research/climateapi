@@ -1,12 +1,26 @@
 #' @importFrom magrittr %>%
 
 #' @title Estimate counts of hazard-impacted structures by structure type
+#' @description Retrieves building footprint data from the USA Structures dataset and
+#'   summarizes structure counts by type at the tract or county level.
 #' @param geography The desired geography of the results. One of "tract" or "county".
 #' @param boundaries A POLYGON or MULTIPOLYGON object, or an sf::st_bbox()-style bbox.
 #' @param keep_structures Logical. If TRUE, the raw structure data will be returned alongside the summarized data.
-
-#' @returns A dataframe comprising estimated counts of each structure type, at the specified `geography`, for all such geographic units intersecting the `boundaries` object. If keep_structure = TRUE, returns a list with two elements: the summarized data and the raw structure data.
-
+#'
+#' @details Data are sourced from the USA Structures dataset maintained by the
+#'   Department of Homeland Security. See \url{https://geoplatform.gov/metadata/9d4a3ae3-8637-4707-92a7-b7d67b769a6b}.
+#'
+#' @returns A dataframe comprising estimated counts of each structure type, at the
+#'   specified `geography`, for all such geographic units intersecting the `boundaries`
+#'   object. If keep_structure = TRUE, returns a list with two elements: the summarized
+#'   data and the raw structure data. Columns include:
+#'   \describe{
+#'     \item{GEOID}{Census tract (11-digit) or county (5-digit) FIPS code.}
+#'     \item{primary_occupancy}{The primary use of the structure (e.g., "Residential", "Commercial").}
+#'     \item{occupancy_class}{Broader classification of occupancy type.}
+#'     \item{count}{Number of structures of this type in the geographic unit.}
+#'   }
+#'
 #' @export
 #' @examples
 #' \dontrun{

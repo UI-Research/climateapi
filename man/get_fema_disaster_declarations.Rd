@@ -16,10 +16,28 @@ get_fema_disaster_declarations(
 \item{api}{If TRUE (default), access data from the API. Else, read locally from \code{file_path}.}
 }
 \value{
-A dataframe comprising Major Disaster Declarations by month by year by county. Tribal declarations are stored as an attribute of the primary dataframe called \code{tribal_declarations}.
+A dataframe comprising Major Disaster Declarations by month by year by county.
+Tribal declarations are stored as an attribute (\code{tribal_declarations}). Columns include:
+\describe{
+\item{unique_id}{Unique identifier for each observation.}
+\item{GEOID}{Five-digit county FIPS code.}
+\item{year_declared}{Year the disaster was declared.}
+\item{month_declared}{Month the disaster was declared (1-12).}
+\item{declaration_title}{Title(s) of the disaster declaration(s).}
+\item{incidents_all}{Total count of disaster declarations in the county-month.}
+\item{incidents_natural_hazard}{Count of natural hazard declarations.}
+\item{incidents_*}{Additional columns for other incident types, each of which reflects the count of the given incident type.}
+}
 }
 \description{
-Get major disaster declarations by county
+Retrieves FEMA Major Disaster Declarations at the county level,
+aggregated by year and month. Tribal declarations are stored separately as
+an attribute.
+}
+\details{
+Data are from FEMA's OpenFEMA API. See
+\url{https://www.fema.gov/openfema-data-page/disaster-declarations-summaries-v2}.
+Statewide declarations are expanded to all counties in the state.
 }
 \examples{
 \dontrun{

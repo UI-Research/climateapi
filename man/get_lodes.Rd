@@ -2,8 +2,7 @@
 % Please edit documentation in R/get_lodes.R
 \name{get_lodes}
 \alias{get_lodes}
-\title{Get LEHD Origin-Destination Employment Statistics (LODES) data
-Returned data are from LODES Version 8, which is enumerated in 2020-vintage geometries.}
+\title{Get LEHD Origin-Destination Employment Statistics (LODES) data}
 \usage{
 get_lodes(
   lodes_type,
@@ -15,9 +14,13 @@ get_lodes(
 )
 }
 \arguments{
-\item{lodes_type}{One of c("rac", "wac", "od"). "rac" = Residence Area Characteristics, where jobs are associated with employees' residences. "wac" = Workplace Area Characteristics, where jobs are associated with employees' workplaces. "od" = Origin-Destination data, where jobs are associated with both workers' residences and their workplaces.}
+\item{lodes_type}{One of c("rac", "wac", "od"). "rac" = Residence Area Characteristics,
+where jobs are associated with employees' residences. "wac" = Workplace Area Characteristics,
+where jobs are associated with employees' workplaces. "od" = Origin-Destination data,
+where jobs are associated with both workers' residences and their workplaces.}
 
-\item{jobs_type}{One of c("all", "primary"). Default is "all", which includes multiple jobs for workers with multiple jobs. "primary" includes only the highest-paying job per worker.}
+\item{jobs_type}{One of c("all", "primary"). Default is "all", which includes multiple
+jobs for workers with multiple jobs. "primary" includes only the highest-paying job per worker.}
 
 \item{states}{A vector of state abbreviations.}
 
@@ -25,12 +28,37 @@ get_lodes(
 
 \item{geography}{One of c("block", "block group", "tract", "county", "state"). Default is "tract".}
 
-\item{state_part}{One of c("main", "aux"). Default is "main", which includes only workers who reside inside the state where they work. "aux" returns only workers who work in the specified state but live outside of that state.}
+\item{state_part}{One of c("main", "aux"). Default is "main", which includes only workers
+who reside inside the state where they work. "aux" returns only workers who work in the
+specified state but live outside of that state.}
 }
 \value{
-A tibble with one record per geography per year per job type. Attributes include total jobs and jobs by worker earnings, industry, and demographics; the origin-destination results have more limited demographics compared to the "wac" and "rac" results.
+A tibble with one record per geography per year per job type. Key columns include:
+\describe{
+\item{year}{Year of the data.}
+\item{state}{Two-letter state abbreviation.}
+\item{job_type}{"all" or "federal" indicating the job category.}
+\item{h_GEOID / w_GEOID}{Home (h) or work (w) GEOID depending on lodes_type.}
+\item{jobs}{Total number of jobs.}
+\item{jobs_workers_age_29_or_younger}{Jobs for workers age 29 or younger.}
+\item{jobs_workers_age_30_to_54}{Jobs for workers age 30 to 54.}
+\item{jobs_workers_age_55_or_older}{Jobs for workers age 55 or older.}
+\item{jobs_earnings_1250_month_or_less}{Jobs with earnings $1250/month or less.}
+\item{jobs_earnings_1251_month_to_3333_month}{Jobs with earnings $1251-$3333/month.}
+\item{jobs_earnings_greater_than_3333_month}{Jobs with earnings >$3333/month.}
+\item{jobs_industry_\emph{}{Jobs by NAICS industry sector (20 sectors for WAC/RAC).}
+\item{jobs_workers_race_}}{Jobs by worker race (WAC/RAC only).}
+\item{jobs_workers_ethnicity_\emph{}{Jobs by worker ethnicity (WAC/RAC only).}
+\item{jobs_workers_educational_attainment_}}{Jobs by education level (WAC/RAC only).}
+\item{jobs_workers_sex_*}{Jobs by worker sex (WAC/RAC only).}
+}
 }
 \description{
-Get LEHD Origin-Destination Employment Statistics (LODES) data
+Retrieves LODES employment data at various geographic levels.
 Returned data are from LODES Version 8, which is enumerated in 2020-vintage geometries.
+}
+\details{
+Data are from the Longitudinal Employer-Household Dynamics (LEHD) program.
+See \url{https://lehd.ces.census.gov/data/} and the technical documentation at
+\url{https://lehd.ces.census.gov/data/lodes/LODES8/LODESTechDoc8.0.pdf}.
 }

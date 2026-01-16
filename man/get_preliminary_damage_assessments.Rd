@@ -13,18 +13,42 @@ get_preliminary_damage_assessments(
 )
 }
 \arguments{
-\item{file_path}{The file path to the cached dataset, or if there is no cache, the path at which to cache the resulting data.}
+\item{file_path}{The file path to the cached dataset, or if there is no cache, the path
+at which to cache the resulting data.}
 
-\item{directory_path}{The path to the directory where PDA PDFs are stored. Use \code{scrape_pda_pdfs} to generate these files.}
+\item{directory_path}{The path to the directory where PDA PDFs are stored. Use
+\code{scrape_pda_pdfs} to generate these files.}
 
-\item{use_cache}{Boolean. Read the existing dataset stored at \code{file_path}? If FALSE, data will be generated anew. Else, if a file exists at \code{file_path}, this file will be returned.}
+\item{use_cache}{Boolean. Read the existing dataset stored at \code{file_path}? If FALSE,
+data will be generated anew. Else, if a file exists at \code{file_path}, this file will be returned.}
 }
 \value{
-A dataframe of preliminary damage assessment reports.
+A dataframe of preliminary damage assessment reports. Key columns include:
+\describe{
+\item{disaster_number}{FEMA disaster number.}
+\item{event_type}{Type of decision: "approved", "denial", "appeal_approved", or "appeal_denial".}
+\item{event_title}{Title/description of the disaster event.}
+\item{event_date_determined}{Date the PDA determination was made.}
+\item{event_native_flag}{1 if tribal request, 0 otherwise.}
+\item{ia_requested}{1 if Individual Assistance was requested, 0 otherwise.}
+\item{ia_residences_impacted}{Total residences impacted.}
+\item{ia_residences_destroyed}{Number of residences destroyed.}
+\item{ia_residences_major_damage}{Number of residences with major damage.}
+\item{ia_residences_minor_damage}{Number of residences with minor damage.}
+\item{ia_cost_estimate_total}{Estimated total Individual Assistance cost.}
+\item{pa_requested}{1 if Public Assistance was requested, 0 otherwise.}
+\item{pa_cost_estimate_total}{Estimated total Public Assistance cost.}
+\item{pa_per_capita_impact_statewide}{Statewide per capita impact amount.}
+\item{pa_per_capita_impact_indicator_statewide}{Met/Not Met indicator for statewide threshold.}
+}
 }
 \description{
-These data reflect extracted attributes from PDF preliminary damage assessments
-hosted on FEMA's website at: https://www.fema.gov/disaster/how-declared/preliminary-damage-assessments/reports.
+Retrieves data extracted from PDF preliminary damage assessment (PDA)
+reports submitted to FEMA for disaster declarations.
+}
+\details{
+Data are extracted from PDF reports hosted at
+\url{https://www.fema.gov/disaster/how-declared/preliminary-damage-assessments/reports}.
 Owing to the unstructured nature of the source documents, some fields may be incorrect
 in the data returned by the function, though significant quality checks have been
 implemented in an effort to produce a high-quality dataset.

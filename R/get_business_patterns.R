@@ -1,9 +1,35 @@
 #' Obtain County Business Patterns (CBP) Estimates per County
 #'
-#' @param year The vintage of CBP data desired. Data are available from 1986, though this function likely only supports more recent years (it it tested on 2022-vintage data only). Default is 2022.
-#' @param naics_code_digits One of c(2, 3). Default is 2. NAICS codes range in specificity; 2-digit codes describe the highest groupings of industries, while six-digit codes are exceedingly detailed. There are 20 2-digit NAICS codes and 196 3-digit codes.
-#' @param naics_codes A vector of NAICS codes to query. If NULL, the function will query all available codes with the specified number of digits. If not NULL, this argument overrides the `naics_code_digits` argument.
-#' @return A tibble with data on county-level employees, employers, and aggregate annual payrolls by industry and employer size
+#' @description Retrieves County Business Patterns data from the Census Bureau,
+#'   providing counts of establishments, employees, and payroll by industry and
+#'   employer size at the county level.
+#'
+#' @param year The vintage of CBP data desired. Data are available from 1986, though
+#'   this function likely only supports more recent years (it is tested on 2022-vintage
+#'   data only). Default is 2022.
+#' @param naics_code_digits One of c(2, 3). Default is 2. NAICS codes range in specificity;
+#'   2-digit codes describe the highest groupings of industries, while six-digit codes
+#'   are exceedingly detailed. There are 20 2-digit NAICS codes and 196 3-digit codes.
+#' @param naics_codes A vector of NAICS codes to query. If NULL, the function will query
+#'   all available codes with the specified number of digits. If not NULL, this argument
+#'   overrides the `naics_code_digits` argument.
+#'
+#' @details Data are from the U.S. Census Bureau's County Business Patterns program.
+#'   See \url{https://www.census.gov/programs-surveys/cbp.html} and
+#'   \url{https://www.census.gov/naics/} for NAICS code definitions.
+#'
+#' @return A tibble with data on county-level employees, employers, and aggregate
+#'   annual payrolls by industry and employer size. Columns include:
+#'   \describe{
+#'     \item{state}{Two-digit state FIPS code.}
+#'     \item{county}{Three-digit county FIPS code.}
+#'     \item{employees}{Number of employees mid-March of the reference year.}
+#'     \item{employers}{Number of establishments.}
+#'     \item{annual_payroll}{Annual payroll in thousands of dollars.}
+#'     \item{industry}{NAICS industry description (lowercase, underscored).}
+#'     \item{employee_size_range_label}{Human-readable employer size category.}
+#'     \item{employee_size_range_code}{Census code for employer size range.}
+#'   }
 #' @export
 #'
 #' @examples

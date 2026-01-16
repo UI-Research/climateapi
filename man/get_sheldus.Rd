@@ -2,7 +2,7 @@
 % Please edit documentation in R/get_sheldus.R
 \name{get_sheldus}
 \alias{get_sheldus}
-\title{Access temporal county-level SHELDUS hazard damage data.}
+\title{Access temporal county-level SHELDUS hazard damage data}
 \usage{
 get_sheldus(
   file_path = file.path(get_box_path(), "hazards", "sheldus",
@@ -15,9 +15,30 @@ get_sheldus(
 }
 \value{
 A dataframe comprising hazard x month x year x county observations of hazard events.
+Columns include:
+\describe{
+\item{unique_id}{Unique identifier for each observation.}
+\item{GEOID}{Five-digit county FIPS code.}
+\item{state_name}{Full state name (sentence case).}
+\item{county_name}{County name.}
+\item{year}{Year of the hazard event(s).}
+\item{month}{Month of the hazard event(s).}
+\item{hazard}{Type of hazard (e.g., "Flooding", "Hurricane/Tropical Storm").}
+\item{damage_property}{Property damage in 2023 inflation-adjusted dollars.}
+\item{damage_crop}{Crop damage in 2023 inflation-adjusted dollars.}
+\item{fatalities}{Number of fatalities.}
+\item{injuries}{Number of injuries.}
+\item{records}{Number of individual events aggregated into this observation.}
+}
 }
 \description{
-Access temporal county-level SHELDUS hazard damage data.
+Retrieves county-level hazard event data from the Spatial Hazard Events
+and Losses Database for the United States (SHELDUS), including property damage,
+crop damage, fatalities, and injuries.
+}
+\details{
+Data are from Arizona State University's SHELDUS database. Access requires
+a subscription. See \url{https://cemhs.asu.edu/sheldus}.
 }
 \examples{
 \dontrun{

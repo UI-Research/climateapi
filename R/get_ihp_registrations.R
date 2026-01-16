@@ -2,12 +2,41 @@
 
 #' @title Get Individuals and Households Program (IHP) registrations
 #'
-#' @param state_fips A character vector of two-letter state abbreviations. If NULL (default), return data for all 51 states. Otherwise return data for the specified states.
+#' @description Retrieves FEMA Individual and Households Program (IHP) registration data,
+#'   which captures applications for disaster assistance from individuals and households.
+#'
+#' @param state_fips A character vector of two-letter state abbreviations. If NULL (default),
+#'   return data for all 51 states. Otherwise return data for the specified states.
 #' @param file_name The name (not the full path) of the Box file containing the raw data.
 #' @param api If TRUE, query the API. If FALSE (default), read from disk.
 #' @param outpath The path to save the parquet-formatted datafile. Applicable only when `api = FALSE`.
 #'
-#' @returns A dataframe comprising IHP registrations
+#' @details Data are from FEMA's OpenFEMA API. See
+#'   \url{https://www.fema.gov/openfema-data-page/individuals-and-households-program-valid-registrations-v2}.
+#'
+#' @returns A dataframe comprising IHP registrations. Note that records are duplicated
+#'   due to a many-to-many join with a ZCTA-to-county crosswalk; use `allocation_factor_zcta_to_county`
+#'   to properly aggregate. Columns include:
+#'   \describe{
+#'     \item{unique_id}{Unique identifier for the original registration.}
+#'     \item{allocation_factor_zcta_to_county}{Weight for attributing registration to county.}
+#'     \item{geoid_county}{Five-digit county FIPS code.}
+#'     \item{zcta_code}{Five-digit ZIP Code Tabulation Area.}
+#'     \item{geoid_tract}{11-digit census tract FIPS code.}
+#'     \item{geoid_block_group}{12-digit census block group FIPS code.}
+#'     \item{disaster_number}{FEMA disaster number.}
+#'     \item{amount_individual_housing_program}{Total IHP assistance amount in dollars.}
+#'     \item{amount_housing_assistance}{Housing assistance amount in dollars.}
+#'     \item{amount_other_needs_assistance}{Other needs assistance amount in dollars.}
+#'     \item{amount_rental_assistance}{Rental assistance amount in dollars.}
+#'     \item{amount_repairs}{Repair assistance amount in dollars.}
+#'     \item{amount_replacement}{Replacement assistance amount in dollars.}
+#'     \item{amount_personal_property}{Personal property assistance amount in dollars.}
+#'     \item{amount_flood_insurance_premium_paid_by_fema}{FEMA-paid flood insurance premium.}
+#'     \item{state_name}{Full state name.}
+#'     \item{state_abbreviation}{Two-letter state abbreviation.}
+#'     \item{state_code}{Two-digit state FIPS code.}
+#'   }
 #' @export
 #'
 #' @examples

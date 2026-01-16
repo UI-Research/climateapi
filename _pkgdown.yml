@@ -31,6 +31,7 @@ reference:
 - title: Event boundaries
   contents:
   - get_current_fire_perimeters
+  - get_wildfire_burn_zones
 - title: Land use
   contents:
   - estimate_zoning_envelope

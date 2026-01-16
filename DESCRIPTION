@@ -15,14 +15,15 @@ Authors@R: c(
 Description: This packages combines a set of utilities for acquiring and processing 
     climate and climate-adjacent datasets under a consistent API. It takes opinionated 
     stances on how to manipulate raw data in an effort to produce standard workflows 
-    that enable project teams to devote more time to substantive analysis and inference-making.
+    that enable project teams to devote more time to substantive analysis.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.2
-Imports: 
+RoxygenNote: 7.3.3
+Imports:
     arrow,
     censusapi,
+    sfarrow,
     dplyr,
     esri2sf (>= 0.1.1),
     ellmer,
@@ -60,9 +61,11 @@ Remotes:
     UI-Research/urbnindicators,
     UrbanInstitute/urbnthemes
 URL: https://ui-research.github.io/climateapi/
-Suggests: 
+Suggests:
     knitr,
     qualtRics,
     rmarkdown,
+    testthat (>= 3.0.0),
     tidyverse
+Config/testthat/edition: 3
 VignetteBuilder: knitr

@@ -1,8 +1,31 @@
 #' Get government unit-level expenses from the Census of Governments
 #'
+#' @description Retrieves government unit-level finance data from the Census of Governments,
+#'   including expenses by category for state, county, city, township, special district,
+#'   and school district government units.
+#'
 #' @param year A four-digit year. The default is 2022.
 #'
+#' @details Data are from the U.S. Census Bureau's Annual Survey of State and Local
+#'   Government Finances and Census of Governments. See
+#'   \url{https://www.census.gov/programs-surveys/gov-finances.html}.
+#'
 #' @return A dataframe containing government unit-level expenses for the specified year.
+#'   Columns include:
+#'   \describe{
+#'     \item{unit_id}{Unique identifier for the government unit.}
+#'     \item{year_data}{Year of the financial data.}
+#'     \item{amount_thousands}{Total expenses in thousands of dollars.}
+#'     \item{government_type}{Type of government (State, County, City, Township, Special District, School District).}
+#'     \item{data_quality}{Proportion of expense items that were reported (vs. imputed).}
+#'     \item{state_code}{Two-digit state FIPS code.}
+#'     \item{county_code}{Three-digit county FIPS code.}
+#'     \item{unit_name}{Name of the government unit.}
+#'     \item{county_name}{Name of the county.}
+#'     \item{population}{Population served by the unit.}
+#'     \item{enrollment}{Student enrollment (for school districts).}
+#'     \item{amount_per_capita}{Expenses per capita or per enrolled student.}
+#'   }
 #' @export
 
 get_government_finances = function(year = 2022) {
