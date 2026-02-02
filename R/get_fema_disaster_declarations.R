@@ -3,7 +3,8 @@
 #' @title Get major disaster declarations by county
 #' @param file_path The path (on Box) to the file containing the raw data.
 #' @param api If TRUE (default), access data from the API. Else, read locally from `file_path`.
-#' @returns A dataframe comprising Major Disaster Declarations by month by year by county. Tribal declarations are stored as an attribute of the primary dataframe called `tribal_declarations`.
+#' @returns A dataframe comprising Major Disaster Declarations by month by year by county.
+#'  Tribal declarations are stored as an attribute of the primary dataframe called `tribal_declarations`.
 #' @export
 #' @examples
 #' \dontrun{
