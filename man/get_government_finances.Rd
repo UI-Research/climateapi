@@ -10,7 +10,20 @@ get_government_finances(year = 2022)
 \item{year}{A four-digit year. The default is 2022.}
 }
 \value{
-A dataframe containing government unit-level expenses for the specified year.
+A tibble containing government unit-level financial data aggregated by unit, with the following columns:
+\describe{
+\item{unit_id}{Character. Unique identifier for the government unit.}
+\item{year_data}{Numeric. The year of the financial data.}
+\item{amount_thousands}{Numeric. Total expenditure amount in thousands of dollars.}
+\item{government_type}{Character. Type of government unit: "State", "County", "City", "Township", "Special District", or "School District/Educational Service Agency".}
+\item{data_quality}{Numeric. Proportion of records that were reported (vs. imputed or from alternative sources), ranging from 0 to 1.}
+\item{unit_name}{Character. Name of the government unit.}
+\item{county_name}{Character. County name where the unit is located.}
+\item{state_code}{Character. Two-digit state FIPS code.}
+\item{population}{Numeric. Population served by the government unit.}
+\item{enrollment}{Numeric. Student enrollment (for school districts; NA for other unit types).}
+\item{amount_per_capita}{Numeric. Expenditure per capita (or per enrolled student for school districts).}
+}
 }
 \description{
 Get government unit-level expenses from the Census of Governments

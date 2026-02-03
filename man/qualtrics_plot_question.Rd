@@ -43,7 +43,14 @@ qualtrics_plot_question(
 \item{omit_other}{Logical; whether to omit the "Other" response option. Default is TRUE.}
 }
 \value{
-A ggplot object
+A \code{ggplot2} object representing a visualization of survey responses. The plot type varies based on \code{question_type}:
+\describe{
+\item{For "continuous"}{A boxplot showing the distribution of numeric responses, with question sub-text on the y-axis and values on the x-axis. Multiple sub-questions are displayed as separate boxplots.
+}
+\item{For "checkbox_single" or "checkbox_multi"}{A horizontal bar chart showing response counts. Response options are ordered by total count (descending). For "checkbox_multi", bars are stacked by response type.}
+\item{For "checkbox_factor"}{A stacked horizontal bar chart showing response counts by factor level, with response options ordered by total count.}
+}
+The plot uses Urban Institute theming via \code{urbnthemes::theme_urbn_print()} and includes the specified \code{title} and auto-generated or custom \code{subtitle}.
 }
 \description{
 Plot responses to Qualtrics survey questions

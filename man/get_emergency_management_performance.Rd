@@ -17,7 +17,15 @@ get_emergency_management_performance(
 \item{api}{Logical indicating whether to use the OpenFEMA API to retrieve the data. Default is TRUE.}
 }
 \value{
-A data frame containing emergency management performance grant (EMPG) data.
+A tibble containing Emergency Management Performance Grant (EMPG) data with the following columns:
+\describe{
+\item{state_name}{Character. The name of the state receiving the grant (renamed from original "state" column).}
+\item{year_project_start}{Numeric. The year the project started, with corrections applied for known data entry errors in the source data.}
+\item{state_code}{Character. Two-digit FIPS state code.}
+\item{state_abbreviation}{Character. Two-letter USPS state abbreviation.}
+\item{...}{Additional columns from the OpenFEMA EMPG dataset, cleaned via \code{janitor::clean_names()}.}
+}
+Data are filtered to records with \code{year_project_start > 2012}. A warning is issued noting data completeness concerns for 2024-2025.
 }
 \description{
 Get EMPG data

@@ -20,7 +20,24 @@ get_preliminary_damage_assessments(
 \item{use_cache}{Boolean. Read the existing dataset stored at \code{file_path}? If FALSE, data will be generated anew. Else, if a file exists at \code{file_path}, this file will be returned.}
 }
 \value{
-A dataframe of preliminary damage assessment reports.
+A tibble containing parsed data from FEMA Preliminary Damage Assessment (PDA) PDF reports. Each row represents one disaster declaration request. The returned object includes:
+\describe{
+\item{disaster_number}{Character. Four-digit FEMA disaster number.}
+\item{event_type}{Character. Declaration outcome: "approved", "denial", "appeal_approved", or "appeal_denial".}
+\item{event_title}{Character. Title/description of the disaster event from the PDA.}
+\item{event_date_determined}{Date. Date the declaration determination was made.}
+\item{event_native_flag}{Integer. 1 if this is a tribal declaration, 0 otherwise.}
+\item{ia_requested}{Integer. 1 if Individual Assistance was requested, 0 otherwise.}
+\item{ia_residences_impacted, ia_residences_destroyed, ia_residences_major_damage, ia_residences_minor_damage, ia_residences_affected}{Numeric. Counts of affected residences by damage category.}
+\item{ia_residences_insured_total_percent, ia_residences_insured_flood_percent}{Numeric. Insurance coverage percentages.}
+\item{ia_cost_estimate_total}{Numeric. Total estimated Individual Assistance cost.}
+\item{pa_requested}{Integer. 1 if Public Assistance was requested, 0 otherwise.}
+\item{pa_cost_estimate_total}{Numeric. Total estimated Public Assistance cost.}
+\item{pa_per_capita_impact_statewide, pa_per_capita_impact_countywide_max, pa_per_capita_impact_countywide_min}{Numeric. Per capita impact metrics.}
+\item{pa_per_capita_impact_indicator_statewide, pa_per_capita_impact_indicator_countywide}{Character. Per capita impact indicator values.}
+\item{text}{Character. Full extracted text from the PDA for reference.}
+}
+Note: Due to the unstructured nature of PDF source documents, some extracted values may be inaccurate and should be verified.
 }
 \description{
 These data reflect extracted attributes from PDF preliminary damage assessments

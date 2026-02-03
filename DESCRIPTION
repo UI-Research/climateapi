@@ -68,4 +68,3 @@ Suggests:
     tidyverse
 Config/testthat/edition: 3
 VignetteBuilder: knitr
-Config/testthat/edition: 3

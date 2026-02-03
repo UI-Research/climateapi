@@ -14,7 +14,12 @@ get_spatial_extent_census(data, return_geometry = FALSE, projection = 5070)
 \item{projection}{The EPSG code of the desired projection. Default is 5070 (Albers Equal Area).}
 }
 \value{
-A dataframe (optionally, an sf-dataframe) comprising Census geographies
+A tibble (or \code{sf} object if \code{return_geometry = TRUE}) containing Census geographies that overlap with the input spatial data. The structure depends on the geographic extent:
+\describe{
+\item{When multiple states overlap}{Returns state-level data with columns: \code{state_geoid} (2-digit FIPS), \code{geography} ("state").}
+\item{When a single state overlaps}{Returns tract-level data with columns: \code{state_geoid} (2-digit FIPS), \code{county_geoid} (5-digit FIPS), \code{geography} ("tract").}
+}
+If \code{return_geometry = TRUE}, the geometry column is retained; otherwise it is dropped.
 }
 \description{
 Get the Census geographies that overlap with the input spatial dataset
