@@ -19,7 +19,7 @@ Description: This packages combines a set of utilities for acquiring and process
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.3
 Imports: 
     arrow,
     censusapi,
@@ -64,5 +64,7 @@ Suggests:
     knitr,
     qualtRics,
     rmarkdown,
+    testthat (>= 3.0.0),
     tidyverse
 VignetteBuilder: knitr
+Config/testthat/edition: 3
