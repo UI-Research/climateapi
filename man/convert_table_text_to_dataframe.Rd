@@ -30,7 +30,13 @@ convert_table_text_to_dataframe(
 \item{required}{Boolean; default is FALSE. If TRUE, the LLM will be instructed to return values for all columns. If FALSE, \code{NULL} values are allowed. Generally, NULL values should be allowed unless you are certain that every value in the inputted text-table has a non-NULL value.}
 }
 \value{
-A list of dataframes, with each item corresponding to one page of the inputted text. The dataframes have the same column names and types as specified in \code{column_types}. Use \code{purrr::bind_rows()} to consolidate results into a single dataframe, if needed.
+A list of tibbles, where each list element corresponds to one item (typically one page) in the input \code{text} vector/list. Each tibble contains:
+\describe{
+\item{Structure}{Columns match the names and types defined in \code{column_types}. Each row represents one record extracted from the table text by the LLM.}
+\item{NULL values}{When \code{required = FALSE} (default), columns may contain NULL/NA values if the LLM could not extract a value for that cell.}
+\item{Empty dataframes}{If the LLM encounters an error processing a page, that list element will be an empty \code{data.frame()}.}
+}
+Use \code{purrr::list_rbind()} or \code{dplyr::bind_rows()} to consolidate results into a single dataframe. A warning is issued reminding users to review AI-generated results for accuracy.
 }
 \description{
 It is common to encounter valuable tabular data that is stored in a file type that does not codify tabular data as such, e.g., a table in a PDF or .docx file. This function uses a user-specified LLM (from OpenAI or Anthropic) to convert the text of a table into a dataframe. Note that users must have an API key with credits for the specified LLM. For a typical full-page PDF table, the LLM costs are roughly $.02-.05 USD per page.

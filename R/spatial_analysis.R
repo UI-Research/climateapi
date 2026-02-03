@@ -7,7 +7,13 @@
 #' @param max_length  The maximum length of each segment. Segments longer than this value will be subdivided; those that are below this threshold will be returned as-is.
 #' @param crs The coordinate reference system to which the linestring should be transformed. Default is 5070.
 #'
-#' @return A spatial dataframe comprising linestrings below the `max_length` threshold, linked back to their input linestrings via a `line_id` attribute
+#' @return An `sf` object (simple feature collection) with geometry type LINESTRING. The returned object contains:
+#' \describe{
+#'   \item{row_id}{Integer. The row index from the original input linestring, allowing linkage back to the input data.}
+#'   \item{...}{All original attributes from the input `line` object are preserved and joined back via `row_id`.}
+#'   \item{geometry}{LINESTRING geometry. Each segment is at most `max_length` units long (in the CRS units). Segments shorter than `max_length` in the input are returned unchanged.}
+#' }
+#' The CRS of the output is set to the value specified by the `crs` parameter (default: EPSG:5070).
 #' @export
 subdivide_linestring = function(line, max_length, crs = 5070) {
 
@@ -72,7 +78,14 @@ subdivide_linestring = function(line, max_length, crs = 5070) {
 #'
 #' @param .sf The spatial dataframe containing one or more polygons
 #'
-#' @return A simple feature collection of linestrings derived from the inputted polygons; all attributes are retained, and two new attributes--`polygon_id` and `line_id`--are prepended to the output
+#' @return An `sf` object (simple feature collection) with geometry type LINESTRING. The returned object contains:
+#' \describe{
+#'   \item{polygon_id}{Integer. The row index of the originating polygon from the input `.sf` object, enabling linkage back to the source polygon.}
+#'   \item{line_id}{Integer. A sequential identifier for each line segment within its originating polygon. Line segments are ordered according to the vertex sequence of the polygon boundary.}
+#'   \item{...}{All original attributes from the input `.sf` object are preserved and joined back via `polygon_id`.}
+#'   \item{geometry}{LINESTRING geometry. Each line segment represents one edge of the original polygon boundary.}
+#' }
+#' The CRS of the output matches the input `.sf` object (transformed to EPSG:5070 during processing).
 #' @export
 polygons_to_linestring = function(.sf) {
   sf1 = .sf %>%

@@ -8,7 +8,15 @@
 #' @param sections A named vector specifying the last question number in each survey section
 #' @param text_replace A named character vector of regex patterns to replace in the metadata
 #'
-#' @return A dataframe of formatted metadata
+#' @return A tibble containing formatted Qualtrics survey metadata with the following columns:
+#' \describe{
+#'   \item{question_number}{Integer. The sequential position of the question in the survey (1-indexed).}
+#'   \item{question_name}{Character. The internal Qualtrics question identifier (e.g., "Q1", "Q2_1").}
+#'   \item{text_main}{Character. The primary question text, with any patterns specified in `text_replace` substituted.}
+#'   \item{text_sub}{Character. The sub-question or response option text, with any patterns specified in `text_replace` substituted.}
+#'   \item{survey_section}{Character. The name of the survey section to which the question belongs, as defined by the `sections` parameter. Filled upward from section boundaries.
+#'   }
+#' }
 #' @export
 qualtrics_format_metadata = function(metadata, sections = c(), text_replace = "zzzzz") {
 
@@ -38,7 +46,7 @@ qualtrics_format_metadata = function(metadata, sections = c(), text_replace = "z
 #' @param survey_section A regex pattern to match the survey section(s)
 #' @param return_values The name of the column (character) to be returned
 #'
-#' @return A character vector of the requested metadata
+#' @return A character vector containing the values from the column specified by `return_values` (default: "text_sub"), filtered to rows matching either the `question_name` or `survey_section` pattern. The length of the vector corresponds to the number of matching rows in the metadata. Returns an empty character vector if no matches are found.
 #' @export
 qualtrics_get_metadata = function(metadata, question_name = NULL, survey_section = NULL, return_values = "text_sub") {
 
@@ -69,7 +77,14 @@ qualtrics_get_metadata = function(metadata, question_name = NULL, survey_section
 #' @param text_replace A named character vector of regex patterns to replace in the response text
 #' @param omit_other Logical; whether to omit the "Other" response option. Default is TRUE.
 #'
-#' @return A ggplot object
+#' @return A `ggplot2` object representing a visualization of survey responses. The plot type varies based on `question_type`:
+#' \describe{
+#'   \item{For "continuous"}{A boxplot showing the distribution of numeric responses, with question sub-text on the y-axis and values on the x-axis. Multiple sub-questions are displayed as separate boxplots.
+#'   }
+#'   \item{For "checkbox_single" or "checkbox_multi"}{A horizontal bar chart showing response counts. Response options are ordered by total count (descending). For "checkbox_multi", bars are stacked by response type.}
+#'   \item{For "checkbox_factor"}{A stacked horizontal bar chart showing response counts by factor level, with response options ordered by total count.}
+#' }
+#' The plot uses Urban Institute theming via `urbnthemes::theme_urbn_print()` and includes the specified `title` and auto-generated or custom `subtitle`.
 #' @export
 qualtrics_plot_question = function(
     df,
@@ -213,7 +228,13 @@ qualtrics_plot_question = function(
 #' @param predicate_question Optional. The name of a single column that controls whether columns selected with `question_code_include`
 #' @param predicate_question_negative_value If `predicate_question` is specified, provide the value that indicates a negative response to the predicate question. For responses where the predicate question has this value, this value will be imputed to the specified columns
 #'
-#' @return The inputted `df` object with missing/non-missing values applied to specified columns
+#' @return A tibble containing only the columns selected by `question_code_include` (excluding those matching `question_code_omit`), with missing values handled according to the following logic:
+#' \describe{
+#'   \item{Without predicate_question}{If all selected columns are NA for a row, values remain NA. If any selected column has a non-NA value, NA values in other selected columns are replaced with the appropriate default value from `default_values` based on column type.}
+#'   \item{With predicate_question}{If the predicate question is NA, all selected columns are set to NA. If the predicate question equals `predicate_question_negative_value
+#'   `, all selected columns are set to the appropriate default value. Otherwise, original values are preserved.}
+#' }
+#' Column types and their default value mappings: character uses `default_values[[1]]`, numeric uses `default_values[[2]]`, and Date/POSIXct uses `default_values[[3]]`.
 #' @export
 qualtrics_define_missing = function(
     df,

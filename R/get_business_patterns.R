@@ -1,35 +1,128 @@
-#' Obtain County Business Patterns (CBP) Estimates per County
+#' @importFrom magrittr %>%
+
+#' @title Get NAICS Codes for County Business Patterns
 #'
-#' @description Retrieves County Business Patterns data from the Census Bureau,
-#'   providing counts of establishments, employees, and payroll by industry and
-#'   employer size at the county level.
+#' @description A utility function to programmatically identify and select NAICS
+#'     codes for use with `get_business_patterns()`. This is a wrapper around
+#'     `censusapi::listCensusMetadata(name = "cbp")`.
 #'
-#' @param year The vintage of CBP data desired. Data are available from 1986, though
-#'   this function likely only supports more recent years (it is tested on 2022-vintage
-#'   data only). Default is 2022.
-#' @param naics_code_digits One of c(2, 3). Default is 2. NAICS codes range in specificity;
-#'   2-digit codes describe the highest groupings of industries, while six-digit codes
-#'   are exceedingly detailed. There are 20 2-digit NAICS codes and 196 3-digit codes.
-#' @param naics_codes A vector of NAICS codes to query. If NULL, the function will query
-#'   all available codes with the specified number of digits. If not NULL, this argument
-#'   overrides the `naics_code_digits` argument.
+#' @param year The vintage year for NAICS codes. Data are available from 1986 through 2023.
+#'     Default is 2022.
+#' @param digits The number of digits for desired NAICS codes. Must be between 2 and 6.
+#'     Default is 3. Two-digit codes represent broad industry sectors (20 codes),
+#'     while six-digit codes represent detailed industries.
 #'
-#' @details Data are from the U.S. Census Bureau's County Business Patterns program.
-#'   See \url{https://www.census.gov/programs-surveys/cbp.html} and
-#'   \url{https://www.census.gov/naics/} for NAICS code definitions.
+#' @return A tibble with the following columns:
+#'     \describe{
+#'         \item{naics_code}{The NAICS code (character)}
+#'         \item{naics_label}{The descriptive label for the NAICS code}
+#'         \item{year}{The vintage year of the NAICS codes}
+#'     }
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' # Get all 2-digit NAICS codes
+#' get_naics_codes(year = 2022, digits = 2)
+#'
+#' # Get all 3-digit NAICS codes (default)
+#' get_naics_codes(year = 2022)
+#'
+#' # Get 4-digit NAICS codes for a specific year
+#' get_naics_codes(year = 2020, digits = 4)
+#' }
+get_naics_codes <- function(year = 2022, digits = 3) {
+  if (year < 1986) { stop("Year must be 1986 or later.") }
+  if (year > 2023) { stop("Most recent year for data is 2023.") }
+  if (!digits %in% 2:6) { stop("`digits` must be between 2 and 6.") }
+
+  naics_metadata <- censusapi::listCensusMetadata(
+      name = "cbp",
+      vintage = as.character(year),
+      type = "variables",
+      include_values = TRUE) |>
+    dplyr::filter(
+      !is.na(values_code),
+      nchar(values_code) == digits) |>
+    dplyr::transmute(
+      naics_code = values_code,
+      naics_label = values_label,
+      year = year) |>
+    dplyr::distinct() |>
+    dplyr::arrange(naics_code) |>
+    tibble::as_tibble()
+
+}
+
+#' @title Obtain County Business Patterns (CBP) Estimates per County
+#'
+#' @param year The vintage of CBP data desired. Data are available from 1986,
+#'     though this function likely only supports more recent years (it it tested on 2022-vintage data only).
+#'     Default is 2022.
+#' @param geo The level of geography of CBP data desired. Either "county" or "zipcode". Zipcode
+#'     level data only The ZIP Code Business Patterns (ZBP) dataset includes the number of establishments,
+#'     employment during the week of March 12th, first quarter and annual payroll for NAICS 00 (total for all sectors).
+#'     Additionally, the number of establishments (but not employment or payroll) are available by employment
+#'     size of the establishment for 2- through 6-digit NAICS.
+#' @param naics_code_digits One of c(2, 3). Default is 2. NAICS codes range in
+#'     specificity; 2-digit codes describe the highest groupings of industries,
+#'     while six-digit codes are exceedingly detailed. There are 20 2-digit NAICS
+#'     codes and 196 3-digit codes. If more specific codes are desired, leave this
+#'     argument as NULL and supply the desired codes as the argument to `naics_codes`.
+#' @param naics_codes A vector of NAICS codes to query. If NULL, the function will
+#'     query all available codes with the specified number of digits. If not NULL,
+#'     this argument overrides the `naics_code_digits` argument.
+#'
+#' @details
+#' County Business Patterns (CBP) is an annual series that provides subnational
+#' economic data for establishments with paid employees by industry and employment size.
+#' This series includes the number of establishments, employment during the week of
+#' March 12, first quarter payroll, and annual payroll. Industry classification of business
+#' establishments in CBP is according to the North American Industry Classification System (NAICS)
+#' https://www.census.gov/naics/
+#'
+#' CBP data are useful for studying economic activity of small areas. Federal agencies
+#' use the data to determine employee concentrations and trends by industry.
+#' State and local government offices use the data to assess business changes, develop
+#' fiscal policies, and plan future policies and programs. CBP data are used to benchmark
+#' public and private sector statistical series, surveys, and databases between economic census years.
+#'
+#' While similar to LEHD Origin-Destination Employment Statistics (LODES) data in it's coverage of employment
+#' statistics, CBP differs mainly due to its broader geographies (county vs. tract) and
+#' focus on framing the statistics at an establishment/company level rather than at the individual/job
+#' level found in LODES data. CBP also does not offer information on locations of the jobs in relation to
+#' where the employee actually resides.
+#'
+#' The series excludes data on self-employed individuals, employees of private households,
+#' railroad employees, agricultural production employees, and most government employees.
+#' A certain amount of undercoverage occurs in the universe, as the Census Bureau does
+#' not create a multi-unit company structure in the Business Register for very small employers
+#' (less than 10 employees) identified in the Economic Census.
+#'
+#' CBP covers most NAICS industries excluding Crop and Animal Production (NAICS 111,112);
+#' Rail Transportation (NAICS 482); Postal Service (NAICS 491); Pension, Health, Welfare,
+#' and Other Insurance Funds (NAICS 525110, 525120, 525190); Trusts, Estates, and Agency
+#' Accounts (NAICS 525920); Offices of Notaries (NAICS 541120); Private Households (NAICS 814);
+#' and Public Administration (NAICS 92)
 #'
 #' @return A tibble with data on county-level employees, employers, and aggregate
-#'   annual payrolls by industry and employer size. Columns include:
-#'   \describe{
-#'     \item{state}{Two-digit state FIPS code.}
-#'     \item{county}{Three-digit county FIPS code.}
-#'     \item{employees}{Number of employees mid-March of the reference year.}
-#'     \item{employers}{Number of establishments.}
-#'     \item{annual_payroll}{Annual payroll in thousands of dollars.}
-#'     \item{industry}{NAICS industry description (lowercase, underscored).}
-#'     \item{employee_size_range_label}{Human-readable employer size category.}
-#'     \item{employee_size_range_code}{Census code for employer size range.}
-#'   }
+#'     annual payrolls by industry and employer size
+#'     \describe{
+#'         \item{year}{the year for which CBP data is pulled from}
+#'         \item{state}{A two-digit state identifier.}
+#'         \item{county}{A three-digit county identifier.}
+#'         \item{employees}{number of individual employees employed in that particular industry
+#'              and establishment size combination}
+#'         \item{employers}{number of establishments of each employment size}
+#'         \item{annual_payroll}{total annual payroll expenditures measured in $1,000's of USD}
+#'         \item{industry}{industry classification according to North American Industry Classification System.
+#'              Refer to details for additional information}
+#'         \item{employee_size_range_label}{range for the employment size of establishments included in each
+#'              given grouping}
+#'         \item{employee_size_range_code}{three-digit code used to categorize employment sizes}
+#'         \item{naics_code}{two to six-digit code used by the NAICS to categorize and sub-categorize industries}
+#'         }
 #' @export
 #'
 #' @examples
@@ -43,16 +136,22 @@
 #'  naics_codes = c(221111, 221112))
 #' }
 
-get_business_patterns = function(year = 2022, naics_code_digits = 2, naics_codes = NULL) {
+get_business_patterns = function(year = 2022, geo = "county", naics_code_digits = 2, naics_codes = NULL) {
   if (year < 1986) { stop("Year must be 1986 or later.") }
+  if (year > 2023) { stop("Most recent year for data is 2023.") }
+  if (! geo %in% c("county", "zipcode")) { stop("`geo` must be one of 'county' or 'zipcode'.") }
   if (! naics_code_digits %in% c(2, 3)) {
     stop("`naics_code_digits` must be one of c(2, 3). For more detailed codes, explicitly pass desired codes to the `naics_codes` parameter.") }
 
   naics_codes_metadata = censusapi::listCensusMetadata(
-    name = "cbp",
-    vintage = "2022",
-    type = "variables",
-    include_values = TRUE)
+      name = "cbp",
+      vintage = "2022",
+      type = "variables",
+      include_values = TRUE) %>%
+    #filter out codes 92 and 95 which do not appear to have data associated and
+    #don't appear on the census list of naics codes at
+    #https://www2.census.gov/programs-surveys/cbp/technical-documentation/reference/naics-descriptions/naics2017.txt
+    dplyr::filter(!stringr::str_starts(values_code, "92|95"))
 
   if (!is.null(naics_codes)) {
     naics_code_check = naics_codes_metadata %>%
@@ -88,30 +187,32 @@ get_business_patterns = function(year = 2022, naics_code_digits = 2, naics_codes
     ~ tryCatch({
       censusapi::getCensus(
         name = "cbp",
-        vintage = 2022,
+        vintage = year,
         vars = c(
           "EMP",
+          "YEAR",
           "ESTAB",
           "PAYANN",
           "EMPSZES",
           "NAICS2017_LABEL"),
-        region = "county:*",
-        NAICS2017 = .x)},
-      error = function(e) {
-        message("Error in NAICS2017: ", .x)
-        return(tibble::tibble())})) %>%
-    dplyr::select(
-      state,
-      county,
+        region = paste0(geo, ":*"),
+        NAICS2017 = .x) %>%
+      dplyr::mutate(naics_code = .x)},
+      error = function(e) { return(tibble::tibble()) })) %>%
+    dplyr::mutate(
+      # state,
+      # county,
       employees = EMP,
       employers = ESTAB,
       annual_payroll = PAYANN,
       employee_size_range = EMPSZES,
-      industry = NAICS2017_LABEL) %>%
+      industry = NAICS2017_LABEL,
+      naics_code) %>%
     dplyr::mutate(
       industry = industry %>%
         stringr::str_to_lower() %>%
         stringr::str_replace_all(c(" " = "_", ",|\\(|\\)|_for_all_sectors|and_" = "")),
+      year = year,
       ## this recoding is mapped from: https://www2.census.gov/programs-surveys/bds/technical-documentation/label_empszes.csv
       employee_size_range_label = dplyr::case_when(
         employee_size_range == "001" ~ "All establishments",
@@ -163,7 +264,24 @@ get_business_patterns = function(year = 2022, naics_code_digits = 2, naics_codes
         stringr::str_extract(employee_size_range_label, "[0-9]{4}") %>% as.numeric >= 1000 ~ "1000+",
         TRUE ~ employee_size_range_label)) %>%
     dplyr::rename(employee_size_range_code = employee_size_range) %>%
-    dplyr::select(state, county, employees, employers, annual_payroll, industry, employee_size_range_label, employee_size_range_code)
+    { if (geo == "county") {
+        dplyr::select(.,
+          year, state, county, employees, employers, annual_payroll,
+          industry, employee_size_range_label, employee_size_range_code, naics_code)} 
+      else if (geo == "zipcode") {
+        dplyr::select(.,
+          year, zip_code, employees, employers, annual_payroll,
+          industry, employee_size_range_label, employee_size_range_code, naics_code) } }
+
+  high_missingness = cbp %>%
+    skimr::skim() %>%
+    dplyr::filter(complete_rate < .9) %>%
+    dplyr::pull(skim_variable)
+
+  if (length(high_missingness) > 0) {
+    warning(
+      stringr::str_c("Variables with high missingness in County Business Patterns", ": ",
+      base::paste(high_missingness, collapse = ", "))) } 
 
   return(cbp)
 }
@@ -171,4 +289,4 @@ get_business_patterns = function(year = 2022, naics_code_digits = 2, naics_codes
 utils::globalVariables(
   c("EMP", "EMPSZES", "ESTAB", "NAICS2017_LABEL", "PAYANN", "annual_payroll",
     "employee_size_range", "employee_size_range_code", "employee_size_range_label",
-    "employees", "employers", "industry", "values_code"))
+    "employees", "employers", "industry", "values_code", "values_label", "naics_code"))

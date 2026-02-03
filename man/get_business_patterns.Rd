@@ -4,7 +4,12 @@
 \alias{get_business_patterns}
 \title{Obtain County Business Patterns (CBP) Estimates per County}
 \usage{
-get_business_patterns(year = 2022, naics_code_digits = 2, naics_codes = NULL)
+get_business_patterns(
+  year = 2022,
+  geo = "county",
+  naics_code_digits = 2,
+  naics_codes = NULL
+)
 }
 \arguments{
 \item{year}{The vintage of CBP data desired. Data are available from 1986, though
@@ -42,6 +47,38 @@ employer size at the county level.
 Data are from the U.S. Census Bureau's County Business Patterns program.
 See \url{https://www.census.gov/programs-surveys/cbp.html} and
 \url{https://www.census.gov/naics/} for NAICS code definitions.
+}
+\details{
+County Business Patterns (CBP) is an annual series that provides subnational
+economic data for establishments with paid employees by industry and employment size.
+This series includes the number of establishments, employment during the week of
+March 12, first quarter payroll, and annual payroll. Industry classification of business
+establishments in CBP is according to the North American Industry Classification System (NAICS)
+https://www.census.gov/naics/
+
+CBP data are useful for studying economic activity of small areas. Federal agencies
+use the data to determine employee concentrations and trends by industry.
+State and local government offices use the data to assess business changes, develop
+fiscal policies, and plan future policies and programs. CBP data are used to benchmark
+public and private sector statistical series, surveys, and databases between economic census years.
+
+While similar to LEHD Origin-Destination Employment Statistics (LODES) data in it's coverage of employment
+statistics, CBP differs mainly due to its broader geographies (county vs. tract) and
+focus on framing the statistics at an establishment/company level rather than at the individual/job
+level found in LODES data. CBP also does not offer information on locations of the jobs in relation to
+where the employee actually resides.
+
+The series excludes data on self-employed individuals, employees of private households,
+railroad employees, agricultural production employees, and most government employees.
+A certain amount of undercoverage occurs in the universe, as the Census Bureau does
+not create a multi-unit company structure in the Business Register for very small employers
+(less than 10 employees) identified in the Economic Census.
+
+CBP covers most NAICS industries excluding Crop and Animal Production (NAICS 111,112);
+Rail Transportation (NAICS 482); Postal Service (NAICS 491); Pension, Health, Welfare,
+and Other Insurance Funds (NAICS 525110, 525120, 525190); Trusts, Estates, and Agency
+Accounts (NAICS 525920); Offices of Notaries (NAICS 541120); Private Households (NAICS 814);
+and Public Administration (NAICS 92)
 }
 \examples{
 \dontrun{

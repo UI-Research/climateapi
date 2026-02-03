@@ -21,7 +21,12 @@ read_ipums_cached(
 \item{refresh}{If true, execute the API query, even if data are already stored locally. Defaults to FALSE.}
 }
 \value{
-A dataframe corresponding to the supplied \code{extract_definition}
+A tibble containing IPUMS data corresponding to the supplied \code{extract_definition}. The structure varies by collection type:
+\describe{
+\item{For microdata collections (e.g., "usa", "cps")}{Returns individual-level records with columns corresponding to the variables specified in the extract definition. Column names and types are determined by IPUMS variable specifications. The data are read via \code{ipumsr::read_ipums_micro()}.}
+\item{For aggregate collections ("nhgis", "ihgis")}{Returns aggregate data (typically at geographic summary levels) with columns corresponding to the requested tables/variables. IPUMS variable attributes are applied via the collection's codebook. The data are read via \code{ipumsr::read_ipums_agg()}.}
+}
+If a cached file exists at the specified path and \code{refresh = FALSE}, the cached data are returned with a warning. Otherwise, the extract is submitted to IPUMS, downloaded, and cached for future use.
 }
 \description{
 This script wraps a standard ipumsr::read_ipums*() query workflow, addressing

@@ -26,7 +26,8 @@ jobs for workers with multiple jobs. "primary" includes only the highest-paying 
 
 \item{years}{A vector of years.}
 
-\item{geography}{One of c("block", "block group", "tract", "county", "state"). Default is "tract".}
+\item{geography}{One of c("block", "block group", "tract", "county", "state").
+Default is "tract".}
 
 \item{state_part}{One of c("main", "aux"). Default is "main", which includes only workers
 who reside inside the state where they work. "aux" returns only workers who work in the

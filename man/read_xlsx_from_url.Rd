@@ -16,7 +16,8 @@ read_xlsx_from_url(urls, directory, file_names = NULL, silent = TRUE)
 \item{silent}{If TRUE (default), files are saved silently. If FALSE, downloaded files are read and returned as a list.}
 }
 \value{
-Either nothing (silent == TRUE) or a list of dataframes from the specified URLs.
+When \code{silent = TRUE} (default): Returns NULL invisibly. Files are downloaded and saved to \code{directory}.
+When \code{silent = FALSE}: Returns a list of data frames, one per URL, containing the contents of each downloaded .xlsx file as read by \code{openxlsx::read.xlsx()}. List elements are in the same order as the input \code{urls}.
 }
 \description{
 Download a .xlsx file(s) from a URL(s)

@@ -10,7 +10,14 @@ polygons_to_linestring(.sf)
 \item{.sf}{The spatial dataframe containing one or more polygons}
 }
 \value{
-A simple feature collection of linestrings derived from the inputted polygons; all attributes are retained, and two new attributes--\code{polygon_id} and \code{line_id}--are prepended to the output
+An \code{sf} object (simple feature collection) with geometry type LINESTRING. The returned object contains:
+\describe{
+\item{polygon_id}{Integer. The row index of the originating polygon from the input \code{.sf} object, enabling linkage back to the source polygon.}
+\item{line_id}{Integer. A sequential identifier for each line segment within its originating polygon. Line segments are ordered according to the vertex sequence of the polygon boundary.}
+\item{...}{All original attributes from the input \code{.sf} object are preserved and joined back via \code{polygon_id}.}
+\item{geometry}{LINESTRING geometry. Each line segment represents one edge of the original polygon boundary.}
+}
+The CRS of the output matches the input \code{.sf} object (transformed to EPSG:5070 during processing).
 }
 \description{
 Convert polygons into their component linestrings

@@ -6,21 +6,23 @@
 #' @param geography The desired geography of the results. One of "tract" or "county".
 #' @param boundaries A POLYGON or MULTIPOLYGON object, or an sf::st_bbox()-style bbox.
 #' @param keep_structures Logical. If TRUE, the raw structure data will be returned alongside the summarized data.
+
+#' @return Depends on the `keep_structures` parameter:
 #'
-#' @details Data are sourced from the USA Structures dataset maintained by the
-#'   Department of Homeland Security. See \url{https://geoplatform.gov/metadata/9d4a3ae3-8637-4707-92a7-b7d67b769a6b}.
+#' **When `keep_structures = FALSE` (default):** A tibble containing structure counts aggregated by geography and occupancy type, with columns:
+#' \describe{
+#'   \item{GEOID}{Character. Census geography identifier (county FIPS or tract GEOID depending on `geography` parameter).}
+#'   \item{primary_occupancy}{Character. The primary occupancy classification of the structures (e.g., "Single Family Dwelling", "Multi - Family Dwelling").}
+#'   \item{occupancy_class}{Character. Broad occupancy classification (e.g., "Residential", "Commercial").}
+#'   \item{count}{Integer. Number of structures of this occupancy type in the geography.}
+#' }
 #'
-#' @returns A dataframe comprising estimated counts of each structure type, at the
-#'   specified `geography`, for all such geographic units intersecting the `boundaries`
-#'   object. If keep_structure = TRUE, returns a list with two elements: the summarized
-#'   data and the raw structure data. Columns include:
-#'   \describe{
-#'     \item{GEOID}{Census tract (11-digit) or county (5-digit) FIPS code.}
-#'     \item{primary_occupancy}{The primary use of the structure (e.g., "Residential", "Commercial").}
-#'     \item{occupancy_class}{Broader classification of occupancy type.}
-#'     \item{count}{Number of structures of this type in the geographic unit.}
-#'   }
-#'
+#' **When `keep_structures = TRUE`:** A named list with two elements:
+#' \describe{
+#'   \item{structures_summarized}{The aggregated tibble described above.}
+#'   \item{structures_raw}{An `sf` object (POINT geometry) containing individual structure records with columns: `unique_id` (building ID), `occupancy_class`, `primary_occupancy`, `county_fips`, and geometry.}
+#' }
+
 #' @export
 #' @examples
 #' \dontrun{

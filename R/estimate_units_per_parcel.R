@@ -123,7 +123,19 @@ benchmark_units_to_census = function(data) {
 #' @param zoning A spatial (polygon) zoning dataset.
 #' @param acs Optionally, a non-spatial dataset, at the tract level, returned from `urbnindicators::compile_acs_data()`.
 #'
-#' @returns The inputted parcels datasets with attributes describing estimated unit counts by unit type.
+#' @return An `sf` object (point geometry, representing parcel centroids) containing the input parcel data augmented with estimated residential unit information. The returned object includes:
+#' \describe{
+#'   \item{parcel_id}{Character or numeric. The unique parcel identifier from the input data.}
+#'   \item{tract_geoid}{Character. The 11-digit Census tract GEOID containing the parcel centroid.}
+#'   \item{jurisdiction}{Character. The jurisdiction name associated with the parcel.}
+#'   \item{municipality_name}{Character. The municipality name associated with the parcel.}
+#'   \item{residential_unit_count}{Numeric. The estimated number of residential units on the parcel, benchmarked against ACS estimates at the tract level.}
+#'   \item{residential_unit_categories}{Factor (ordered). Categorical classification of unit counts: "0", "1", "2", "3-4", "5-9", "10-19", "20-49", "50+".}
+#'   \item{median_value_improvement_sf}{Numeric. Tract-level median improvement value for single-family parcels.}
+#'   \item{median_value_improvement_mh}{Numeric. Tract-level median improvement value for manufactured home parcels.}
+#'   \item{acs_units_*}{Numeric. ACS-reported housing unit counts by units-in-structure category for the tract.}
+#'   \item{zone, zoned_housing_type, far, setback_*, height_maximum, ...}{Various zoning attributes joined from the zoning dataset.}
+#' }
 #' @export
 estimate_units_per_parcel = function(
     structures,

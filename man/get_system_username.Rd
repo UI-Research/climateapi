@@ -7,7 +7,8 @@
 get_system_username()
 }
 \value{
-The username of the user running the script
+A character string containing the system username. Uses \code{Sys.info()["user"]}
+which works reliably across Windows, Mac, and Linux.
 }
 \description{
 Get the user's username
