@@ -1,34 +1,31 @@
-# Tests for get_business_patterns.R
 
-test_that("get_business_patterns validates year parameter", {
-  # Year must be 1986 or later
-  expect_error(
-    get_business_patterns(year = 1985),
-    "1986 or later"
-  )
+testthat::test_that("naics_code_digits errors clearly when not in c(2,3)", {
+  testthat::expect_error({get_business_patterns(year = 2022, naics_code_digits = 4)})
 })
 
-test_that("get_business_patterns validates naics_code_digits parameter", {
-  # naics_code_digits must be 2 or 3
-  expect_error(
-    get_business_patterns(naics_code_digits = 4),
-    "must be one of"
-  )
 
-  expect_error(
-    get_business_patterns(naics_code_digits = 1),
-    "must be one of"
-  )
+testthat::test_that("year errors clearly when year is outside accceptable range", {
+  testthat::expect_error({get_business_patterns(year = 2025, naics_code_digits = 3)})
+  testthat::expect_error({get_business_patterns(year = 1970, naics_code_digits = 3)})
 })
 
-test_that("get_business_patterns accepts valid parameters", {
-  # These should not error on parameter validation
-  # (actual API calls would require network access)
-  expect_true(is.function(get_business_patterns))
+testthat::test_that("geo errors clearly when geo is not 'county' or 'zipcode'; does not error when in 'county' or 'zipcode' ", {
+  testthat::expect_error({get_business_patterns(geo = "tract", naics_code_digits = 3)})
+  testthat::expect_no_error({get_business_patterns(geo = "county", naics_code_digits = 2)})
+})
 
-  # Check default parameter values are acceptable
-  f <- get_business_patterns
-  expect_equal(formals(f)$year, 2022)
-  expect_equal(formals(f)$naics_code_digits, 2)
-  expect_null(formals(f)$naics_codes)
+testthat::test_that("employees has no negative values", {
+  test <- get_business_patterns(geo = "zipcode", naics_code_digits = 2)
+
+  # Ensure the column exists
+  testthat::expect_true(
+    "employees" %in% names(test),
+    info = "`employees` column is missing in the returned data."
+  )
+
+  # Assert no negative values (ignore NAs)
+  testthat::expect_true(
+    all(test$employees[!is.na(test$employees)] >= 0),
+    info = "Found negative values in `employees`."
+  )
 })

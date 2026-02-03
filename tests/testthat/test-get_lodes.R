@@ -1,61 +1,39 @@
-# Tests for get_lodes.R
 
-test_that("get_lodes validates lodes_type parameter", {
-  expect_error(
-    get_lodes(lodes_type = "invalid", states = "TX", years = 2020),
-    "must be one of"
+testthat::test_that("states clearly errors when invalid state abbreviation is supplied", {
+  testthat::expect_error({get_lodes(lodes_type = "wac", year = 2022, states = "AB")})
+  testthat::expect_error({get_lodes(lodes_type = "rac", year = 2022, states = "AB")})
+  testthat::expect_error({get_lodes(lodes_type = "od", year = 2022, states = c("AL", "AM"))})
+})
+
+testthat::test_that("warning generated when missing state and year combination is supplied", {
+  testthat::expect_warning({get_lodes(lodes_type = "od", year = 2022, states = c("AK", "MN"))})
+  testthat::expect_warning({get_lodes(lodes_type = "wac", year = 2009, states = c("DC", "MN"))})
+})
+
+testthat::test_that("error generated when invalid lodes_type is supplied", {
+  testthat::expect_error({get_lodes(lodes_type = "dc", year = 2022, states = c("AK", "MN"))})
+  testthat::expect_error({get_lodes(lodes_type = "mac", year = 2009, states = c("DC", "MN"))})
+})
+
+testthat::test_that("variables have no negative values", {
+  test <- get_lodes(lodes_type = "wac", year = 2022, states = "all")
+
+  # Select numeric columns
+  num_df <- dplyr::select(test, where(is.numeric))
+
+  # Identify if any numeric columns have any negative values (ignoring NAs)
+  neg_cols <- num_df %>%
+    dplyr::summarise(dplyr::across(dplyr::everything(), ~ any(.x < 0, na.rm = TRUE))) %>%
+    tidyr::pivot_longer(everything(), names_to = "col", values_to = "has_neg") %>%
+    dplyr::filter(has_neg) %>%
+    dplyr::pull(col)
+
+  # Expect no negatives anywhere; if present, list the columns
+  testthat::expect_true(
+    length(neg_cols) == 0,
+    info = if (length(neg_cols) > 0)
+      sprintf("Negative values found in: %s", paste(bad_cols, collapse = ", "))
+    else
+      NULL
   )
-})
-
-test_that("get_lodes validates jobs_type parameter", {
-  expect_error(
-    get_lodes(lodes_type = "wac", jobs_type = "invalid", states = "TX", years = 2020),
-    "must be one of"
-  )
-})
-
-test_that("get_lodes validates geography parameter", {
-  expect_error(
-    get_lodes(lodes_type = "wac", states = "TX", years = 2020, geography = "invalid"),
-    "must be one of"
-  )
-})
-
-test_that("get_lodes validates state_part parameter", {
-  expect_error(
-    get_lodes(lodes_type = "wac", states = "TX", years = 2020, state_part = "invalid"),
-    "must be one of"
-  )
-})
-
-test_that("get_lodes validates states parameter", {
-  expect_error(
-    get_lodes(lodes_type = "wac", states = "XX", years = 2020),
-    "must be a vector of state abbreviations"
-  )
-})
-
-test_that("get_lodes validates years parameter", {
-  # Years before 2002 should error
-  expect_error(
-    get_lodes(lodes_type = "wac", states = "TX", years = 2001),
-    "2002 onward"
-  )
-})
-
-test_that("get_lodes accepts valid parameters", {
-  # Check that valid parameters don't cause errors at validation stage
-  expect_true(is.function(get_lodes))
-
-  # Check valid lodes_type options
-  f <- get_lodes
-  expect_equal(formals(f)$jobs_type, "all")
-  expect_equal(formals(f)$geography, "tract")
-  expect_equal(formals(f)$state_part, "main")
-})
-
-test_that("get_lodes handles geography aliases", {
-  # 'bg' should be converted to 'block group' internally
-  # This tests the logic but not the actual API call
-  expect_true(is.function(get_lodes))
 })
