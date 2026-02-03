@@ -26,8 +26,14 @@ An \code{sf} object (point geometry, representing parcel centroids) containing t
 \item{residential_unit_categories}{Factor (ordered). Categorical classification of unit counts: "0", "1", "2", "3-4", "5-9", "10-19", "20-49", "50+".}
 \item{median_value_improvement_sf}{Numeric. Tract-level median improvement value for single-family parcels.}
 \item{median_value_improvement_mh}{Numeric. Tract-level median improvement value for manufactured home parcels.}
-\item{acs_units_\emph{}{Numeric. ACS-reported housing unit counts by units-in-structure category for the tract.}
-\item{zone, zoned_housing_type, far, setback_}, height_maximum, ...}{Various zoning attributes joined from the zoning dataset.}
+\item{acs_units_N}{Numeric columns (acs_units_1, acs_units_2, etc.). ACS-reported housing unit counts by units-in-structure category for the tract.}
+\item{zone}{Character. Zoning designation from the zoning dataset.}
+\item{zoned_housing_type}{Character. Housing type allowed by zoning.}
+\item{far}{Numeric. Floor area ratio.}
+\item{setback_front}{Numeric. Front setback requirement in feet.}
+\item{setback_rear}{Numeric. Rear setback requirement in feet.}
+\item{setback_side}{Numeric. Side setback requirement in feet.}
+\item{height_maximum}{Numeric. Maximum building height allowed.}
 }
 }
 \description{

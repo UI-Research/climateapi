@@ -28,6 +28,7 @@ reference:
 - title: State data
   contents:
   - get_emergency_management_performance
+  - get_disaster_dollar_database
 - title: Event boundaries
   contents:
   - get_current_fire_perimeters
@@ -58,3 +59,4 @@ reference:
   - read_ipums_cached
   - inflation_adjust
   - cache_it
+  - get_naics_codes
