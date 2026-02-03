@@ -44,7 +44,6 @@ get_naics_codes <- function(year = 2022, digits = 3) {
       include_values = TRUE) |>
     dplyr::filter(
       !is.na(values_code),
-      !stringr::str_starts(values_code, "92|95"),
       nchar(values_code) == digits) |>
     dplyr::transmute(
       naics_code = values_code,
