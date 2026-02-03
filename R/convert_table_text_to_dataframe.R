@@ -9,7 +9,13 @@
 #' @param short_document Boolean; default is FALSE. If TRUE, it is assumed that the document is short enough that it can be processed in a single API call. If FALSE and the inputted `text` is a single item, the function throws an error. Note that multi-page documents should be broken into multi-item vectors/lists before being passed to `text`.
 #' @param required Boolean; default is FALSE. If TRUE, the LLM will be instructed to return values for all columns. If FALSE, `NULL` values are allowed. Generally, NULL values should be allowed unless you are certain that every value in the inputted text-table has a non-NULL value.
 #'
-#' @return A list of dataframes, with each item corresponding to one page of the inputted text. The dataframes have the same column names and types as specified in `column_types`. Use `purrr::bind_rows()` to consolidate results into a single dataframe, if needed.
+#' @return A list of tibbles, where each list element corresponds to one item (typically one page) in the input `text` vector/list. Each tibble contains:
+#' \describe{
+#'   \item{Structure}{Columns match the names and types defined in `column_types`. Each row represents one record extracted from the table text by the LLM.}
+#'   \item{NULL values}{When `required = FALSE` (default), columns may contain NULL/NA values if the LLM could not extract a value for that cell.}
+#'   \item{Empty dataframes}{If the LLM encounters an error processing a page, that list element will be an empty `data.frame()`.}
+#' }
+#' Use `purrr::list_rbind()` or `dplyr::bind_rows()` to consolidate results into a single dataframe. A warning is issued reminding users to review AI-generated results for accuracy.
 #' @export
 #' @examples
 #' \dontrun{

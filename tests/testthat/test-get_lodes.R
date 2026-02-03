@@ -1,35 +1,19 @@
+
 testthat::test_that("states clearly errors when invalid state abbreviation is supplied", {
-
   testthat::expect_error({get_lodes(lodes_type = "wac", year = 2022, states = "AB")})
-
   testthat::expect_error({get_lodes(lodes_type = "rac", year = 2022, states = "AB")})
-
   testthat::expect_error({get_lodes(lodes_type = "od", year = 2022, states = c("AL", "AM"))})
-
-
 })
-
 
 testthat::test_that("warning generated when missing state and year combination is supplied", {
-
   testthat::expect_warning({get_lodes(lodes_type = "od", year = 2022, states = c("AK", "MN"))})
-
   testthat::expect_warning({get_lodes(lodes_type = "wac", year = 2009, states = c("DC", "MN"))})
-
-
 })
-
 
 testthat::test_that("error generated when invalid lodes_type is supplied", {
-
   testthat::expect_error({get_lodes(lodes_type = "dc", year = 2022, states = c("AK", "MN"))})
-
   testthat::expect_error({get_lodes(lodes_type = "mac", year = 2009, states = c("DC", "MN"))})
-
-
 })
-
-
 
 testthat::test_that("variables have no negative values", {
   test <- get_lodes(lodes_type = "wac", year = 2022, states = "all")
@@ -53,4 +37,3 @@ testthat::test_that("variables have no negative values", {
       NULL
   )
 })
-

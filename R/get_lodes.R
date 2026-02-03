@@ -157,8 +157,6 @@ rename_lodes_variables = function(.df) {
 #'         \item{jobs_firm_age}{number of employees by the age of employing firm; only available in 'wac' datasets}
 #'         \item{jobs_firm_size}{number of employees for a given range in employer size; only available in 'wac' datasets}
 #'     }
-#'
-#'
 #' @export
 get_lodes = function(
     lodes_type,

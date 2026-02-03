@@ -1,4 +1,6 @@
 ^renv$
+^renv/
+^\.renv$
 ^renv\.lock$
 ^climateapi\.Rproj$
 ^\.Rproj\.user$
@@ -8,3 +10,4 @@
 ^docs$
 ^pkgdown$
 ^\.github$
+^temporary-scripts$
