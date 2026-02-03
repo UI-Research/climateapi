@@ -39,10 +39,10 @@ testthat::test_that("variables have no negative values", {
 
   # Identify if any numeric columns have any negative values (ignoring NAs)
   neg_cols <- num_df %>%
-    summarise(across(everything(), ~ any(.x < 0, na.rm = TRUE))) %>%
+    dplyr::summarise(dplyr::across(dplyr::everything(), ~ any(.x < 0, na.rm = TRUE))) %>%
     tidyr::pivot_longer(everything(), names_to = "col", values_to = "has_neg") %>%
-    filter(has_neg) %>%
-    pull(col)
+    dplyr::filter(has_neg) %>%
+    dplyr::pull(col)
 
   # Expect no negatives anywhere; if present, list the columns
   testthat::expect_true(
@@ -52,5 +52,5 @@ testthat::test_that("variables have no negative values", {
     else
       NULL
   )
-
 })
+

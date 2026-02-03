@@ -1,6 +1,6 @@
 #' @importFrom magrittr %>%
-#'
-#' Obtain County Business Patterns (CBP) Estimates per County
+
+#' @title Obtain County Business Patterns (CBP) Estimates per County
 #'
 #' @param year The vintage of CBP data desired. Data are available from 1986,
 #'     though this function likely only supports more recent years (it it tested on 2022-vintage data only).
@@ -18,7 +18,6 @@
 #' @param naics_codes A vector of NAICS codes to query. If NULL, the function will
 #'     query all available codes with the specified number of digits. If not NULL,
 #'     this argument overrides the `naics_code_digits` argument.
-#'
 #'
 #' @details
 #' County Business Patterns (CBP) is an annual series that provides subnational
@@ -52,8 +51,6 @@
 #' Accounts (NAICS 525920); Offices of Notaries (NAICS 541120); Private Households (NAICS 814);
 #' and Public Administration (NAICS 92)
 #'
-#'
-#'
 #' @return A tibble with data on county-level employees, employers, and aggregate
 #'     annual payrolls by industry and employer size
 #'     \describe{
@@ -71,8 +68,6 @@
 #'         \item{employee_size_range_code}{three-digit code used to categorize employment sizes}
 #'         \item{naics_code}{two to six-digit code used by the NAICS to categorize and sub-categorize industries}
 #'         }
-#'
-#'
 #' @export
 #'
 #' @examples
@@ -147,10 +142,8 @@ get_business_patterns = function(year = 2022, geo = "county", naics_code_digits 
           "NAICS2017_LABEL"),
         region = paste0(geo, ":*"),
         NAICS2017 = .x) %>%
-        mutate(naics_code = .x)},
-      error = function(e) {
-        message("Error in NAICS2017: ", .x)
-        return(tibble::tibble())})) %>%
+      dplyr::mutate(naics_code = .x)},
+      error = function(e) { return(tibble::tibble()) })) %>%
     dplyr::mutate(
       # state,
       # county,
@@ -216,40 +209,24 @@ get_business_patterns = function(year = 2022, geo = "county", naics_code_digits 
         stringr::str_extract(employee_size_range_label, "[0-9]{4}") %>% as.numeric >= 1000 ~ "1000+",
         TRUE ~ employee_size_range_label)) %>%
     dplyr::rename(employee_size_range_code = employee_size_range) %>%
-    {
-    if (geo == "county") {
-      dplyr::select(.,
-        year, state, county, employees, employers, annual_payroll,
-        industry, employee_size_range_label, employee_size_range_code, naics_code
-      )
-    } else if (geo == "zipcode") {
-      dplyr::select(.,
-        year, zip_code, employees, employers, annual_payroll,
-        industry, employee_size_range_label, employee_size_range_code, naics_code)
-    }
-    }
-
-#    dplyr::select(year, state, county, employees, employers, annual_payroll, industry, employee_size_range_label, employee_size_range_code, naics_code)
+    { if (geo == "county") {
+        dplyr::select(.,
+          year, state, county, employees, employers, annual_payroll,
+          industry, employee_size_range_label, employee_size_range_code, naics_code)} 
+      else if (geo == "zipcode") {
+        dplyr::select(.,
+          year, zip_code, employees, employers, annual_payroll,
+          industry, employee_size_range_label, employee_size_range_code, naics_code) } }
 
   high_missingness = cbp %>%
     skimr::skim() %>%
     dplyr::filter(complete_rate < .9) %>%
     dplyr::pull(skim_variable)
 
-
   if (length(high_missingness) > 0) {
-    base::warning(
-      stringr::str_c(
-        "Variables with high missingness in County Business Patterns",
-        ": ",
-        base::paste(high_missingness, collapse = ", ")
-      ),
-      call. = FALSE
-    )
-  } else {
-    base::print("No variables have high missingness (complete_rate >= 0.9).")
-  }
-
+    warning(
+      stringr::str_c("Variables with high missingness in County Business Patterns", ": ",
+      base::paste(high_missingness, collapse = ", "))) } 
 
   return(cbp)
 }
