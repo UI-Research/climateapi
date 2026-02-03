@@ -100,7 +100,21 @@ rename_lodes_variables = function(.df) {
 #' @param geography One of c("block", "block group", "tract", "county", "state"). Default is "tract".
 #' @param state_part One of c("main", "aux"). Default is "main", which includes only workers who reside inside the state where they work. "aux" returns only workers who work in the specified state but live outside of that state.
 #'
-#' @return A tibble with one record per geography per year per job type. Attributes include total jobs and jobs by worker earnings, industry, and demographics; the origin-destination results have more limited demographics compared to the "wac" and "rac" results.
+#' @return A tibble with one record per geography-year-job_type combination. The structure varies by `lodes_type`:
+#' \describe{
+#'   \item{Common columns}{
+#'     \itemize{
+#'       \item `year`: Numeric. Data year.
+#'       \item `state`: Character. Two-letter state abbreviation.
+#'       \item `job_type`: Character. Either "all" (all jobs or primary jobs) or "federal" (federal jobs only).
+#'       \item `jobs`: Numeric. Total number of jobs (renamed from C000/S000).
+#'     }
+#'   }
+#'   \item{Geography columns}{For "rac": `h_GEOID` (residence). For "wac": `w_GEOID` (workplace). For "od": both `h_GEOID` and `w_GEOID`.}
+#'   \item{Job characteristics}{Columns for jobs by age (e.g., `jobs_workers_age_29_or_younger`), earnings (e.g., `jobs_earnings_1250_month_or_less`), industry (e.g., `jobs_industry_manufacturing`), and demographics (race, ethnicity, education, sex). Column names are descriptive versions of LODES variable codes.}
+#'   \item{Firm characteristics}{For WAC/RAC only: firm age and firm size categories.}
+#' }
+#' Federal job columns contain NA for years prior to 2010 (federal jobs not available). Warnings are issued regarding federal job reporting changes over time.
 #' @export
 get_lodes = function(
     lodes_type,

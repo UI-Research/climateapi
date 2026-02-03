@@ -60,9 +60,11 @@ Remotes:
     UI-Research/urbnindicators,
     UrbanInstitute/urbnthemes
 URL: https://ui-research.github.io/climateapi/
-Suggests: 
+Suggests:
     knitr,
     qualtRics,
     rmarkdown,
+    testthat (>= 3.0.0),
     tidyverse
+Config/testthat/edition: 3
 VignetteBuilder: knitr

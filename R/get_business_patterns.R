@@ -3,7 +3,18 @@
 #' @param year The vintage of CBP data desired. Data are available from 1986, though this function likely only supports more recent years (it it tested on 2022-vintage data only). Default is 2022.
 #' @param naics_code_digits One of c(2, 3). Default is 2. NAICS codes range in specificity; 2-digit codes describe the highest groupings of industries, while six-digit codes are exceedingly detailed. There are 20 2-digit NAICS codes and 196 3-digit codes.
 #' @param naics_codes A vector of NAICS codes to query. If NULL, the function will query all available codes with the specified number of digits. If not NULL, this argument overrides the `naics_code_digits` argument.
-#' @return A tibble with data on county-level employees, employers, and aggregate annual payrolls by industry and employer size
+#' @return A tibble containing County Business Patterns data with the following columns:
+#' \describe{
+#'   \item{state}{Character. Two-digit FIPS state code.}
+#'   \item{county}{Character. Three-digit FIPS county code (within state).}
+#'   \item{employees}{Numeric. Number of employees in the county-industry-size category.}
+#'   \item{employers}{Numeric. Number of establishments (ESTAB) in the county-industry-size category.}
+#'   \item{annual_payroll}{Numeric. Total annual payroll in thousands of dollars.}
+#'   \item{industry}{Character. NAICS industry label, cleaned to lowercase with underscores (e.g., "manufacturing", "retail_trade").}
+#'   \item{employee_size_range_label}{Character. Human-readable description of employer size category (e.g., "1-4 employees", "500+ employees", "1000+").}
+#'   \item{employee_size_range_code}{Character. Three-digit Census code for employer size category.}
+#' }
+#' Each row represents a unique combination of county, industry, and employer size range.
 #' @export
 #'
 #' @examples

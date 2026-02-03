@@ -1,6 +1,7 @@
 #' @title Get the user's username
 #'
-#' @return The username of the user running the script
+#' @return A character string containing the system username. Uses `Sys.info()["user"]`
+#'   which works reliably across Windows, Mac, and Linux.
 #' @export
 #'
 #' @examples
@@ -8,14 +9,20 @@
 #' get_system_username()
 #' }
 get_system_username = function() {
-  here::here() |>
-    stringr::str_match("Users/.*?/") |>
-    stringr::str_remove_all("Users|/")
+  username <- Sys.info()[["user"]]
+  if (is.null(username) || username == "") {
+    stop("Could not determine system username from Sys.info()")
+  }
+
+  username
 }
 
 #' @title Get the path to the C&C Box folder
 #'
-#' @return The filepath to the C&C Box folder
+#' @return A character string containing the full file path to the Climate and Communities (C&C) Box folder.
+#'   On Windows, returns "C:/Users/{username}/Box/METRO Climate and Communities Practice Area/github-repository".
+#'   On Mac, checks for Box at "/Users/{username}/Box" or "/Users/{username}/Library/CloudStorage/Box-Box",
+#'   using whichever exists. Throws an error if the Box folder cannot be found.
 #' @export
 #'
 #' @examples
@@ -23,10 +30,42 @@ get_system_username = function() {
 #' get_box_path()
 #' }
 get_box_path = function() {
-  username = get_system_username()
-  file.path(
-    "C:", "Users", username, "Box", "METRO Climate and Communities Practice Area",
-    "github-repository")
+  username <- get_system_username()
+  os <- Sys.info()[["sysname"]]
+  box_subfolder <- file.path("METRO Climate and Communities Practice Area", "github-repository")
+
+ if (os == "Windows") {
+    box_root <- file.path("C:", "Users", username, "Box")
+  } else if (os == "Darwin") {
+    # Mac: Check common Box locations
+    box_locations <- c(
+      file.path("/Users", username, "Box"),
+      file.path("/Users", username, "Library", "CloudStorage", "Box-Box")
+    )
+    box_root <- NULL
+    for (loc in box_locations) {
+      if (dir.exists(loc)) {
+        box_root <- loc
+        break
+      }
+    }
+    if (is.null(box_root)) {
+      stop(
+        "Could not find Box folder. Checked:\n",
+        paste("  -", box_locations, collapse = "\n")
+      )
+    }
+  } else {
+    stop("Unsupported operating system: ", os, ". Only Windows and Mac are supported.")
+  }
+
+  box_path <- file.path(box_root, box_subfolder)
+
+  if (!dir.exists(box_path)) {
+    warning("Box path does not exist: ", box_path)
+  }
+
+  box_path
 }
 
 
@@ -34,7 +73,7 @@ get_box_path = function() {
 #'
 #' @param dataset The name of the dataset. One of c('nfip_policies', 'ihp_registrations').
 #'
-#' @return A vector of raw column names to be selected from the specified dataset
+#' @return A character vector containing the raw column names (in camelCase format as they appear in the source data) to be selected when reading the specified dataset. The columns returned are curated subsets of the full dataset columns, excluding administrative/metadata fields. For "nfip_policies": 20 columns including location, policy details, and building characteristics. For "ihp_registrations": ~20 columns including disaster info, geographic identifiers, and assistance amounts.
 get_dataset_columns = function(dataset) {
 
   if (length(dataset) > 1 | !is.character(dataset)) {
@@ -118,7 +157,7 @@ get_dataset_columns = function(dataset) {
 #' @param subsetted_columns The columns to include in the outputted parquet data.
 #' @param dataset NULL by default. Alternately, one of c("nfip_policies", "ihp_registrations"). If not null, this will be used to select the columns that are returned.
 #'
-#' @returns Nothing. Parquet data are written to local path.
+#' @return NULL (invisibly). This function is called for its side effect of writing a parquet file to disk at the specified `outpath` (or a path derived from `inpath` with a .parquet extension). The function reads the input file in chunks to handle large files efficiently, optionally subsets to specified columns, and writes the result in Apache Parquet format using `arrow::write_parquet()`.
 convert_delimited_to_parquet = function(
     inpath,
     outpath = NULL,
@@ -170,7 +209,12 @@ convert_delimited_to_parquet = function(
 #' @param return_geometry Logical. Include the geometries of returned geographies?
 #' @param projection The EPSG code of the desired projection. Default is 5070 (Albers Equal Area).
 #'
-#' @returns A dataframe (optionally, an sf-dataframe) comprising Census geographies
+#' @return A tibble (or `sf` object if `return_geometry = TRUE`) containing Census geographies that overlap with the input spatial data. The structure depends on the geographic extent:
+#' \describe{
+#'   \item{When multiple states overlap}{Returns state-level data with columns: `state_geoid` (2-digit FIPS), `geography` ("state").}
+#'   \item{When a single state overlaps}{Returns tract-level data with columns: `state_geoid` (2-digit FIPS), `county_geoid` (5-digit FIPS), `geography` ("tract").}
+#' }
+#' If `return_geometry = TRUE`, the geometry column is retained; otherwise it is dropped.
 #' @export
 get_spatial_extent_census = function(data, return_geometry = FALSE, projection = 5070) {
   warning("This leverages `sf::st_overlaps()` and does not provide the desired results consistently.")
@@ -226,7 +270,8 @@ get_spatial_extent_census = function(data, return_geometry = FALSE, projection =
 #' @param file_names Optionally, a character vector of the same length as `urls` containing only the file names (not the full paths) with which the downloaded files should be named. If NULL (default), file names are extracted from `urls`.
 #' @param silent If TRUE (default), files are saved silently. If FALSE, downloaded files are read and returned as a list.
 #'
-#' @returns Either nothing (silent == TRUE) or a list of dataframes from the specified URLs.
+#' @return When `silent = TRUE` (default): Returns NULL invisibly. Files are downloaded and saved to `directory`.
+#' When `silent = FALSE`: Returns a list of data frames, one per URL, containing the contents of each downloaded .xlsx file as read by `openxlsx::read.xlsx()`. List elements are in the same order as the input `urls`.
 #' @export
 read_xlsx_from_url = function(urls, directory, file_names = NULL, silent = TRUE) {
 
@@ -264,7 +309,12 @@ read_xlsx_from_url = function(urls, directory, file_names = NULL, silent = TRUE)
 #' @param geography_type One of c("state", "county").
 #' @param year The year for which to obtain state/county metadata. Cannot be greater than the most recent year supported by `library(tidycensus)` for the 5-year ACS.
 #'
-#' @return A data frame containing metadata about the specified geography type and area.
+#' @return A tibble containing geographic metadata. The structure varies by `geography_type`:
+#' \describe{
+#'   \item{For "county"}{Returns county-level data with columns: `state_code` (2-digit FIPS), `state_name`, `state_abbreviation` (2-letter USPS), `state_population`, `county_code` (5-digit FIPS), `county_name`, `county_population`.}
+#'   \item{For "state"}{Returns state-level data with columns: `state_abbreviation`, `state_code`, `state_name` (one row per state, no county information).}
+#' }
+#' Population data are sourced from the ACS 5-year estimates for the specified `year`.
 
 get_geography_metadata = function(
     geography_type = c("state", "county"),
@@ -338,7 +388,7 @@ date_string_to_date = function(date_string) {
 #' @param base_year The year to use as the base for inflation adjustment. If NULL, defaults to the most recent year in the PCE index data.
 #' @param names_suffix A suffix to add to the names of the inflation-adjusted variables. If NULL, defaults to "_<base_year>". If "", columns are renamed in place.
 #'
-#' @return A dataframe with inflation-adjusted values
+#' @return A tibble identical to the input `df` with additional inflation-adjusted columns. For each column specified in `dollar_variables`, a new column is created with the same name plus `names_suffix` (default: "_{base_year}"). The adjusted values are calculated by multiplying original values by an inflation factor derived from the PCE Price Index ratio between the base year and each observation's year. Original columns are preserved unchanged.
 #' @export
 #'
 #' @examples
