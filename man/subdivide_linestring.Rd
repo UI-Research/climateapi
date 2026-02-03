@@ -14,7 +14,13 @@ subdivide_linestring(line, max_length, crs = 5070)
 \item{crs}{The coordinate reference system to which the linestring should be transformed. Default is 5070.}
 }
 \value{
-A spatial dataframe comprising linestrings below the \code{max_length} threshold, linked back to their input linestrings via a \code{line_id} attribute
+An \code{sf} object (simple feature collection) with geometry type LINESTRING. The returned object contains:
+\describe{
+\item{row_id}{Integer. The row index from the original input linestring, allowing linkage back to the input data.}
+\item{...}{All original attributes from the input \code{line} object are preserved and joined back via \code{row_id}.}
+\item{geometry}{LINESTRING geometry. Each segment is at most \code{max_length} units long (in the CRS units). Segments shorter than \code{max_length} in the input are returned unchanged.}
+}
+The CRS of the output is set to the value specified by the \code{crs} parameter (default: EPSG:5070).
 }
 \description{
 Subdivide a linestring into segments of a specified length

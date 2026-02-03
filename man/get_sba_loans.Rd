@@ -7,7 +7,20 @@
 get_sba_loans()
 }
 \value{
-A dataframe comprising city- and zip-level data on SBA loanmaking
+A tibble containing SBA disaster loan data at the city/zip level, combining both home and business loan records. The returned object includes:
+\describe{
+\item{disaster_number_fema}{Character. The FEMA disaster number associated with the loan.}
+\item{disaster_number_sba_physical}{Character. SBA physical disaster declaration number.}
+\item{disaster_number_sba_eidl}{Character. SBA Economic Injury Disaster Loan (EIDL) declaration number.}
+\item{damaged_property_zip_code}{Character. ZIP code of the damaged property.}
+\item{damaged_property_city_name}{Character. City name of the damaged property.}
+\item{damaged_property_state_code}{Character. State code of the damaged property.}
+\item{verified_loss_total}{Numeric. Total verified loss amount in dollars.}
+\item{approved_amount_total}{Numeric. Total approved loan amount in dollars.}
+\item{approved_amount_real_estate}{Numeric. Approved loan amount for real estate in dollars.}
+\item{fiscal_year}{Character. Fiscal year of the loan (format: "20XX").}
+\item{loan_type}{Character. Either "business" or "residential" indicating the loan category.}
+}
 }
 \description{
 Access SBA data on disaster loans

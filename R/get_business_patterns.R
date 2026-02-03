@@ -1,5 +1,61 @@
 #' @importFrom magrittr %>%
 
+#' @title Get NAICS Codes for County Business Patterns
+#'
+#' @description A utility function to programmatically identify and select NAICS
+#'     codes for use with `get_business_patterns()`. This is a wrapper around
+#'     `censusapi::listCensusMetadata(name = "cbp")`.
+#'
+#' @param year The vintage year for NAICS codes. Data are available from 1986 through 2023.
+#'     Default is 2022.
+#' @param digits The number of digits for desired NAICS codes. Must be between 2 and 6.
+#'     Default is 3. Two-digit codes represent broad industry sectors (20 codes),
+#'     while six-digit codes represent detailed industries.
+#'
+#' @return A tibble with the following columns:
+#'     \describe{
+#'         \item{naics_code}{The NAICS code (character)}
+#'         \item{naics_label}{The descriptive label for the NAICS code}
+#'         \item{year}{The vintage year of the NAICS codes}
+#'     }
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' # Get all 2-digit NAICS codes
+#' get_naics_codes(year = 2022, digits = 2)
+#'
+#' # Get all 3-digit NAICS codes (default)
+#' get_naics_codes(year = 2022)
+#'
+#' # Get 4-digit NAICS codes for a specific year
+#' get_naics_codes(year = 2020, digits = 4)
+#' }
+get_naics_codes <- function(year = 2022, digits = 3) {
+  if (year < 1986) { stop("Year must be 1986 or later.") }
+  if (year > 2023) { stop("Most recent year for data is 2023.") }
+  if (!digits %in% 2:6) { stop("`digits` must be between 2 and 6.") }
+
+  naics_metadata <- censusapi::listCensusMetadata(
+      name = "cbp",
+      vintage = as.character(year),
+      type = "variables",
+      include_values = TRUE) |>
+    dplyr::filter(
+      !is.na(values_code),
+      !stringr::str_starts(values_code, "92|95"),
+      nchar(values_code) == digits) |>
+    dplyr::transmute(
+      naics_code = values_code,
+      naics_label = values_label,
+      year = year) |>
+    dplyr::distinct() |>
+    dplyr::arrange(naics_code) |>
+    tibble::as_tibble()
+
+}
+
 #' @title Obtain County Business Patterns (CBP) Estimates per County
 #'
 #' @param year The vintage of CBP data desired. Data are available from 1986,
@@ -234,4 +290,4 @@ get_business_patterns = function(year = 2022, geo = "county", naics_code_digits 
 utils::globalVariables(
   c("EMP", "EMPSZES", "ESTAB", "NAICS2017_LABEL", "PAYANN", "annual_payroll",
     "employee_size_range", "employee_size_range_code", "employee_size_range_label",
-    "employees", "employers", "industry", "values_code", "naics_code"))
+    "employees", "employers", "industry", "values_code", "values_label", "naics_code"))

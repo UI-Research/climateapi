@@ -12,7 +12,12 @@ get_geography_metadata(geography_type = c("state", "county"), year = 2023)
 \item{year}{The year for which to obtain state/county metadata. Cannot be greater than the most recent year supported by \code{library(tidycensus)} for the 5-year ACS.}
 }
 \value{
-A data frame containing metadata about the specified geography type and area.
+A tibble containing geographic metadata. The structure varies by \code{geography_type}:
+\describe{
+\item{For "county"}{Returns county-level data with columns: \code{state_code} (2-digit FIPS), \code{state_name}, \code{state_abbreviation} (2-letter USPS), \code{state_population}, \code{county_code} (5-digit FIPS), \code{county_name}, \code{county_population}.}
+\item{For "state"}{Returns state-level data with columns: \code{state_abbreviation}, \code{state_code}, \code{state_name} (one row per state, no county information).}
+}
+Population data are sourced from the ACS 5-year estimates for the specified \code{year}.
 }
 \description{
 Get geography metadata about states or counties

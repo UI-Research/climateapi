@@ -14,7 +14,21 @@ get_structures(boundaries, geography = "county", keep_structures = FALSE)
 \item{keep_structures}{Logical. If TRUE, the raw structure data will be returned alongside the summarized data.}
 }
 \value{
-A dataframe comprising estimated counts of each structure type, at the specified \code{geography}, for all such geographic units intersecting the \code{boundaries} object. If keep_structure = TRUE, returns a list with two elements: the summarized data and the raw structure data.
+Depends on the \code{keep_structures} parameter:
+
+\strong{When \code{keep_structures = FALSE} (default):} A tibble containing structure counts aggregated by geography and occupancy type, with columns:
+\describe{
+\item{GEOID}{Character. Census geography identifier (county FIPS or tract GEOID depending on \code{geography} parameter).}
+\item{primary_occupancy}{Character. The primary occupancy classification of the structures (e.g., "Single Family Dwelling", "Multi - Family Dwelling").}
+\item{occupancy_class}{Character. Broad occupancy classification (e.g., "Residential", "Commercial").}
+\item{count}{Integer. Number of structures of this occupancy type in the geography.}
+}
+
+\strong{When \code{keep_structures = TRUE}:} A named list with two elements:
+\describe{
+\item{structures_summarized}{The aggregated tibble described above.}
+\item{structures_raw}{An \code{sf} object (POINT geometry) containing individual structure records with columns: \code{unique_id} (building ID), \code{occupancy_class}, \code{primary_occupancy}, \code{county_fips}, and geometry.}
+}
 }
 \description{
 Estimate counts of hazard-impacted structures by structure type

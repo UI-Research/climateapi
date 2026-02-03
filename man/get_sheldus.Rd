@@ -14,7 +14,22 @@ get_sheldus(
 \item{file_path}{The path to the raw SHELDUS data.}
 }
 \value{
-A dataframe comprising hazard x month x year x county observations of hazard events.
+A tibble containing SHELDUS (Spatial Hazard Events and Losses Database for the United States) data at the county-year-month-hazard level. The returned object includes:
+\describe{
+\item{unique_id}{Character. A UUID uniquely identifying each observation.}
+\item{GEOID}{Character. Five-digit FIPS county code. Connecticut counties are crosswalked to 2022 planning regions using population-weighted allocation factors.}
+\item{state_name}{Character. State name (sentence case).}
+\item{county_name}{Character. County name.}
+\item{year}{Numeric. Year of the hazard event.}
+\item{month}{Numeric. Month of the hazard event (1-12).}
+\item{hazard}{Character. Type of hazard event.}
+\item{damage_property}{Numeric. Property damage in 2023 inflation-adjusted dollars.}
+\item{damage_crop}{Numeric. Crop damage in 2023 inflation-adjusted dollars.}
+\item{injuries}{Numeric. Number of injuries.}
+\item{fatalities}{Numeric. Number of fatalities.}
+\item{records}{Numeric. Number of individual event records aggregated into this observation.}
+}
+Note: Only counties that existed in either 2010 or 2022 are included.
 }
 \description{
 Access temporal county-level SHELDUS hazard damage data.

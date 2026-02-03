@@ -21,7 +21,7 @@ qualtrics_get_metadata(
 \item{return_values}{The name of the column (character) to be returned}
 }
 \value{
-A character vector of the requested metadata
+A character vector containing the values from the column specified by \code{return_values} (default: "text_sub"), filtered to rows matching either the \code{question_name} or \code{survey_section} pattern. The length of the vector corresponds to the number of matching rows in the metadata. Returns an empty character vector if no matches are found.
 }
 \description{
 Access Qualtrics metadata

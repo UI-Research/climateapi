@@ -24,7 +24,7 @@ inflation_adjust(
 \item{base_year}{The year to use as the base for inflation adjustment. If NULL, defaults to the most recent year in the PCE index data.}
 }
 \value{
-A dataframe with inflation-adjusted values
+A tibble identical to the input \code{df} with additional inflation-adjusted columns. For each column specified in \code{dollar_variables}, a new column is created with the same name plus \code{names_suffix} (default: "_{base_year}"). The adjusted values are calculated by multiplying original values by an inflation factor derived from the PCE Price Index ratio between the base year and each observation's year. Original columns are preserved unchanged.
 }
 \description{
 The Personal Consumption Expenditures Price Index (PCE Index) is from the

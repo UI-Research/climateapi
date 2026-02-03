@@ -27,7 +27,12 @@ qualtrics_define_missing(
 \item{predicate_question_negative_value}{If \code{predicate_question} is specified, provide the value that indicates a negative response to the predicate question. For responses where the predicate question has this value, this value will be imputed to the specified columns}
 }
 \value{
-The inputted \code{df} object with missing/non-missing values applied to specified columns
+A tibble containing only the columns selected by \code{question_code_include} (excluding those matching \code{question_code_omit}), with missing values handled according to the following logic:
+\describe{
+\item{Without predicate_question}{If all selected columns are NA for a row, values remain NA. If any selected column has a non-NA value, NA values in other selected columns are replaced with the appropriate default value from \code{default_values} based on column type.}
+\item{With predicate_question}{If the predicate question is NA, all selected columns are set to NA. If the predicate question equals \code{predicate_question_negative_value }, all selected columns are set to the appropriate default value. Otherwise, original values are preserved.}
+}
+Column types and their default value mappings: character uses \code{default_values[[1]]}, numeric uses \code{default_values[[2]]}, and Date/POSIXct uses \code{default_values[[3]]}.
 }
 \description{
 Fill in missing and non-missing values across interrelated survey questions

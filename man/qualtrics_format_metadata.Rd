@@ -14,7 +14,15 @@ qualtrics_format_metadata(metadata, sections = c(), text_replace = "zzzzz")
 \item{text_replace}{A named character vector of regex patterns to replace in the metadata}
 }
 \value{
-A dataframe of formatted metadata
+A tibble containing formatted Qualtrics survey metadata with the following columns:
+\describe{
+\item{question_number}{Integer. The sequential position of the question in the survey (1-indexed).}
+\item{question_name}{Character. The internal Qualtrics question identifier (e.g., "Q1", "Q2_1").}
+\item{text_main}{Character. The primary question text, with any patterns specified in \code{text_replace} substituted.}
+\item{text_sub}{Character. The sub-question or response option text, with any patterns specified in \code{text_replace} substituted.}
+\item{survey_section}{Character. The name of the survey section to which the question belongs, as defined by the \code{sections} parameter. Filled upward from section boundaries.
+}
+}
 }
 \description{
 Prep Qualtrics metadata
