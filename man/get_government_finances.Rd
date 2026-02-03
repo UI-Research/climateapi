@@ -10,21 +10,30 @@ get_government_finances(year = 2022)
 \item{year}{A four-digit year. The default is 2022.}
 }
 \value{
-A tibble containing government unit-level financial data aggregated by unit, with the following columns:
+A dataframe containing government unit-level expenses for the specified year.
+Columns include:
 \describe{
-\item{unit_id}{Character. Unique identifier for the government unit.}
-\item{year_data}{Numeric. The year of the financial data.}
-\item{amount_thousands}{Numeric. Total expenditure amount in thousands of dollars.}
-\item{government_type}{Character. Type of government unit: "State", "County", "City", "Township", "Special District", or "School District/Educational Service Agency".}
-\item{data_quality}{Numeric. Proportion of records that were reported (vs. imputed or from alternative sources), ranging from 0 to 1.}
-\item{unit_name}{Character. Name of the government unit.}
-\item{county_name}{Character. County name where the unit is located.}
-\item{state_code}{Character. Two-digit state FIPS code.}
-\item{population}{Numeric. Population served by the government unit.}
-\item{enrollment}{Numeric. Student enrollment (for school districts; NA for other unit types).}
-\item{amount_per_capita}{Numeric. Expenditure per capita (or per enrolled student for school districts).}
+\item{unit_id}{Unique identifier for the government unit.}
+\item{year_data}{Year of the financial data.}
+\item{amount_thousands}{Total expenses in thousands of dollars.}
+\item{government_type}{Type of government (State, County, City, Township, Special District, School District).}
+\item{data_quality}{Proportion of expense items that were reported (vs. imputed).}
+\item{state_code}{Two-digit state FIPS code.}
+\item{county_code}{Three-digit county FIPS code.}
+\item{unit_name}{Name of the government unit.}
+\item{county_name}{Name of the county.}
+\item{population}{Population served by the unit.}
+\item{enrollment}{Student enrollment (for school districts).}
+\item{amount_per_capita}{Expenses per capita or per enrolled student.}
 }
 }
 \description{
-Get government unit-level expenses from the Census of Governments
+Retrieves government unit-level finance data from the Census of Governments,
+including expenses by category for state, county, city, township, special district,
+and school district government units.
+}
+\details{
+Data are from the U.S. Census Bureau's Annual Survey of State and Local
+Government Finances and Census of Governments. See
+\url{https://www.census.gov/programs-surveys/gov-finances.html}.
 }

@@ -1,6 +1,8 @@
 #' @importFrom magrittr %>%
 
 #' @title Estimate counts of hazard-impacted structures by structure type
+#' @description Retrieves building footprint data from the USA Structures dataset and
+#'   summarizes structure counts by type at the tract or county level.
 #' @param geography The desired geography of the results. One of "tract" or "county".
 #' @param boundaries A POLYGON or MULTIPOLYGON object, or an sf::st_bbox()-style bbox.
 #' @param keep_structures Logical. If TRUE, the raw structure data will be returned alongside the summarized data.

@@ -12,47 +12,41 @@ get_business_patterns(
 )
 }
 \arguments{
-\item{year}{The vintage of CBP data desired. Data are available from 1986,
-though this function likely only supports more recent years (it it tested on 2022-vintage data only).
-Default is 2022.}
+\item{year}{The vintage of CBP data desired. Data are available from 1986, though
+this function likely only supports more recent years (it is tested on 2022-vintage
+data only). Default is 2022.}
 
-\item{geo}{The level of geography of CBP data desired. Either "county" or "zipcode". Zipcode
-level data only The ZIP Code Business Patterns (ZBP) dataset includes the number of establishments,
-employment during the week of March 12th, first quarter and annual payroll for NAICS 00 (total for all sectors).
-Additionally, the number of establishments (but not employment or payroll) are available by employment
-size of the establishment for 2- through 6-digit NAICS.}
+\item{naics_code_digits}{One of c(2, 3). Default is 2. NAICS codes range in specificity;
+2-digit codes describe the highest groupings of industries, while six-digit codes
+are exceedingly detailed. There are 20 2-digit NAICS codes and 196 3-digit codes.}
 
-\item{naics_code_digits}{One of c(2, 3). Default is 2. NAICS codes range in
-specificity; 2-digit codes describe the highest groupings of industries,
-while six-digit codes are exceedingly detailed. There are 20 2-digit NAICS
-codes and 196 3-digit codes. If more specific codes are desired, leave this
-argument as NULL and supply the desired codes as the argument to \code{naics_codes}.}
-
-\item{naics_codes}{A vector of NAICS codes to query. If NULL, the function will
-query all available codes with the specified number of digits. If not NULL,
-this argument overrides the \code{naics_code_digits} argument.}
+\item{naics_codes}{A vector of NAICS codes to query. If NULL, the function will query
+all available codes with the specified number of digits. If not NULL, this argument
+overrides the \code{naics_code_digits} argument.}
 }
 \value{
 A tibble with data on county-level employees, employers, and aggregate
-annual payrolls by industry and employer size
+annual payrolls by industry and employer size. Columns include:
 \describe{
-\item{year}{the year for which CBP data is pulled from}
-\item{state}{A two-digit state identifier.}
-\item{county}{A three-digit county identifier.}
-\item{employees}{number of individual employees employed in that particular industry
-and establishment size combination}
-\item{employers}{number of establishments of each employment size}
-\item{annual_payroll}{total annual payroll expenditures measured in $1,000's of USD}
-\item{industry}{industry classification according to North American Industry Classification System.
-Refer to details for additional information}
-\item{employee_size_range_label}{range for the employment size of establishments included in each
-given grouping}
-\item{employee_size_range_code}{three-digit code used to categorize employment sizes}
-\item{naics_code}{two to six-digit code used by the NAICS to categorize and sub-categorize industries}
+\item{state}{Two-digit state FIPS code.}
+\item{county}{Three-digit county FIPS code.}
+\item{employees}{Number of employees mid-March of the reference year.}
+\item{employers}{Number of establishments.}
+\item{annual_payroll}{Annual payroll in thousands of dollars.}
+\item{industry}{NAICS industry description (lowercase, underscored).}
+\item{employee_size_range_label}{Human-readable employer size category.}
+\item{employee_size_range_code}{Census code for employer size range.}
 }
 }
 \description{
-Obtain County Business Patterns (CBP) Estimates per County
+Retrieves County Business Patterns data from the Census Bureau,
+providing counts of establishments, employees, and payroll by industry and
+employer size at the county level.
+}
+\details{
+Data are from the U.S. Census Bureau's County Business Patterns program.
+See \url{https://www.census.gov/programs-surveys/cbp.html} and
+\url{https://www.census.gov/naics/} for NAICS code definitions.
 }
 \details{
 County Business Patterns (CBP) is an annual series that provides subnational

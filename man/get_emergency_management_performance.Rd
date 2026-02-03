@@ -2,7 +2,7 @@
 % Please edit documentation in R/get_emergency_managerment_performance.R
 \name{get_emergency_management_performance}
 \alias{get_emergency_management_performance}
-\title{Get EMPG data}
+\title{Get Emergency Management Performance Grant (EMPG) data}
 \usage{
 get_emergency_management_performance(
   file_path = file.path(get_box_path(), "hazards", "FEMA",
@@ -14,19 +14,31 @@ get_emergency_management_performance(
 \arguments{
 \item{file_path}{Path to the downloaded dataset on Box.}
 
-\item{api}{Logical indicating whether to use the OpenFEMA API to retrieve the data. Default is TRUE.}
+\item{api}{Logical indicating whether to use the OpenFEMA API to retrieve the data.
+Default is TRUE.}
 }
 \value{
-A tibble containing Emergency Management Performance Grant (EMPG) data with the following columns:
+A data frame containing emergency management performance grant (EMPG) data.
+Columns include:
 \describe{
-\item{state_name}{Character. The name of the state receiving the grant (renamed from original "state" column).}
-\item{year_project_start}{Numeric. The year the project started, with corrections applied for known data entry errors in the source data.}
-\item{state_code}{Character. Two-digit FIPS state code.}
-\item{state_abbreviation}{Character. Two-letter USPS state abbreviation.}
-\item{...}{Additional columns from the OpenFEMA EMPG dataset, cleaned via \code{janitor::clean_names()}.}
+\item{id}{Unique identifier for the grant record.}
+\item{state_name}{Full state name.}
+\item{state_code}{Two-digit state FIPS code.}
+\item{state_abbreviation}{Two-letter state abbreviation.}
+\item{year_project_start}{Year the project started.}
+\item{project_start_date}{Date the project started.}
+\item{project_end_date}{Date the project ended.}
+\item{grant_amount}{Total grant amount in dollars.}
+\item{federal_share}{Federal portion of the grant in dollars.}
+\item{non_federal_share}{Non-federal cost share in dollars.}
+\item{program}{EMPG program type.}
 }
-Data are filtered to records with \code{year_project_start > 2012}. A warning is issued noting data completeness concerns for 2024-2025.
 }
 \description{
-Get EMPG data
+Retrieves Emergency Management Performance Grant (EMPG) award data
+from FEMA, which supports state and local emergency management agencies.
+}
+\details{
+Data are from FEMA's OpenFEMA API. See
+\url{https://www.fema.gov/openfema-data-page/emergency-management-performance-grants-v2}.
 }

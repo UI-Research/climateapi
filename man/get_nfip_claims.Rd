@@ -11,7 +11,8 @@ get_nfip_claims(
 )
 }
 \arguments{
-\item{county_geoids}{A character vector of five-digit county codes. NULL by default; must be non-NULL if \code{api = TRUE}.}
+\item{county_geoids}{A character vector of five-digit county codes. NULL by default;
+must be non-NULL if \code{api = TRUE}.}
 
 \item{file_name}{The name (not the full path) of the Box file containing the raw data.}
 
@@ -44,10 +45,12 @@ A data frame comprising county-level data on current NFIP policies
 }
 }
 \description{
-Access county-level data on NFIP claims
+Retrieves National Flood Insurance Program (NFIP) claims data at
+the county level, including damage amounts, payments, and building characteristics.
 }
 \details{
-These data are from: https://www.fema.gov/openfema-data-page/fima-nfip-redacted-claims-v2.
+Data are from FEMA's OpenFEMA API. See
+\url{https://www.fema.gov/openfema-data-page/fima-nfip-redacted-claims-v2}.
 Per FEMA: This data set represents more than 2,000,000 NFIP claims transactions. It is
 derived from the NFIP system of record, staged in the NFIP reporting platform and
 redacted to protect policy holder personally identifiable information. The

@@ -1,10 +1,15 @@
 #' @title Access county-level data on NFIP policies
+#'
+#' @description Retrieves National Flood Insurance Program (NFIP) policy data at
+#'   the county level, including both current and historical policies.
+#'
 #' @param state_abbreviation A 2 letter state abbreviation (e.g. TX).
 #' @param county_geoids A character vector of five-digit county codes.
 #' @param file_name The name (not the full path) of the Box file containing the raw data.
 #' @param api If TRUE, query the API. If FALSE (default), read from `file_name`.
 #'
-#' @details
+#' @details Data are from FEMA's OpenFEMA API. See
+#'   \url{https://www.fema.gov/openfema-data-page/fima-nfip-redacted-policies-v2}.
 #'
 #' The following dataset houses information on NFIP policies (both historic and current).
 #' In order to filter to current policies, the analyst will need to filter on the
@@ -88,7 +93,8 @@ get_nfip_policies = function(
     tidytable::mutate(county_geoid = tidytable::if_else(
       !is.na(county_code),
       county_code,
-      stringr::str_sub(census_tract, 1, 5))) ### taking county_code if it exists, if not extract from census_tract
+      ### taking county_code if it exists, if not extract from census_tract
+      stringr::str_sub(census_tract, 1, 5))) 
 
   if (!is.null(county_geoids)) {
     df1b = df1b |>
@@ -119,10 +125,11 @@ get_nfip_policies = function(
       policy_premium_total_cost = total_insurance_premium_of_the_policy,
       policy_date_termination = policy_termination_date,
       policy_date_effective = policy_effective_date,
-      building_occupancy_type = dplyr::case_when(occupancy_type %in% c(1, 11) ~ "single family",
-                                                           occupancy_type %in% c(2, 12, 3, 13, 16, 15) ~ "multi-family",
-                                                           occupancy_type %in% c(14) ~ "mobile/manufactured home",
-                                                           occupancy_type %in% c(4, 6, 17, 18, 19) ~ "non-residential"),
+      building_occupancy_type = dplyr::case_when(
+        occupancy_type %in% c(1, 11) ~ "single family",
+        occupancy_type %in% c(2, 12, 3, 13, 16, 15) ~ "multi-family",
+        occupancy_type %in% c(14) ~ "mobile/manufactured home",
+        occupancy_type %in% c(4, 6, 17, 18, 19) ~ "non-residential"),
       building_replacement_cost = building_replacement_cost)
 
   message("

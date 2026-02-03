@@ -3,21 +3,27 @@
 #' @importFrom magrittr %>%
 
 #' @title Access SBA data on disaster loans
-
-#' @return A tibble containing SBA disaster loan data at the city/zip level, combining both home and business loan records. The returned object includes:
-#' \describe{
-#'   \item{disaster_number_fema}{Character. The FEMA disaster number associated with the loan.}
-#'   \item{disaster_number_sba_physical}{Character. SBA physical disaster declaration number.}
-#'   \item{disaster_number_sba_eidl}{Character. SBA Economic Injury Disaster Loan (EIDL) declaration number.}
-#'   \item{damaged_property_zip_code}{Character. ZIP code of the damaged property.}
-#'   \item{damaged_property_city_name}{Character. City name of the damaged property.}
-#'   \item{damaged_property_state_code}{Character. State code of the damaged property.}
-#'   \item{verified_loss_total}{Numeric. Total verified loss amount in dollars.}
-#'   \item{approved_amount_total}{Numeric. Total approved loan amount in dollars.}
-#'   \item{approved_amount_real_estate}{Numeric. Approved loan amount for real estate in dollars.}
-#'   \item{fiscal_year}{Character. Fiscal year of the loan (format: "20XX").}
-#'   \item{loan_type}{Character. Either "business" or "residential" indicating the loan category.}
-#' }
+#' @description Retrieves Small Business Administration (SBA) disaster loan data
+#'   for both home and business loans at the city and zip code level.
+#'
+#' @details Data are sourced from the SBA's disaster loan reports. See
+#'   \url{https://www.sba.gov/funding-programs/disaster-assistance}.
+#'
+#' @returns A dataframe comprising city- and zip-level data on SBA loanmaking.
+#'   Columns include:
+#'   \describe{
+#'     \item{fiscal_year}{The federal fiscal year of the loan.}
+#'     \item{disaster_number_fema}{FEMA disaster number associated with the loan.}
+#'     \item{disaster_number_sba_physical}{SBA physical disaster declaration number.}
+#'     \item{disaster_number_sba_eidl}{SBA Economic Injury Disaster Loan (EIDL) declaration number.}
+#'     \item{damaged_property_zip_code}{ZIP code of the damaged property.}
+#'     \item{damaged_property_city_name}{City name of the damaged property.}
+#'     \item{damaged_property_state_code}{Two-letter state abbreviation.}
+#'     \item{verified_loss_total}{Total verified loss amount in dollars.}
+#'     \item{approved_amount_total}{Total approved loan amount in dollars.}
+#'     \item{approved_amount_real_estate}{Approved loan amount for real estate in dollars.}
+#'     \item{loan_type}{Type of loan: "residential" or "business".}
+#'   }
 #' @export
 #'
 #' @examples

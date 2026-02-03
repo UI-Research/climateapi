@@ -12,7 +12,8 @@ get_ihp_registrations(
 )
 }
 \arguments{
-\item{state_fips}{A character vector of two-letter state abbreviations. If NULL (default), return data for all 51 states. Otherwise return data for the specified states.}
+\item{state_fips}{A character vector of two-letter state abbreviations. If NULL (default),
+return data for all 51 states. Otherwise return data for the specified states.}
 
 \item{file_name}{The name (not the full path) of the Box file containing the raw data.}
 
@@ -21,22 +22,37 @@ get_ihp_registrations(
 \item{outpath}{The path to save the parquet-formatted datafile. Applicable only when \code{api = FALSE}.}
 }
 \value{
-A tibble containing Individual and Households Program (IHP) registration data at the household level, joined to county-level geography. Due to ZIP-to-county crosswalking, records may be duplicated across counties (see warning). The returned object includes:
+A dataframe comprising IHP registrations. Note that records are duplicated
+due to a many-to-many join with a ZCTA-to-county crosswalk; use \code{allocation_factor_zcta_to_county}
+to properly aggregate. Columns include:
 \describe{
-\item{unique_id}{Character. A UUID uniquely identifying each original IHP registration.}
-\item{allocation_factor_zcta_to_county}{Numeric. The proportion of the ZCTA's population in this county (0-1). Used to apportion registrations when a ZIP spans multiple counties.}
-\item{geoid_county}{Character. Five-digit FIPS county code.}
-\item{zcta_code}{Character. Five-digit ZCTA (ZIP Code Tabulation Area) code.}
-\item{geoid_tract}{Character. 11-digit Census tract GEOID (may have missingness).}
-\item{geoid_block_group}{Character. 12-digit Census block group GEOID (may have missingness).}
-\item{disaster_number}{Character. FEMA disaster number associated with the registration.}
-\item{amount_individual_housing_program, amount_housing_assistance, amount_other_needs_assistance, amount_rental_assistance, amount_repairs, amount_replacement, amount_personal_property}{Numeric. Various IHP assistance amounts in dollars.}
-\item{amount_flood_insurance_premium_paid_by_fema}{Numeric. Flood insurance premium paid by FEMA in dollars.}
-\item{state_name, state_abbreviation, state_code}{Character. State identifiers.}
+\item{unique_id}{Unique identifier for the original registration.}
+\item{allocation_factor_zcta_to_county}{Weight for attributing registration to county.}
+\item{geoid_county}{Five-digit county FIPS code.}
+\item{zcta_code}{Five-digit ZIP Code Tabulation Area.}
+\item{geoid_tract}{11-digit census tract FIPS code.}
+\item{geoid_block_group}{12-digit census block group FIPS code.}
+\item{disaster_number}{FEMA disaster number.}
+\item{amount_individual_housing_program}{Total IHP assistance amount in dollars.}
+\item{amount_housing_assistance}{Housing assistance amount in dollars.}
+\item{amount_other_needs_assistance}{Other needs assistance amount in dollars.}
+\item{amount_rental_assistance}{Rental assistance amount in dollars.}
+\item{amount_repairs}{Repair assistance amount in dollars.}
+\item{amount_replacement}{Replacement assistance amount in dollars.}
+\item{amount_personal_property}{Personal property assistance amount in dollars.}
+\item{amount_flood_insurance_premium_paid_by_fema}{FEMA-paid flood insurance premium.}
+\item{state_name}{Full state name.}
+\item{state_abbreviation}{Two-letter state abbreviation.}
+\item{state_code}{Two-digit state FIPS code.}
 }
 }
 \description{
-Get Individuals and Households Program (IHP) registrations
+Retrieves FEMA Individual and Households Program (IHP) registration data,
+which captures applications for disaster assistance from individuals and households.
+}
+\details{
+Data are from FEMA's OpenFEMA API. See
+\url{https://www.fema.gov/openfema-data-page/individuals-and-households-program-valid-registrations-v2}.
 }
 \examples{
 \dontrun{

@@ -26,11 +26,39 @@ clean_county = function(county) {
 
 #' Get Hazard Mitigation Assistance (HMA) Project Details
 #'
-#' @param file_path_old_grant_system The file path to raw data for HMA applications from the older grant-reporting system. These data are typically available from: https://www.fema.gov/openfema-data-page/hazard-mitigation-assistance-projects-v4
-#' @param file_path_new_grant_system The file path to raw data for HMA applications from the newer (FEMA GO) grant-reporting system. These data are typically available from: https://www.fema.gov/openfema-data-page/hma-subapplications-v2
-#' @param state_abbreviations NULL by default, in which case data are returned for all 51 states. Provide a vector of two-character USPS state abbreviations to obtain data for a sub-selection of states.
+#' @description Retrieves Hazard Mitigation Assistance project data from both the legacy
+#'   HMA Projects dataset and the newer FEMA GO subapplications dataset, harmonized
+#'   at the project-county level.
 #'
-#' @return A dataframe of project-county HMA application data, aggregated across both old and new grant reporting systems.
+#' @param file_path_old_grant_system The file path to raw data for HMA applications from
+#'   the older grant-reporting system. These data are typically available from:
+#'   \url{https://www.fema.gov/openfema-data-page/hazard-mitigation-assistance-projects-v4}
+#' @param file_path_new_grant_system The file path to raw data for HMA applications from
+#'   the newer (FEMA GO) grant-reporting system. These data are typically available from:
+#'   \url{https://www.fema.gov/openfema-data-page/hma-subapplications-v2}
+#' @param state_abbreviations NULL by default, in which case data are returned for all 51
+#'   states. Provide a vector of two-character USPS state abbreviations to obtain data for
+#'   a sub-selection of states.
+#'
+#' @details Data are from FEMA's OpenFEMA API, combining two data sources: the legacy
+#'   Hazard Mitigation Assistance Projects (v4) and the newer HMA Subapplications (v2).
+#'   Multi-county projects are split across counties based on population proportions.
+#'
+#' @return A dataframe of project-county HMA application data. Only `project_cost_federal_split`
+#'   should be used for county-level aggregations. Columns include:
+#'   \describe{
+#'     \item{data_source}{"hma-projects" (legacy) or "hma-subapplications" (FEMA GO).}
+#'     \item{project_id}{Unique project identifier.}
+#'     \item{disaster_number}{FEMA disaster number (if disaster-related).}
+#'     \item{project_program_area}{HMA program: HMGP, BRIC, FMA, or PDM.}
+#'     \item{project_fiscal_year}{Fiscal year of the project.}
+#'     \item{state_name}{Full state name.}
+#'     \item{county_geoid}{Five-digit county FIPS code.}
+#'     \item{county_population}{County population used for allocation.}
+#'     \item{project_status}{Current project status (e.g., "Closed", "Active").}
+#'     \item{project_cost_federal}{Total federal cost at project level.}
+#'     \item{project_cost_federal_split}{Federal cost allocated to this county.}
+#'   }
 #' @export
 #'
 #' @examples

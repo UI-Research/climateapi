@@ -1,17 +1,30 @@
-#' Get EMPG data
+#' Get Emergency Management Performance Grant (EMPG) data
+#'
+#' @description Retrieves Emergency Management Performance Grant (EMPG) award data
+#'   from FEMA, which supports state and local emergency management agencies.
 #'
 #' @param file_path Path to the downloaded dataset on Box.
-#' @param api Logical indicating whether to use the OpenFEMA API to retrieve the data. Default is TRUE.
+#' @param api Logical indicating whether to use the OpenFEMA API to retrieve the data.
+#'   Default is TRUE.
 #'
-#' @return A tibble containing Emergency Management Performance Grant (EMPG) data with the following columns:
-#' \describe{
-#'   \item{state_name}{Character. The name of the state receiving the grant (renamed from original "state" column).}
-#'   \item{year_project_start}{Numeric. The year the project started, with corrections applied for known data entry errors in the source data.}
-#'   \item{state_code}{Character. Two-digit FIPS state code.}
-#'   \item{state_abbreviation}{Character. Two-letter USPS state abbreviation.}
-#'   \item{...}{Additional columns from the OpenFEMA EMPG dataset, cleaned via `janitor::clean_names()`.}
-#' }
-#' Data are filtered to records with `year_project_start > 2012`. A warning is issued noting data completeness concerns for 2024-2025.
+#' @details Data are from FEMA's OpenFEMA API. See
+#'   \url{https://www.fema.gov/openfema-data-page/emergency-management-performance-grants-v2}.
+#'
+#' @return A data frame containing emergency management performance grant (EMPG) data.
+#'   Columns include:
+#'   \describe{
+#'     \item{id}{Unique identifier for the grant record.}
+#'     \item{state_name}{Full state name.}
+#'     \item{state_code}{Two-digit state FIPS code.}
+#'     \item{state_abbreviation}{Two-letter state abbreviation.}
+#'     \item{year_project_start}{Year the project started.}
+#'     \item{project_start_date}{Date the project started.}
+#'     \item{project_end_date}{Date the project ended.}
+#'     \item{grant_amount}{Total grant amount in dollars.}
+#'     \item{federal_share}{Federal portion of the grant in dollars.}
+#'     \item{non_federal_share}{Non-federal cost share in dollars.}
+#'     \item{program}{EMPG program type.}
+#'   }
 #' @export
 
 get_emergency_management_performance = function(

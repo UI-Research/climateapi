@@ -1,22 +1,30 @@
-#' @title Access temporal county-level SHELDUS hazard damage data.
+#' @title Access temporal county-level SHELDUS hazard damage data
+#'
+#' @description Retrieves county-level hazard event data from the Spatial Hazard Events
+#'   and Losses Database for the United States (SHELDUS), including property damage,
+#'   crop damage, fatalities, and injuries.
+#'
 #' @param file_path The path to the raw SHELDUS data.
 #'
-#' @return A tibble containing SHELDUS (Spatial Hazard Events and Losses Database for the United States) data at the county-year-month-hazard level. The returned object includes:
-#' \describe{
-#'   \item{unique_id}{Character. A UUID uniquely identifying each observation.}
-#'   \item{GEOID}{Character. Five-digit FIPS county code. Connecticut counties are crosswalked to 2022 planning regions using population-weighted allocation factors.}
-#'   \item{state_name}{Character. State name (sentence case).}
-#'   \item{county_name}{Character. County name.}
-#'   \item{year}{Numeric. Year of the hazard event.}
-#'   \item{month}{Numeric. Month of the hazard event (1-12).}
-#'   \item{hazard}{Character. Type of hazard event.}
-#'   \item{damage_property}{Numeric. Property damage in 2023 inflation-adjusted dollars.}
-#'   \item{damage_crop}{Numeric. Crop damage in 2023 inflation-adjusted dollars.}
-#'   \item{injuries}{Numeric. Number of injuries.}
-#'   \item{fatalities}{Numeric. Number of fatalities.}
-#'   \item{records}{Numeric. Number of individual event records aggregated into this observation.}
-#' }
-#' Note: Only counties that existed in either 2010 or 2022 are included.
+#' @details Data are from Arizona State University's SHELDUS database. Access requires
+#'   a subscription. See \url{https://cemhs.asu.edu/sheldus}.
+#'
+#' @returns A dataframe comprising hazard x month x year x county observations of hazard events.
+#'   Columns include:
+#'   \describe{
+#'     \item{unique_id}{Unique identifier for each observation.}
+#'     \item{GEOID}{Five-digit county FIPS code.}
+#'     \item{state_name}{Full state name (sentence case).}
+#'     \item{county_name}{County name.}
+#'     \item{year}{Year of the hazard event(s).}
+#'     \item{month}{Month of the hazard event(s).}
+#'     \item{hazard}{Type of hazard (e.g., "Flooding", "Hurricane/Tropical Storm").}
+#'     \item{damage_property}{Property damage in 2023 inflation-adjusted dollars.}
+#'     \item{damage_crop}{Crop damage in 2023 inflation-adjusted dollars.}
+#'     \item{fatalities}{Number of fatalities.}
+#'     \item{injuries}{Number of injuries.}
+#'     \item{records}{Number of individual events aggregated into this observation.}
+#'   }
 #' @export
 #'
 #' @examples

@@ -91,7 +91,6 @@ rename_lodes_variables = function(.df) {
 }
 
 #' Get LEHD Origin-Destination Employment Statistics (LODES) data
-#' Returned data are from LODES Version 8, which is enumerated in 2020-vintage geometries.
 #'
 #' @param lodes_type One of c("rac", "wac", "od"). "rac" = Residence Area
 #'     Characteristics, where jobs are associated with employees' residences.

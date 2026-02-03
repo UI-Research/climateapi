@@ -2,7 +2,7 @@
 % Please edit documentation in R/get_current_fire_perimeters.R
 \name{get_current_fire_perimeters}
 \alias{get_current_fire_perimeters}
-\title{Acquire wildfire perimeters}
+\title{Acquire current wildfire perimeters}
 \usage{
 get_current_fire_perimeters(
   geography = NULL,
@@ -21,10 +21,26 @@ get_current_fire_perimeters(
 \item{api}{Included only for API consistency; this must be TRUE.}
 }
 \value{
-A library(sf) enabled dataframe comprising perimeters of current wildfires.
+An sf dataframe comprising perimeters of current wildfires. Columns include:
+\describe{
+\item{unique_id}{Unique identifier for each observation (generated).}
+\item{incident_name}{Name of the fire incident (title case).}
+\item{incident_size_acres}{Size of the fire in acres.}
+\item{incident_short_description}{Brief description of the incident.}
+\item{percent_contained}{Percent of fire contained (0-100).}
+\item{identified_date}{Date/time the fire was discovered.}
+\item{updated_date}{Date/time the record was last updated.}
+\item{geometry}{Polygon geometry of the fire perimeter.}
+}
 }
 \description{
-Acquire wildfire perimeters
+Retrieves current wildfire perimeter data from the NIFC (National
+Interagency Fire Center) via the Wildland Fire Interagency Geospatial Services
+(WFIGS) API.
+}
+\details{
+Data are from the NIFC WFIGS service. See
+\url{https://data-nifc.opendata.arcgis.com/datasets/nifc::wfigs-interagency-fire-perimeters/about}.
 }
 \examples{
 \dontrun{
