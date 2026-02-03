@@ -9,14 +9,14 @@
 
 ## Citation
 
-Curran-Groome W, Lloyd K (2025). *climateapi: Climate (and adjacent)
+Curran-Groome W, Lloyd K (2026). *climateapi: Climate (and adjacent)
 data and functions for the C&C practice area*. R package version
 0.0.0.9001, <https://ui-research.github.io/climateapi/>.
 
     @Manual{,
       title = {climateapi: Climate (and adjacent) data and functions for the C&C practice area},
       author = {Will Curran-Groome and Kameron Lloyd},
-      year = {2025},
+      year = {2026},
       note = {R package version 0.0.0.9001},
       url = {https://ui-research.github.io/climateapi/},
     }

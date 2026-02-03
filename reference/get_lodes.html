@@ -56,11 +56,17 @@ Returned data are from LODES Version 8, which is enumerated in 2020-vintage geom
 
 
 <dl><dt id="arg-lodes-type">lodes_type<a class="anchor" aria-label="anchor" href="#arg-lodes-type"></a></dt>
-<dd><p>One of c("rac", "wac", "od"). "rac" = Residence Area Characteristics, where jobs are associated with employees' residences. "wac" = Workplace Area Characteristics, where jobs are associated with employees' workplaces. "od" = Origin-Destination data, where jobs are associated with both workers' residences and their workplaces.</p></dd>
+<dd><p>One of c("rac", "wac", "od"). "rac" = Residence Area
+Characteristics, where jobs are associated with employees' residences.
+"wac" = Workplace Area Characteristics, where jobs are associated with
+employees' workplaces. "od" = Origin-Destination data, where jobs are associated
+with both workers' residences and their workplaces.</p></dd>
 
 
 <dt id="arg-jobs-type">jobs_type<a class="anchor" aria-label="anchor" href="#arg-jobs-type"></a></dt>
-<dd><p>One of c("all", "primary"). Default is "all", which includes multiple jobs for workers with multiple jobs. "primary" includes only the highest-paying job per worker.</p></dd>
+<dd><p>One of c("all", "primary"). Default is "all", which includes
+multiple jobs for workers with multiple jobs. "primary" includes only the
+highest-paying job per worker.</p></dd>
 
 
 <dt id="arg-states">states<a class="anchor" aria-label="anchor" href="#arg-states"></a></dt>
@@ -72,16 +78,88 @@ Returned data are from LODES Version 8, which is enumerated in 2020-vintage geom
 
 
 <dt id="arg-geography">geography<a class="anchor" aria-label="anchor" href="#arg-geography"></a></dt>
-<dd><p>One of c("block", "block group", "tract", "county", "state"). Default is "tract".</p></dd>
+<dd><p>One of c("block", "block group", "tract", "county", "state").
+Default is "tract".</p></dd>
 
 
 <dt id="arg-state-part">state_part<a class="anchor" aria-label="anchor" href="#arg-state-part"></a></dt>
-<dd><p>One of c("main", "aux"). Default is "main", which includes only workers who reside inside the state where they work. "aux" returns only workers who work in the specified state but live outside of that state.</p></dd>
+<dd><p>One of c("main", "aux"). Default is "main", which includes
+only workers who reside inside the state where they work. "aux" returns
+only workers who work in the specified state but live outside of that state.</p></dd>
 
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A tibble with one record per geography per year per job type. Attributes include total jobs and jobs by worker earnings, industry, and demographics; the origin-destination results have more limited demographics compared to the "wac" and "rac" results.</p>
+    <p>A tibble with one record per geography per year per job type. Attributes
+include total jobs and jobs by worker earnings, industry, and demographics;
+the origin-destination results have more limited demographics compared to
+the "wac" and "rac" results.</p><dl><dt>year</dt>
+<dd><p>the year for which LODES data is pulled from</p></dd>
+
+<dt>state</dt>
+<dd><p>A two-digit state identifier.</p></dd>
+
+<dt>GEOID</dt>
+<dd><p>11 digit identifier denoted as either h_GEOID representing the employees' residence census block code or w_GEOID representing the employees' workplace census block code</p></dd>
+
+<dt>job_type</dt>
+<dd><p>one of either 'all' jobs or only 'federal' jobs</p></dd>
+
+<dt>total_jobs</dt>
+<dd><p>total number of jobs in a given tract</p></dd>
+
+<dt>jobs_workers_age</dt>
+<dd><p>number of employees by given age range</p></dd>
+
+<dt>jobs_earnings</dt>
+<dd><p>number of employees by given monthly earnings range</p></dd>
+
+<dt>jobs_industry</dt>
+<dd><p>number of employees by given industry</p></dd>
+
+<dt>jobs_workers_race</dt>
+<dd><p>number of employees by given race, inclusive of hispanic or latino; only available in 'wac' and 'rac' datasets</p></dd>
+
+<dt>jobs_workers_ethnicity</dt>
+<dd><p>number of employess by hispanic or latino status, regardless of race; only available in 'wac' and 'rac' datasets</p></dd>
+
+<dt>jobs_workers_educational_attainment</dt>
+<dd><p>number of employees by highest level of education attained; only available in 'wac' and 'rac' datasets</p></dd>
+
+<dt>jobs_workers_sex</dt>
+<dd><p>number of employees by sex; only available in 'wac' and 'rac' datasets</p></dd>
+
+<dt>jobs_firm_age</dt>
+<dd><p>number of employees by the age of employing firm; only available in 'wac' datasets</p></dd>
+
+<dt>jobs_firm_size</dt>
+<dd><p>number of employees for a given range in employer size; only available in 'wac' datasets</p></dd>
+
+
+</dl></div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>The Longitudinal Employer-Household Dynamics (LEHD) data at the U.S. Census Bureau
+is a quarterly database of linked employer-employee data covering over 95% of employment
+in the United States. The LEHD data are generated by merging previously collected survey
+and administrative data on jobs, businesses, and workers.</p>
+<p>LEHD Origin-Destination Employment Statistics (LODES)is a partially synthetic dataset
+that describes geographic patterns of jobs by their employment locations and residential
+locations as well as the connections between the two locations. The microdata link employee
+and employer data by combining administrative state unemployment insurance wage records
+with other administrative and survey data. The source data are aggregated and adjusted
+to protect confidentiality.</p>
+<p>LODES data includes three datasets:
+Residence Area Characteristics (RAC):
+This file lists the total number of jobs by the census block where the employee lives.</p>
+<p>Workplace Area Characteristics (WAC):
+This file lists the total number of jobs by the census block where the employee works.</p>
+<p>Origin-Destination (OD):
+This file lists job totals by both the census block where the employee lives and the
+census block where the employee works</p>
+<p>While similar to County Business Patterns (CBP) data in it's coverage of employment
+statistics, LODES differs mainly due to its more granular geographies (tract vs. county) and
+focus on framing the statistics at the individual/job level found in LODES data.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
