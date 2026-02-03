@@ -431,4 +431,4 @@ utils::globalVariables(c(
   "project_counties", "hma_project00", "initial_obligation_amount", "project_counties_multiple_flag",
   "project_fiscal_year", "project_id", "project_identifier", "project_program_area",
   "selection_federal_share_amount", "selection_federal_share_amount_split", "status",
-  "subapplicant_state", "subapplicant_state_abbreviation"))
+  "subapplicant_state", "subapplicant_state_abbreviation", "selection_status"))
