@@ -31,7 +31,7 @@ get_nfip_residential_penetration <- function(
   
   if (!file.exists(inpath)) { stop("The provided `file_name` is invalid.") }
   
-  df1 <- read.csv(file = inpath) %>% 
+  df1 <- readr::read_csv(file = inpath) %>% 
     janitor::clean_names() %>%
     dplyr::transmute(
       state_name = state, 
