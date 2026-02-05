@@ -4,11 +4,11 @@
 \alias{get_naics_codes}
 \title{Get NAICS Codes for County Business Patterns}
 \usage{
-get_naics_codes(year = 2022, digits = 3)
+get_naics_codes(year = 2023, digits = 3)
 }
 \arguments{
 \item{year}{The vintage year for NAICS codes. Data are available from 1986 through 2023.
-Default is 2022.}
+Default is 2023.}
 
 \item{digits}{The number of digits for desired NAICS codes. Must be between 2 and 6.
 Default is 3. Two-digit codes represent broad industry sectors (20 codes),
@@ -30,7 +30,7 @@ codes for use with \code{get_business_patterns()}. This is a wrapper around
 \examples{
 \dontrun{
 # Get all 2-digit NAICS codes
-get_naics_codes(year = 2022, digits = 2)
+get_naics_codes(year = 2023, digits = 2)
 
 # Get all 3-digit NAICS codes (default)
 get_naics_codes(year = 2022)

@@ -7,7 +7,7 @@
 #'     `censusapi::listCensusMetadata(name = "cbp")`.
 #'
 #' @param year The vintage year for NAICS codes. Data are available from 1986 through 2023.
-#'     Default is 2022.
+#'     Default is 2023.
 #' @param digits The number of digits for desired NAICS codes. Must be between 2 and 6.
 #'     Default is 3. Two-digit codes represent broad industry sectors (20 codes),
 #'     while six-digit codes represent detailed industries.
@@ -24,7 +24,7 @@
 #' @examples
 #' \dontrun{
 #' # Get all 2-digit NAICS codes
-#' get_naics_codes(year = 2022, digits = 2)
+#' get_naics_codes(year = 2023, digits = 2)
 #'
 #' # Get all 3-digit NAICS codes (default)
 #' get_naics_codes(year = 2022)
@@ -32,7 +32,7 @@
 #' # Get 4-digit NAICS codes for a specific year
 #' get_naics_codes(year = 2020, digits = 4)
 #' }
-get_naics_codes <- function(year = 2022, digits = 3) {
+get_naics_codes <- function(year = 2023, digits = 3) {
   if (year < 1986) { stop("Year must be 1986 or later.") }
   if (year > 2023) { stop("Most recent year for data is 2023.") }
   if (!digits %in% 2:6) { stop("`digits` must be between 2 and 6.") }
@@ -57,9 +57,9 @@ get_naics_codes <- function(year = 2022, digits = 3) {
 
 #' @title Obtain County Business Patterns (CBP) Estimates per County
 #'
-#' @param year The vintage of CBP data desired. Data are available from 1986,
-#'     though this function likely only supports more recent years (it it tested on 2022-vintage data only).
-#'     Default is 2022.
+#' @param year The vintage of CBP data desired. Data are available from 2008-2023.
+#'     Earlier years use different NAICS classification systems that are not currently supported.
+#'     Default is 2023.
 #' @param geo The level of geography of CBP data desired. Either "county" or "zipcode". Zipcode
 #'     level data only The ZIP Code Business Patterns (ZBP) dataset includes the number of establishments,
 #'     employment during the week of March 12th, first quarter and annual payroll for NAICS 00 (total for all sectors).
@@ -128,7 +128,7 @@ get_naics_codes <- function(year = 2022, digits = 3) {
 #' @examples
 #' \dontrun{
 #' get_business_patterns(
-#'  year = 2022,
+#'  year = 2023,
 #'  naics_code_digits = 3)
 #'
 #' get_business_patterns(
@@ -136,22 +136,34 @@ get_naics_codes <- function(year = 2022, digits = 3) {
 #'  naics_codes = c(221111, 221112))
 #' }
 
-get_business_patterns = function(year = 2022, geo = "county", naics_code_digits = 2, naics_codes = NULL) {
-  if (year < 1986) { stop("Year must be 1986 or later.") }
+get_business_patterns = function(year = 2023, geo = "county", naics_code_digits = 2, naics_codes = NULL) {
+  if (year < 2008) { stop("Year must be 2008 or later. Earlier years use different data structures not currently supported.") }
   if (year > 2023) { stop("Most recent year for data is 2023.") }
   if (! geo %in% c("county", "zipcode")) { stop("`geo` must be one of 'county' or 'zipcode'.") }
   if (! naics_code_digits %in% c(2, 3)) {
     stop("`naics_code_digits` must be one of c(2, 3). For more detailed codes, explicitly pass desired codes to the `naics_codes` parameter.") }
 
+  # Determine NAICS classification system based on year
+  # Census uses different NAICS vintages for different data years
+
+  naics_version <- dplyr::case_when(
+    year >= 2017 ~ "NAICS2017",
+    year >= 2012 ~ "NAICS2012",
+    year >= 2008 ~ "NAICS2007",
+    TRUE ~ "NAICS2007"
+  )
+  naics_label_var <- paste0(naics_version, "_LABEL")
+
   naics_codes_metadata = censusapi::listCensusMetadata(
       name = "cbp",
-      vintage = "2022",
+      vintage = as.character(year),
       type = "variables",
       include_values = TRUE) %>%
     #filter out codes 92 and 95 which do not appear to have data associated and
     #don't appear on the census list of naics codes at
     #https://www2.census.gov/programs-surveys/cbp/technical-documentation/reference/naics-descriptions/naics2017.txt
-    dplyr::filter(!stringr::str_starts(values_code, "92|95"))
+    dplyr::filter(!stringr::str_starts(values_code, "92|95")) %>%
+    tibble::as_tibble()
 
   if (!is.null(naics_codes)) {
     naics_code_check = naics_codes_metadata %>%
@@ -185,20 +197,21 @@ get_business_patterns = function(year = 2022, geo = "county", naics_code_digits 
     ## error with our query--there's no data for these codes on data.census.gov
     ## either
     ~ tryCatch({
-      censusapi::getCensus(
+      # Build the API call dynamically based on NAICS version
+      api_args <- list(
         name = "cbp",
         vintage = year,
-        vars = c(
-          "EMP",
-          "YEAR",
-          "ESTAB",
-          "PAYANN",
-          "EMPSZES",
-          "NAICS2017_LABEL"),
-        region = paste0(geo, ":*"),
-        NAICS2017 = .x) %>%
-      dplyr::mutate(naics_code = .x)},
+        vars = c("EMP", "YEAR", "ESTAB", "PAYANN", "EMPSZES", naics_label_var),
+        region = paste0(geo, ":*")
+      )
+      # Add the NAICS filter with the correct variable name
+      api_args[[naics_version]] <- .x
+
+      do.call(censusapi::getCensus, api_args) %>%
+        dplyr::mutate(naics_code = .x)},
       error = function(e) { return(tibble::tibble()) })) %>%
+    # Rename the NAICS label column to a standard name
+    dplyr::rename_with(~ "NAICS_LABEL", dplyr::matches("NAICS[0-9]+_LABEL")) %>%
     dplyr::mutate(
       # state,
       # county,
@@ -206,7 +219,7 @@ get_business_patterns = function(year = 2022, geo = "county", naics_code_digits 
       employers = ESTAB,
       annual_payroll = PAYANN,
       employee_size_range = EMPSZES,
-      industry = NAICS2017_LABEL,
+      industry = NAICS_LABEL,
       naics_code) %>%
     dplyr::mutate(
       industry = industry %>%
@@ -287,6 +300,7 @@ get_business_patterns = function(year = 2022, geo = "county", naics_code_digits 
 }
 
 utils::globalVariables(
-  c("EMP", "EMPSZES", "ESTAB", "NAICS2017_LABEL", "PAYANN", "annual_payroll",
+  c("EMP", "EMPSZES", "ESTAB", "NAICS2017_LABEL", "NAICS2012_LABEL", "NAICS2007_LABEL",
+    "NAICS_LABEL", "PAYANN", "annual_payroll",
     "employee_size_range", "employee_size_range_code", "employee_size_range_label",
     "employees", "employers", "industry", "values_code", "values_label", "naics_code"))

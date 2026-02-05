@@ -5,16 +5,16 @@
 \title{Obtain County Business Patterns (CBP) Estimates per County}
 \usage{
 get_business_patterns(
-  year = 2022,
+  year = 2023,
   geo = "county",
   naics_code_digits = 2,
   naics_codes = NULL
 )
 }
 \arguments{
-\item{year}{The vintage of CBP data desired. Data are available from 1986,
-though this function likely only supports more recent years (it it tested on 2022-vintage data only).
-Default is 2022.}
+\item{year}{The vintage of CBP data desired. Data are available from 2008-2023.
+Earlier years use different NAICS classification systems that are not currently supported.
+Default is 2023.}
 
 \item{geo}{The level of geography of CBP data desired. Either "county" or "zipcode". Zipcode
 level data only The ZIP Code Business Patterns (ZBP) dataset includes the number of establishments,
@@ -89,7 +89,7 @@ and Public Administration (NAICS 92)
 \examples{
 \dontrun{
 get_business_patterns(
- year = 2022,
+ year = 2023,
  naics_code_digits = 3)
 
 get_business_patterns(

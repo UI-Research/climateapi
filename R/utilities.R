@@ -413,8 +413,7 @@ inflation_adjust = function(
     names_suffix = NULL,
     base_year = 2024) {
 
-  inflation_data = readr::read_csv(here::here(
-    "data", "data-raw", "pce_index_annual_fred_2025_03_27.csv")) %>%
+  inflation_data = readr::read_csv(file.path(get_box_path(), "utilities", "pce_index_annual_fred_2025_03_27.csv")) %>%
     dplyr::transmute(
       inflation_year_ = lubridate::year(observation_date) %>% as.numeric(),
       pce_index = DPCERG3A086NBEA)

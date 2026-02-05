@@ -59,6 +59,7 @@ Remotes:
     ropensci/rfema,
     yonghah/esri2sf,
     UI-Research/urbnindicators,
+    UI-Research/crosswalk,
     UrbanInstitute/urbnthemes
 URL: https://ui-research.github.io/climateapi/
 Suggests:

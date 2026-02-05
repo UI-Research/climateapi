@@ -21,6 +21,7 @@ reference:
   - get_ihp_registrations
   - get_nfip_policies
   - get_nfip_claims
+  - get_nfip_residential_penetration
   - get_public_assistance
   - get_sheldus
   - get_preliminary_damage_assessments
