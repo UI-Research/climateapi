@@ -286,16 +286,6 @@ get_business_patterns = function(year = 2023, geo = "county", naics_code_digits 
           year, zip_code, employees, employers, annual_payroll,
           industry, employee_size_range_label, employee_size_range_code, naics_code) } }
 
-  high_missingness = cbp %>%
-    skimr::skim() %>%
-    dplyr::filter(complete_rate < .9) %>%
-    dplyr::pull(skim_variable)
-
-  if (length(high_missingness) > 0) {
-    warning(
-      stringr::str_c("Variables with high missingness in County Business Patterns", ": ",
-      base::paste(high_missingness, collapse = ", "))) } 
-
   return(cbp)
 }
 
