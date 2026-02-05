@@ -13,10 +13,13 @@ knitr::opts_chunk$set(
   comment = "#>",
   warning = FALSE,
   message = FALSE,
-  echo = TRUE,
   fig.width = 8,
   fig.height = 6,
-  dpi = 1000)
+  dpi = 1000,
+  eval = TRUE,
+  echo = TRUE)
+
+options(scipen = 999)
 ```
 
 ## Overview

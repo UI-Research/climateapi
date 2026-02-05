@@ -1,112 +1,198 @@
-#' Get government unit-level expenses from the Census of Governments
+#' Get county government revenues and expenditures
 #'
-#' @description Retrieves government unit-level finance data from the Census of Governments,
-#'   including expenses by category for state, county, city, township, special district,
-#'   and school district government units.
-#'
-#' @param year A four-digit year. The default is 2022.
+#' @description Retrieves county government revenues and expenditures over time.
 #'
 #' @details Data are from the U.S. Census Bureau's Annual Survey of State and Local
-#'   Government Finances and Census of Governments. See
-#'   \url{https://www.census.gov/programs-surveys/gov-finances.html}.
+#'   Government Finances and Census of Governments, compiled per: Pierson K., Hand M.,
+#'   and Thompson F. (2015). The Government Finance Database: A Common Resource for
+#'   Quantitative Research in Public Financial Analysis. PLoS ONE doi:
+#'   10.1371/journal.pone.0130119. See \url{https://my.willamette.edu/site/mba/public-datasets}.
+#' 
+#'   This is a survey in most years--i.e., only a subset of the full population of governments
+#'   comprises the sampling frame--but is a true census with relatively high response rates (90%%+)
+#'   in years ending in 2 and 7.
 #'
-#' @return A dataframe containing government unit-level expenses for the specified year.
-#'   Columns include:
+#'   Definitions of key constructs:
+#'
+#'   **Revenues**
+#'   - General revenue: All revenue not arising from utilities, liquor stores, or social insurance.
+#'   - Intergovernmental revenue: Transfers from federal, state, or other local governments.
+#'   - Current charges: Fees collected for providing services.
+#'
+#'   **Expenditures**
+#'   - General expenditure: All spending except utilities, liquor stores, or social insurance.
+#'   - Capital outlay: Spending on construction and equipment.
+#'
+#' @return A dataframe containing county government-level revenues and expenditures by year.
+#'   All monetary values are in thousands of dollars.
 #'   \describe{
-#'     \item{unit_id}{Unique identifier for the government unit.}
-#'     \item{year_data}{Year of the financial data.}
-#'     \item{amount_thousands}{Total expenses in thousands of dollars.}
-#'     \item{government_type}{Type of government (State, County, City, Township, Special District, School District).}
-#'     \item{data_quality}{Proportion of expense items that were reported (vs. imputed).}
-#'     \item{state_code}{Two-digit state FIPS code.}
-#'     \item{county_code}{Three-digit county FIPS code.}
-#'     \item{unit_name}{Name of the government unit.}
+#'     \item{year}{Year of the financial data.}
+#'     \item{GEOID}{Five-digit county FIPS code.}
 #'     \item{county_name}{Name of the county.}
-#'     \item{population}{Population served by the unit.}
-#'     \item{enrollment}{Student enrollment (for school districts).}
-#'     \item{amount_per_capita}{Expenses per capita or per enrolled student.}
+#'     \item{revenue_total}{Total county revenue.}
+#'     \item{revenue_general}{General revenue (excludes utilities, liquor stores, social insurance).}
+#'     \item{revenue_tax_total}{Total tax revenue.}
+#'     \item{revenue_tax_property}{Property tax revenue.}
+#'     \item{revenue_tax_sales}{Sales and gross receipts tax revenue.}
+#'     \item{revenue_tax_income}{Income tax revenue.}
+#'     \item{revenue_intergovernmental_total}{Total intergovernmental transfers received.}
+#'     \item{revenue_intergovernmental_federal}{Federal intergovernmental transfers.}
+#'     \item{revenue_intergovernmental_state}{State intergovernmental transfers.}
+#'     \item{revenue_charges_total}{Total charges and miscellaneous general revenue.}
+#'     \item{revenue_utility_total}{Utility revenue.}
+#'     \item{expenditure_total}{Total county expenditures.}
+#'     \item{expenditure_general}{General expenditures.}
+#'     \item{expenditure_capital_outlay}{Capital outlay spending.}
+#'     \item{expenditure_construction}{Construction spending.}
+#'     \item{expenditure_salaries_wages}{Salaries and wages.}
+#'     \item{expenditure_intergovernmental}{Intergovernmental transfers paid.}
+#'     \item{expenditure_education_total}{Education spending.}
+#'     \item{expenditure_public_safety}{Police protection spending.}
+#'     \item{expenditure_health_hospitals}{Health spending.}
+#'     \item{expenditure_highways}{Highway spending.}
+#'     \item{expenditure_public_welfare}{Public welfare spending.}
+#'     \item{expenditure_utility_total}{Utility expenditures.}
 #'   }
 #' @export
 
-get_government_finances = function(year = 2022) {
+get_government_finances = function() {
 
-  file_path_base = file.path(get_box_path(), "sociodemographics", "census-of-governments")
+  file_path_base = file.path(get_box_path(), "government-units", "government-finance-database", "gfd_2026_02_04.csv")
+  if (!file.exists(file_path_base)) { stop("File does not exist at specified path.") }
 
-  year = stringr::str_sub(year, 1, 2)
-
-  ## this contains expense descriptions that map to the expense codes that are
-  ## included in the raw dataset
-  item_crosswalk = readr::read_csv(
-    file.path(file_path_base, "item_crosswalk.csv"))
-
-  ## this contains the names and other metadata for each unit of government
-  government_unit_crosswalk = readr::read_fwf(
-    file = file.path(file_path_base, "Fin_PID_2022.txt"),
-    col_positions = readr::fwf_widths(
-      widths = c(2, 1, 3, 6, 64, 35, 5, 9, 2, 7, 2, 2, 2, 4, 2),
-      col_names = c(
-        "state_code", "government_type", "county_code", "unit_id", "unit_name",
-        "county_name", "place_code", "population", "population_year",
-        "enrollment", "enrollment_year", "function_code", "school_level_code",
-        "fiscal_year_ending", "data_year"))) %>%
-    dplyr::select(-c(government_type, data_year))
-
-  ## each row corresponds to a finance item (generally, a class of expenditures)
-  ## for a single government unit in a single year
-  data = readr::read_fwf(
-    file = file.path(file_path_base, "2022FinEstDAT_09202024modp_pu.txt"),
-    col_positions = readr::fwf_widths(
-      widths = c(2, 1, 3, 6, 3, 12, 4, 1),
-      col_names = c(
-        "state_code", "government_type", "county_code", "unit_id", "item", "amount_thousands",
-        "year_data", "imputation_type"))) %>%
-    dplyr::select(-c(state_code, county_code)) %>%
-    dplyr::mutate(
-      government_type = dplyr::case_when(
-        government_type == 0 ~ "State",
-        government_type == 1 ~ "County",
-        government_type == 2 ~ "City",
-        government_type == 3 ~ "Township",
-        government_type == 4 ~ "Special District",
-        government_type == 5 ~ "School District/Educational Service Agency"),
-      imputation_type = dplyr::case_when(
-        imputation_type == "A" ~ "Analyst correction",
-        imputation_type == "I" ~ "Imputed",
-        imputation_type == "M" ~ "Unknown",
-        imputation_type == "N" ~ "Not applicable",
-        imputation_type == "R" ~ "Reported",
-        imputation_type == "S" ~ "Alternative source")) %>%
-    dplyr::left_join(item_crosswalk, by = c("item" = "code")) %>%
-    dplyr::select(-item,cexpense_description = description)
-
-  data_by_unit = data %>%
-    dplyr::group_by(unit_id, year_data, imputation_type) %>%
-    dplyr::summarize(
-        count = dplyr::n(),
-        amount_thousands = sum(amount_thousands, na.rm = TRUE),
-        dplyr::across(.cols = c(dplyr::matches("code"), dplyr::matches("name"), government_type), dplyr::first),
-      .groups = "drop") %>%
-    tidyr::pivot_wider(
-      names_from  = imputation_type,
-      values_from = count,
-      values_fill = 0,
-      names_prefix = "imputation_") %>%
+  df1 = readr::read_csv(file_path_base) %>%
     janitor::clean_names() %>%
-    dplyr::mutate(
-      data_quality = imputation_reported /
-        (imputation_reported + imputation_imputed + imputation_analyst_correction + imputation_unknown + imputation_alternative_source)) %>%
-    dplyr::select(-dplyr::matches("imputation")) %>%
-    dplyr::left_join(government_unit_crosswalk, by = "unit_id") %>%
-    dplyr::mutate(amount_per_capita = dplyr::if_else(
-      is.na(enrollment),
-      amount_thousands * 1000 / population,
-      amount_thousands * 1000 / enrollment))
+    tibble::as_tibble() %>%
+    ## Remove duplicate construct of total_ltd_out
+    dplyr::select(-dplyr::any_of("total_long_term_debt_out"))
 
-  return(data_by_unit)
+  df_renamed = df1 %>%
+    ## Step 1: Expand common abbreviations across all columns
+    dplyr::rename_with(
+      .cols = dplyr::everything(),
+      .fn = ~ .x %>%
+        stringr::str_replace_all(c(
+          "^tot_" = "total_",
+          "_tot_" = "_total_",
+          "_tot$" = "_total",
+          "_igr_" = "_intergovernmental_",
+          "_igr$" = "_intergovernmental",
+          "^igr_" = "intergovernmental_",
+          "_ig_" = "_intergovernmental_",
+          "_ig$" = "_intergovernmental",
+          "^ig_" = "intergovernmental_",
+          "_trans_" = "_transit_",
+          "_educ_" = "_education_",
+          "_educ$" = "_education",
+          "^educ_" = "education_",
+          "^elem_" = "elementary_",
+          "_elem_" = "_elementary_",
+          "_elec_" = "_electric_",
+          "_chg_" = "_charges_",
+          "_chg$" = "_charges",
+          "_ret_" = "_retirement_",
+          "_prop_" = "_property_",
+          "_nec_" = "_not_elsewhere_classified_",
+          "_nec$" = "_not_elsewhere_classified",
+          "_ltd_" = "_long_term_debt_",
+          "_ltd$" = "_long_term_debt",
+          "_unemp_" = "_unemployment_",
+          "^emp_" = "employee_",
+          "_emp_" = "_employee_",
+          "_ffc_" = "_full_faith_credit_",
+          "_ffc$" = "_full_faith_credit",
+          "_ng_" = "_nonguaranteed_",
+          "_ng$" = "_nonguaranteed",
+          "_util_" = "_utility_",
+          "_util$" = "_utility",
+          "_iss_" = "_issued_",
+          "_iss$" = "_issued",
+          "_fed_" = "_federal_",
+          "_fed$" = "_federal",
+          "^fed_" = "federal_",
+          "_lic_" = "_license_",
+          "_lic$" = "_license",
+          "_misc_" = "_miscellaneous_",
+          "_misc$" = "_miscellaneous",
+          "_gen_" = "_general_",
+          "_gen$" = "_general",
+          "_cur_" = "_current_",
+          "_cur$" = "_current",
+          "_cap_" = "_capital_",
+          "_cap$" = "_capital",
+          "_out_" = "_outstanding_",
+          "_out$" = "_outstanding",
+          "welf_" = "welfare_",
+          "__+" = "_"))) %>%
+    ## Step 2: Prefix revenue columns
+    dplyr::rename_with(
+      .cols = dplyr::matches("_rev_|_rev$|^total_revenue"),
+      .fn = ~ stringr::str_c("revenue_", .x) %>%
+        stringr::str_remove_all("_rev_|_rev$") %>%
+        stringr::str_replace("revenue_total_revenue", "revenue_total")) %>%
+    ## Step 3: Prefix tax columns (subset of revenue)
+    dplyr::rename_with(
+      .cols = dplyr::matches("_tax$|_taxes$|^total_taxes"),
+      .fn = ~ stringr::str_c("revenue_tax_", .x) %>%
+        stringr::str_remove_all("_tax$|_taxes$") %>%
+        stringr::str_replace("revenue_tax_total_taxes", "revenue_tax_total")) %>%
+    ## Step 4: Prefix expenditure columns
+    dplyr::rename_with(
+      .cols = dplyr::matches("_exp_|_exp$|_expend$|^total_expend"),
+      .fn = ~ stringr::str_c("expenditure_", .x) %>%
+        stringr::str_remove_all("_exp_|_exp$|_expend$|_expend_") %>%
+        stringr::str_replace("expenditure_total_expenditure", "expenditure_total")) %>%
+    ## Step 5: Clean up any double underscores or trailing underscores
+    dplyr::rename_with(
+      .cols = dplyr::everything(),
+      .fn = ~ .x %>%
+        stringr::str_replace_all("__+", "_") %>%
+        stringr::str_remove("_$"))
+  
+  df_final = df_renamed %>%
+    dplyr::transmute(
+      year = year4,
+      GEOID = stringr::str_c(fips_code_state, fips_county),
+      county_name = name,
+      ## Total revenues and major subtotals
+      revenue_total,
+      revenue_general = general_revenue,
+      revenue_tax_total,
+      revenue_tax_property,
+      revenue_tax_sales = revenue_tax_total_sales_gr_rec,
+      revenue_tax_income = revenue_tax_total_income,
+      revenue_intergovernmental_total = total_intergovernmental_revenue,
+      revenue_intergovernmental_federal = total_federal_intergovernmental_revenue,
+      revenue_intergovernmental_state = total_state_intergovernmental_revenue,
+      ## Total expenditures and major subtotals
+      expenditure_total,
+      expenditure_general = general_expenditure#,
+      # expenditure_capital_outlay = expenditure_total_capital_outlay,
+      # expenditure_construction = expenditure_total_construction,
+      # expenditure_salaries_wages = expenditure_total_salaries_wages,
+      # expenditure_intergovernmental = expenditure_total_intergovernmental,
+      # expenditure_education_total = expenditure_total_education,
+      # expenditure_public_safety = expenditure_total_police_protection,
+      # expenditure_health_hospitals = expenditure_total_health,
+      # expenditure_highways = expenditure_total_highways,
+      # expenditure_public_welfare = expenditure_total_public_welfare,
+      # expenditure_utility_total = expenditure_total_utility
+    )
+
+  return(df_final)
 }
 
 utils::globalVariables(c(
-  "amount_thousands", "data_year", "description", "enrollment", "government_type",
-  "imputation_alternative_source", "imputation_analyst_correction", "imputation_imputed",
-  "imputation_reported", "imputation_type", "imputation_unknown", "item", "population",
-  "unit_id", "year_data"))
+  "year4", "fips_code_state", "fips_county", "name",
+  "revenue_total", "revenue_total_general", "revenue_tax_total", "revenue_tax_property",
+
+  "revenue_tax_total_sales_gross_receipts", "revenue_tax_total_income",
+ "revenue_total_intergovernmental", "revenue_total_federal_intergovernmental",
+  "revenue_total_state_intergovernmental", "revenue_total_charges_miscellaneous_general",
+  "revenue_total_utility",
+  "expenditure_total", "expenditure_total_general", "expenditure_total_capital_outlay",
+  "expenditure_total_construction", "expenditure_total_salaries_wages",
+  "expenditure_total_intergovernmental", "expenditure_total_education",
+  "expenditure_total_police_protection", "expenditure_total_health",
+  "expenditure_total_highways", "expenditure_total_public_welfare",
+  "expenditure_total_utility"))

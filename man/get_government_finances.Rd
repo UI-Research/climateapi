@@ -2,38 +2,68 @@
 % Please edit documentation in R/get_government_finances.R
 \name{get_government_finances}
 \alias{get_government_finances}
-\title{Get government unit-level expenses from the Census of Governments}
+\title{Get county government revenues and expenditures}
 \usage{
-get_government_finances(year = 2022)
-}
-\arguments{
-\item{year}{A four-digit year. The default is 2022.}
+get_government_finances()
 }
 \value{
-A dataframe containing government unit-level expenses for the specified year.
-Columns include:
+A dataframe containing county government-level revenues and expenditures by year.
+All monetary values are in thousands of dollars.
 \describe{
-\item{unit_id}{Unique identifier for the government unit.}
-\item{year_data}{Year of the financial data.}
-\item{amount_thousands}{Total expenses in thousands of dollars.}
-\item{government_type}{Type of government (State, County, City, Township, Special District, School District).}
-\item{data_quality}{Proportion of expense items that were reported (vs. imputed).}
-\item{state_code}{Two-digit state FIPS code.}
-\item{county_code}{Three-digit county FIPS code.}
-\item{unit_name}{Name of the government unit.}
+\item{year}{Year of the financial data.}
+\item{GEOID}{Five-digit county FIPS code.}
 \item{county_name}{Name of the county.}
-\item{population}{Population served by the unit.}
-\item{enrollment}{Student enrollment (for school districts).}
-\item{amount_per_capita}{Expenses per capita or per enrolled student.}
+\item{revenue_total}{Total county revenue.}
+\item{revenue_general}{General revenue (excludes utilities, liquor stores, social insurance).}
+\item{revenue_tax_total}{Total tax revenue.}
+\item{revenue_tax_property}{Property tax revenue.}
+\item{revenue_tax_sales}{Sales and gross receipts tax revenue.}
+\item{revenue_tax_income}{Income tax revenue.}
+\item{revenue_intergovernmental_total}{Total intergovernmental transfers received.}
+\item{revenue_intergovernmental_federal}{Federal intergovernmental transfers.}
+\item{revenue_intergovernmental_state}{State intergovernmental transfers.}
+\item{revenue_charges_total}{Total charges and miscellaneous general revenue.}
+\item{revenue_utility_total}{Utility revenue.}
+\item{expenditure_total}{Total county expenditures.}
+\item{expenditure_general}{General expenditures.}
+\item{expenditure_capital_outlay}{Capital outlay spending.}
+\item{expenditure_construction}{Construction spending.}
+\item{expenditure_salaries_wages}{Salaries and wages.}
+\item{expenditure_intergovernmental}{Intergovernmental transfers paid.}
+\item{expenditure_education_total}{Education spending.}
+\item{expenditure_public_safety}{Police protection spending.}
+\item{expenditure_health_hospitals}{Health spending.}
+\item{expenditure_highways}{Highway spending.}
+\item{expenditure_public_welfare}{Public welfare spending.}
+\item{expenditure_utility_total}{Utility expenditures.}
 }
 }
 \description{
-Retrieves government unit-level finance data from the Census of Governments,
-including expenses by category for state, county, city, township, special district,
-and school district government units.
+Retrieves county government revenues and expenditures over time.
 }
 \details{
 Data are from the U.S. Census Bureau's Annual Survey of State and Local
-Government Finances and Census of Governments. See
-\url{https://www.census.gov/programs-surveys/gov-finances.html}.
+Government Finances and Census of Governments, compiled per: Pierson K., Hand M.,
+and Thompson F. (2015). The Government Finance Database: A Common Resource for
+Quantitative Research in Public Financial Analysis. PLoS ONE doi:
+10.1371/journal.pone.0130119. See \url{https://my.willamette.edu/site/mba/public-datasets}.
+
+This is a survey in most years--i.e., only a subset of the full population of governments
+comprises the sampling frame--but is a true census with relatively high response rates (90\%\%+)
+in years ending in 2 and 7.
+
+Definitions of key constructs:
+
+\strong{Revenues}
+\itemize{
+\item General revenue: All revenue not arising from utilities, liquor stores, or social insurance.
+\item Intergovernmental revenue: Transfers from federal, state, or other local governments.
+\item Current charges: Fees collected for providing services.
+}
+
+\strong{Expenditures}
+\itemize{
+\item General expenditure: All spending except utilities, liquor stores, or social insurance.
+\item Capital outlay: Spending on construction and equipment.
+}
 }
