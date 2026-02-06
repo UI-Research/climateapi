@@ -7,20 +7,7 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-```{r, include = FALSE}
-knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>",
-  warning = FALSE,
-  message = FALSE,
-  fig.width = 8,
-  fig.height = 6,
-  dpi = 1000,
-  eval = TRUE,
-  echo = TRUE)
 
-options(scipen = 999)
-```
 
 ## Overview
 
@@ -34,7 +21,8 @@ Access to SHELDUS requires a subscription. See [https://cemhs.asu.edu/sheldus](h
 
 ## Loading the data
 
-```{r setup}
+
+``` r
 library(climateapi)
 library(tidyverse)
 library(sf)
@@ -43,20 +31,35 @@ library(urbnthemes)
 set_urbn_defaults(style = "print")
 ```
 
-```{r load-data, eval = FALSE}
+
+``` r
 sheldus <- get_sheldus()
 ```
 
-```{r load-data-hidden, echo = FALSE}
-sheldus <- get_sheldus()
-```
+
 
 ## Data structure
 
 Each row represents a unique combination of county, year, month, and hazard type. Only county-month-hazard combinations with recorded events are included.
 
-```{r structure}
+
+``` r
 glimpse(sheldus)
+#> Rows: 1,000,189
+#> Columns: 13
+#> $ unique_id         <chr> "199da95a-821f-4f2f-974a-85bb0c4e8a0f", "a9af66c4-1ea9-4c43-9a7e-85211bf280db", "b6e481a5-998b-46a3-a393-0064de9e87b4", "e40fd03d-cabf-4e41-9…
+#> $ GEOID             <chr> "01001", "01001", "01001", "01001", "01001", "01001", "01001", "01001", "01001", "01001", "01001", "01001", "01001", "01001", "01001", "01001…
+#> $ state_name        <chr> "Alabama", "Alabama", "Alabama", "Alabama", "Alabama", "Alabama", "Alabama", "Alabama", "Alabama", "Alabama", "Alabama", "Alabama", "Alabama"…
+#> $ county_name       <chr> "Autauga", "Autauga", "Autauga", "Autauga", "Autauga", "Autauga", "Autauga", "Autauga", "Autauga", "Autauga", "Autauga", "Autauga", "Autauga"…
+#> $ year              <dbl> 1961, 1961, 1961, 1962, 1962, 1962, 1962, 1962, 1963, 1963, 1963, 1964, 1964, 1965, 1966, 1967, 1968, 1968, 1968, 1969, 1969, 1969, 1969, 196…
+#> $ month             <dbl> 1, 2, 12, 1, 4, 4, 4, 12, 1, 4, 12, 4, 4, 7, 1, 3, 3, 8, 8, 3, 3, 6, 6, 6, 4, 4, 4, 5, 1, 3, 3, 4, 4, 4, 5, 5, 5, 6, 3, 3, 2, 4, 5, 11, 1, 2,…
+#> $ hazard            <chr> "Winter Weather", "Severe Storm/Thunder Storm", "Severe Storm/Thunder Storm", "Winter Weather", "Hail", "Severe Storm/Thunder Storm", "Wind",…
+#> $ damage_property   <dbl> 21498.713, 75141.081, 83907.468, 74394.646, 2479.825, 2479.825, 2479.825, 74394.646, 73422.069, 491928.296, 73422.167, 292024.963, 6389.224, …
+#> $ damage_crop       <dbl> 7514.11815, 75141.08081, 8390.71660, 74394.64644, 2479.82487, 2479.82487, 2479.82487, 74394.64644, 73422.06910, 0.00000, 7342.22659, 34952.83…
+#> $ fatalities        <dbl> 0.00, 0.00, 0.00, 0.06, 0.00, 0.00, 0.00, 0.04, 0.00, 0.00, 0.00, 0.00, 0.00, 1.00, 0.15, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.0…
+#> $ injuries          <dbl> 0.00000, 0.00000, 0.00000, 0.00000, 0.00333, 0.00333, 0.00333, 0.00000, 0.00000, 0.00000, 0.00000, 0.04000, 0.04000, 0.00000, 0.07000, 0.0000…
+#> $ records           <dbl> 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, …
+#> $ allocation_factor <dbl> NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, N…
 ```
 
 Key variables include:
@@ -74,16 +77,22 @@ Key variables include:
 
 ### Hazard types in the database
 
-```{r hazard-types}
+
+``` r
 sheldus |>
   distinct(hazard) |>
   arrange(hazard) |>
   pull(hazard)
+#>  [1] "Avalanche"                  "Coastal"                    "Drought"                    "Earthquake"                 "Flooding"                  
+#>  [6] "Fog"                        "Hail"                       "Heat"                       "Hurricane/Tropical Storm"   "Landslide"                 
+#> [11] "Lightning"                  "Severe Storm/Thunder Storm" "Tornado"                    "Tsunami/Seiche"             "Volcano"                   
+#> [16] "Wildfire"                   "Wind"                       "Winter Weather"
 ```
 
 ### Annual property damage by hazard type
 
-```{r annual-damage}
+
+``` r
 df1 <- sheldus |>
   summarize(
     .by = c(year, hazard),
@@ -110,9 +119,12 @@ df1 |>
     fill = "Hazard type")
 ```
 
+![plot of chunk annual-damage](figure/get_sheldus-annual-damage-1.png)
+
 ### Geographic distribution of flood damage
 
-```{r flood-damage-map, fig.height = 7}
+
+``` r
 flood_damage <- sheldus |>
   filter(hazard == "Flooding") |>
   summarize(
@@ -151,9 +163,12 @@ ggplot(flood_map) +
   theme_urbn_map()
 ```
 
+![plot of chunk flood-damage-map](figure/get_sheldus-flood-damage-map-1.png)
+
 ### Seasonal patterns in hazard events
 
-```{r seasonal-patterns}
+
+``` r
 seasonal <- sheldus |>
   filter(hazard %in% top_hazards) |>
   summarize(
@@ -174,9 +189,12 @@ ggplot(seasonal, aes(x = month, y = total_events, color = hazard)) +
     color = "Hazard type")
 ```
 
+![plot of chunk seasonal-patterns](figure/get_sheldus-seasonal-patterns-1.png)
+
 ### Counties with highest fatalities
 
-```{r fatalities}
+
+``` r
 high_fatality_counties <- sheldus |>
   summarize(
     .by = c(GEOID, state_name, county_name),
@@ -195,11 +213,14 @@ high_fatality_counties |>
     y = "")
 ```
 
+![plot of chunk fatalities](figure/get_sheldus-fatalities-1.png)
+
 ### Linking with census data
 
 The county-level structure makes it straightforward to join with demographic data.
 
-```{r demographics, eval = FALSE}
+
+``` r
 county_demographics <- tidycensus::get_acs(
   geography = "county",
   variables = c(
