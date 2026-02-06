@@ -286,7 +286,7 @@ get_business_patterns = function(year = 2023, geo = "county", naics_code_digits 
           year, zip_code, employees, employers, annual_payroll,
           industry, employee_size_range_label, employee_size_range_code, naics_code) } }
 
-  return(cbp)
+  return(cbp %>% tibble::as_tibble())
 }
 
 utils::globalVariables(

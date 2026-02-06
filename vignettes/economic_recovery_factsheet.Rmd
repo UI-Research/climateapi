@@ -1,8 +1,8 @@
 ---
-title: "Economic Recovery Post-Disaster"
+title: "Economic Recovery Post Disaster"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Economic Recovery Post-Disaster}
+  %\VignetteIndexEntry{Economic Recovery Post Disaster}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -22,6 +22,7 @@ knitr::opts_chunk$set(
 options(scipen = 999)
 ```
 
+
 ## Overview
 
 Because post-event data for the affected area will not be available for months or years, this approach identifies historical comparison—counties that experienced similar disasters and had similar pre-disaster characteristics—in the past—to highlight various recovery trajectories.
@@ -36,8 +37,7 @@ Contents:
 
 Critical to this approach is an observable pre-period, especially for the disaster-impacted county (which has no post-period data). But because of data lags, the pre-period will never run up through 2026 (current year at time of writing)--at best, it will go through ~2024 (ACS) or in most cases only 2023 (County Business Patterns, government finances). 
 
-Accordingly, we want our pre-period to be long--say, 8 years preceding the disaster, if possible--so that we have multiple years of observation, even for the disaster-affected county. But for our comparison counties, we are hemmed in on the other side--we want to have post-period observations for these, so the comparison disaster ideally occurs between 2018-2020, giving us 3-5 post-period years. However, this requires a pre-period dating back to as early as 2010... which is not covered in many datasets (e.g., ACS). Thus, we have a tension in identifying overlapping pre-period timelines for our comparison and affected 
-counties due to historical data coverage.
+Accordingly, we want our pre-period to be long--say, 8 years preceding the disaster, if possible--so that we have multiple years of observation, even for the disaster-affected county. But for our comparison counties, we are hemmed in on the other side--we want to have post-period observations for these, so the comparison disaster ideally occurs between 2018-2020, giving us 3-5 post-period years. However, this requires a pre-period dating back to as early as 2010... which is not covered in many datasets (e.g., ACS). Thus, we have a tension in identifying overlapping pre-period timelines for our comparison and affected counties due to historical data coverage.
 
 ## Setup
 
@@ -148,6 +148,43 @@ cbp_affected %>%
   labs(y = "Employees (n)", x = "")
 ```
 
+## Small Businesses over Time
+
+Identify smaller businesses, which may be more vulnerable to disaster-related economic shocks.
+
+```{r}
+total_employers = cbp_affected %>%
+  filter(industry == "total", employee_size_range_label == "All establishments") %>%
+  slice_max(year) %>%
+  pull(employers)
+
+cbp_affected %>%
+  tibble::as_tibble() %>%
+  filter(employee_size_range_label != "All establishments") %>%
+  mutate(
+    employee_size_range_label = case_when(
+      employee_size_range_label %in% c("<100-249 employees", "250-499 employees") ~ "100-499 employees",
+      employee_size_range_label %in% c("500-999 employees", "1000+") ~ "500+ employees",
+      TRUE ~ employee_size_range_label),
+    employee_size_range = factor(
+      employee_size_range_label, 
+      levels = c(
+        "1-4 employees", "<5 employees", "5-9 employees", "10-19 employees", "20-49 employees", 
+        "50-99 employees", "100-499 employees", "500+ employees"), 
+        ordered = TRUE),
+    industry_label = factor(
+      industry_label, 
+      levels = count(., industry_label, sort = TRUE) %>% pull(industry_label),
+      ordered = TRUE)) %>%
+  mutate(.by = industry, employer_total = sum(employers)) %>%
+  filter(employer_total > (.05 * total_employers)) %>%
+  ggplot(aes(x = year)) +
+    geom_area(aes(y = employers, fill = employee_size_range)) +
+    facet_wrap(~ reorder(industry_label, -employer_total), ncol = 4) +
+    labs(x = "Year", y = "Employers", title = "Employers by Number of Employees, by Industry") +
+    scale_y_continuous(labels = scales::comma)
+```
+
 ## County Fiscal Capacity Over Time
 
 ```{r baseline-fiscal}
@@ -246,9 +283,6 @@ industry_shares <- cbp_matching %>%
 ## some industry categories
 industry_matching <- industry_shares %>%
   left_join(cbp_totals, by = "GEOID")
-
-industry_matching %>%
-  filter(GEOID %in% affected_county_fips)
 ```
 
 ```{r matching-nfip}
@@ -256,9 +290,6 @@ industry_matching %>%
 nfip_matching <- get_nfip_residential_penetration() %>%
   mutate(share_residential_structures_sfha = residential_structures_sfha / residential_structures) %>%
   select(GEOID, share_residential_structures_sfha, penetration_rate_sfha)
-
-nfip_matching %>%
-  filter(GEOID %in% affected_county_fips)
 ```
 
 ```{r matching-fiscal}
@@ -267,9 +298,6 @@ finance_reference_year = if_else(reference_year < 2023, reference_year, 2022)
 # Total county government expenses
 county_finances_matching = county_expenses %>%
   filter(year == finance_reference_year)
-
-county_finances_matching %>%
-  filter(GEOID %in% affected_county_fips)
 ```
 
 ```{r matching-acs}
@@ -506,6 +534,7 @@ cbp_event_aligned %>%
   ggplot(aes(x = event_time, y = employees, group = GEOID, color = county_type, linetype = county_type)) +
   geom_line() +
   geom_point() +
+  ylim(c(0, NA)) +
   geom_vline(xintercept = 0, linetype = "dashed", color = "grey40") +
   scale_y_continuous(labels = scales::comma) +
   scale_color_manual(values = c("affected" = "#1696d2", "comparison" = "#d2d2d2")) +
@@ -531,6 +560,7 @@ fiscal_event_aligned %>%
   geom_point() +
   geom_vline(xintercept = 0, linetype = "dashed", color = "grey40") +
   scale_y_continuous(labels = scales::dollar_format(suffix = "M")) +
+  ylim(c(0, NA)) +
   scale_color_manual(values = c("Impacted" = "#1696d2", "Comparison" = "#d2d2d2")) +
   labs(
     x = "Years Relative to Disaster (t=0)",
@@ -575,13 +605,14 @@ sba_event_aligned %>%
   mutate(county_type = if_else(str_detect(county_type, "affected"), "Impacted", "Comparison")) %>%
   ggplot(aes(x = event_time, y = residential_loan / 1000000, group = GEOID, color = county_type)) +
   geom_line() +
+  ylim(c(0, NA)) +
   geom_vline(xintercept = 0, linetype = "dashed", color = "grey40") +
   scale_y_continuous(labels = scales::dollar_format(suffix = "M")) +
   scale_color_manual(values = c("Impacted" = "#1696d2", "Comparison" = "#d2d2d2")) +
   labs(
     x = "Years relative to disaster (t=0)",
     y = "SBA loans (cumulative)",
-    title = "Cumulative SBA Loans") +
+    title = "Cumulative SBA Loans - Residential") +
   theme(legend.position = "none")
 
 sba_event_aligned %>%
@@ -597,10 +628,8 @@ sba_event_aligned %>%
   labs(
     x = "Years relative to disaster (t=0)",
     y = "SBA loans (cumulative)",
-    title = "Cumulative SBA Loans") +
+    title = "Cumulative SBA Loans - Business") +
   theme(legend.position = "none")
-
-
 ```
 
 ## FEMA Public Assistance
@@ -636,7 +665,6 @@ pa_event_aligned %>%
 #     title = "FEMA Individual & Households Program in Comparison Counties",
 #     subtitle = "Blue line = median across comparison counties"
 #   )
-
 ```
 
 ---
