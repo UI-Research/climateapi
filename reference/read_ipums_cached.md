@@ -44,7 +44,27 @@ read_ipums_cached(
 
 ## Value
 
-A dataframe corresponding to the supplied `extract_definition`
+A tibble containing IPUMS data corresponding to the supplied
+`extract_definition`. The structure varies by collection type:
+
+- For microdata collections (e.g., "usa", "cps"):
+
+  Returns individual-level records with columns corresponding to the
+  variables specified in the extract definition. Column names and types
+  are determined by IPUMS variable specifications. The data are read via
+  [`ipumsr::read_ipums_micro()`](https://tech.popdata.org/ipumsr/reference/read_ipums_micro.html).
+
+- For aggregate collections ("nhgis", "ihgis"):
+
+  Returns aggregate data (typically at geographic summary levels) with
+  columns corresponding to the requested tables/variables. IPUMS
+  variable attributes are applied via the collection's codebook. The
+  data are read via
+  [`ipumsr::read_ipums_agg()`](https://tech.popdata.org/ipumsr/reference/read_ipums_agg.html).
+
+If a cached file exists at the specified path and `refresh = FALSE`, the
+cached data are returned with a warning. Otherwise, the extract is
+submitted to IPUMS, downloaded, and cached for future use.
 
 ## Examples
 

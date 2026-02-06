@@ -9,8 +9,6 @@
 
 - [`get_lodes()`](https://ui-research.github.io/climateapi/reference/get_lodes.md)
   : Get LEHD Origin-Destination Employment Statistics (LODES) data
-  Returned data are from LODES Version 8, which is enumerated in
-  2020-vintage geometries.
 
 ## Cities data
 
@@ -20,7 +18,7 @@
 ## Government unit data
 
 - [`get_government_finances()`](https://ui-research.github.io/climateapi/reference/get_government_finances.md)
-  : Get government unit-level expenses from the Census of Governments
+  : Get county government revenues and expenditures
 
 ## County data
 
@@ -34,10 +32,12 @@
   : Access county-level data on NFIP policies
 - [`get_nfip_claims()`](https://ui-research.github.io/climateapi/reference/get_nfip_claims.md)
   : Access county-level data on NFIP claims
+- [`get_nfip_residential_penetration()`](https://ui-research.github.io/climateapi/reference/get_nfip_residential_penetration.md)
+  : Get the share of residential structures covered by NFIP
 - [`get_public_assistance()`](https://ui-research.github.io/climateapi/reference/get_public_assistance.md)
   : Get FEMA Public Assistance (PA) funding
 - [`get_sheldus()`](https://ui-research.github.io/climateapi/reference/get_sheldus.md)
-  : Access temporal county-level SHELDUS hazard damage data.
+  : Access temporal county-level SHELDUS hazard damage data
 - [`get_preliminary_damage_assessments()`](https://ui-research.github.io/climateapi/reference/get_preliminary_damage_assessments.md)
   : Get Data from Preliminary Damage Assessments Submitted to FEMA for
   Disaster Declarations
@@ -47,12 +47,16 @@
 ## State data
 
 - [`get_emergency_management_performance()`](https://ui-research.github.io/climateapi/reference/get_emergency_management_performance.md)
-  : Get EMPG data
+  : Get Emergency Management Performance Grant (EMPG) data
+- [`get_disaster_dollar_database()`](https://ui-research.github.io/climateapi/reference/get_disaster_dollar_database.md)
+  : Get Disaster Dollar Database Data
 
 ## Event boundaries
 
 - [`get_current_fire_perimeters()`](https://ui-research.github.io/climateapi/reference/get_current_fire_perimeters.md)
-  : Acquire wildfire perimeters
+  : Acquire current wildfire perimeters
+- [`get_wildfire_burn_zones()`](https://ui-research.github.io/climateapi/reference/get_wildfire_burn_zones.md)
+  : Get wildfire burn zones
 
 ## Land use
 
@@ -105,3 +109,5 @@
   : Inflation adjust dollar values using annual PCE Index
 - [`cache_it()`](https://ui-research.github.io/climateapi/reference/cache_it.md)
   : Cache an object to a parquet file; optionally read from disk
+- [`get_naics_codes()`](https://ui-research.github.io/climateapi/reference/get_naics_codes.md)
+  : Get NAICS Codes for County Business Patterns

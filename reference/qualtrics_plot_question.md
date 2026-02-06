@@ -71,4 +71,27 @@ qualtrics_plot_question(
 
 ## Value
 
-A ggplot object
+A `ggplot2` object representing a visualization of survey responses. The
+plot type varies based on `question_type`:
+
+- For "continuous":
+
+  A boxplot showing the distribution of numeric responses, with question
+  sub-text on the y-axis and values on the x-axis. Multiple
+  sub-questions are displayed as separate boxplots.
+
+- For "checkbox_single" or "checkbox_multi":
+
+  A horizontal bar chart showing response counts. Response options are
+  ordered by total count (descending). For "checkbox_multi", bars are
+  stacked by response type.
+
+- For "checkbox_factor":
+
+  A stacked horizontal bar chart showing response counts by factor
+  level, with response options ordered by total count.
+
+The plot uses Urban Institute theming via
+[`urbnthemes::theme_urbn_print()`](https://rdrr.io/pkg/urbnthemes/man/theme_urbn_print.html)
+and includes the specified `title` and auto-generated or custom
+`subtitle`.

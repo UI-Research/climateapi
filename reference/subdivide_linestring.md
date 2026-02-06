@@ -27,6 +27,24 @@ subdivide_linestring(line, max_length, crs = 5070)
 
 ## Value
 
-A spatial dataframe comprising linestrings below the `max_length`
-threshold, linked back to their input linestrings via a `line_id`
-attribute
+An `sf` object (simple feature collection) with geometry type
+LINESTRING. The returned object contains:
+
+- row_id:
+
+  Integer. The row index from the original input linestring, allowing
+  linkage back to the input data.
+
+- ...:
+
+  All original attributes from the input `line` object are preserved and
+  joined back via `row_id`.
+
+- geometry:
+
+  LINESTRING geometry. Each segment is at most `max_length` units long
+  (in the CRS units). Segments shorter than `max_length` in the input
+  are returned unchanged.
+
+The CRS of the output is set to the value specified by the `crs`
+parameter (default: EPSG:5070).

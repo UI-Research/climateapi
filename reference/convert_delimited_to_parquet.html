@@ -16,6 +16,13 @@
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/economic_recovery_factsheet.html">Economic Recovery Post Disaster</a></li>
+    <li><a class="dropdown-item" href="../articles/get_sheldus.html">SHELDUS Hazard Data</a></li>
+    <li><a class="dropdown-item" href="../articles/get_structures.html">USA Structures Data</a></li>
+    <li><a class="dropdown-item" href="../articles/get_wildfire_burn_zones.html">Wildfire Burn Zones</a></li>
+  </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -73,7 +80,7 @@
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>Nothing. Parquet data are written to local path.</p>
+    <p>NULL (invisibly). This function is called for its side effect of writing a parquet file to disk at the specified <code>outpath</code> (or a path derived from <code>inpath</code> with a .parquet extension). The function reads the input file in chunks to handle large files efficiently, optionally subsets to specified columns, and writes the result in Apache Parquet format using <code><a href="https://arrow.apache.org/docs/r/reference/write_parquet.html" class="external-link">arrow::write_parquet()</a></code>.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

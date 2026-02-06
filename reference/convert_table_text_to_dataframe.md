@@ -68,10 +68,32 @@ convert_table_text_to_dataframe(
 
 ## Value
 
-A list of dataframes, with each item corresponding to one page of the
-inputted text. The dataframes have the same column names and types as
-specified in `column_types`. Use `purrr::bind_rows()` to consolidate
-results into a single dataframe, if needed.
+A list of tibbles, where each list element corresponds to one item
+(typically one page) in the input `text` vector/list. Each tibble
+contains:
+
+- Structure:
+
+  Columns match the names and types defined in `column_types`. Each row
+  represents one record extracted from the table text by the LLM.
+
+- NULL values:
+
+  When `required = FALSE` (default), columns may contain NULL/NA values
+  if the LLM could not extract a value for that cell.
+
+- Empty dataframes:
+
+  If the LLM encounters an error processing a page, that list element
+  will be an empty
+  [`data.frame()`](https://rdrr.io/r/base/data.frame.html).
+
+Use
+[`purrr::list_rbind()`](https://purrr.tidyverse.org/reference/list_c.html)
+or
+[`dplyr::bind_rows()`](https://dplyr.tidyverse.org/reference/bind_rows.html)
+to consolidate results into a single dataframe. A warning is issued
+reminding users to review AI-generated results for accuracy.
 
 ## Examples
 

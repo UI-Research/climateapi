@@ -1,6 +1,7 @@
 # Estimate counts of hazard-impacted structures by structure type
 
-Estimate counts of hazard-impacted structures by structure type
+Retrieves building footprint data from the USA Structures dataset and
+summarizes structure counts by type at the tract or county level.
 
 ## Usage
 
@@ -25,10 +26,42 @@ get_structures(boundaries, geography = "county", keep_structures = FALSE)
 
 ## Value
 
-A dataframe comprising estimated counts of each structure type, at the
-specified `geography`, for all such geographic units intersecting the
-`boundaries` object. If keep_structure = TRUE, returns a list with two
-elements: the summarized data and the raw structure data.
+Depends on the `keep_structures` parameter:
+
+**When `keep_structures = FALSE` (default):** A tibble containing
+structure counts aggregated by geography and occupancy type, with
+columns:
+
+- GEOID:
+
+  Character. Census geography identifier (county FIPS or tract GEOID
+  depending on `geography` parameter).
+
+- primary_occupancy:
+
+  Character. The primary occupancy classification of the structures
+  (e.g., "Single Family Dwelling", "Multi - Family Dwelling").
+
+- occupancy_class:
+
+  Character. Broad occupancy classification (e.g., "Residential",
+  "Commercial").
+
+- count:
+
+  Integer. Number of structures of this occupancy type in the geography.
+
+**When `keep_structures = TRUE`:** A named list with two elements:
+
+- structures_summarized:
+
+  The aggregated tibble described above.
+
+- structures_raw:
+
+  An `sf` object (POINT geometry) containing individual structure
+  records with columns: `unique_id` (building ID), `occupancy_class`,
+  `primary_occupancy`, `county_fips`, and geometry.
 
 ## Examples
 

@@ -1,6 +1,8 @@
-# Acquire wildfire perimeters
+# Acquire current wildfire perimeters
 
-Acquire wildfire perimeters
+Retrieves current wildfire perimeter data from the NIFC (National
+Interagency Fire Center) via the Wildland Fire Interagency Geospatial
+Services (WFIGS) API.
 
 ## Usage
 
@@ -34,8 +36,45 @@ get_current_fire_perimeters(
 
 ## Value
 
-A library(sf) enabled dataframe comprising perimeters of current
-wildfires.
+An sf dataframe comprising perimeters of current wildfires. Columns
+include:
+
+- unique_id:
+
+  Unique identifier for each observation (generated).
+
+- incident_name:
+
+  Name of the fire incident (title case).
+
+- incident_size_acres:
+
+  Size of the fire in acres.
+
+- incident_short_description:
+
+  Brief description of the incident.
+
+- percent_contained:
+
+  Percent of fire contained (0-100).
+
+- identified_date:
+
+  Date/time the fire was discovered.
+
+- updated_date:
+
+  Date/time the record was last updated.
+
+- geometry:
+
+  Polygon geometry of the fire perimeter.
+
+## Details
+
+Data are from the NIFC WFIGS service. See
+<https://data-nifc.opendata.arcgis.com/datasets/nifc::wfigs-interagency-fire-perimeters/about>.
 
 ## Examples
 

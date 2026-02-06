@@ -22,6 +22,13 @@ reading/writing and adds "_sf" to the filename to indicate the file format.'></h
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/economic_recovery_factsheet.html">Economic Recovery Post Disaster</a></li>
+    <li><a class="dropdown-item" href="../articles/get_sheldus.html">SHELDUS Hazard Data</a></li>
+    <li><a class="dropdown-item" href="../articles/get_structures.html">USA Structures Data</a></li>
+    <li><a class="dropdown-item" href="../articles/get_wildfire_burn_zones.html">Wildfire Burn Zones</a></li>
+  </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -47,7 +54,7 @@ reading/writing and adds "_sf" to the filename to indicate the file format.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">cache_it</span><span class="op">(</span><span class="va">object</span>, file_name <span class="op">=</span> <span class="cn">NULL</span>, path <span class="op">=</span> <span class="st">"/data"</span>, read <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">cache_it</span><span class="op">(</span><span class="va">object</span>, file_name <span class="op">=</span> <span class="cn">NULL</span>, path <span class="op">=</span> <span class="st">"."</span>, read <span class="op">=</span> <span class="cn">TRUE</span>, keep_n <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -62,13 +69,15 @@ case, file_name must be provided.</p></dd>
 
 <dt id="arg-file-name">file_name<a class="anchor" aria-label="anchor" href="#arg-file-name"></a></dt>
 <dd><p>File name (without extension). Optional when object is provided
-(uses object's name). Required when object is missing and reading from cache.</p></dd>
+(uses object's name). Required when object is missing and reading from cache.
+Must not contain path separators or invalid filename characters.</p></dd>
 
 
 <dt id="arg-path">path<a class="anchor" aria-label="anchor" href="#arg-path"></a></dt>
-<dd><p>Directory path where the file should be saved/read. Defaults to /data.
-If the path does not exist, the user will be prompted to create it (in
-interactive sessions) or an error will be thrown (in non-interactive sessions).</p></dd>
+<dd><p>Directory path where the file should be saved/read. Defaults to
+current directory ("."). If the path does not exist, the user will be prompted
+to create it (in interactive sessions) or an error will be thrown (in
+non-interactive sessions).</p></dd>
 
 
 <dt id="arg-read">read<a class="anchor" aria-label="anchor" href="#arg-read"></a></dt>
@@ -77,6 +86,12 @@ interactive sessions) or an error will be thrown (in non-interactive sessions).<
 <li><p>Character: Read the specific file with this exact filename (including extension).
 Defaults to TRUE.</p></li>
 </ul></dd>
+
+
+<dt id="arg-keep-n">keep_n<a class="anchor" aria-label="anchor" href="#arg-keep-n"></a></dt>
+<dd><p>Integer. Maximum number of cached versions to keep. When writing
+a new file, older versions beyond this limit are deleted. Defaults to 5.
+Set to NULL or Inf to keep all versions.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -88,16 +103,16 @@ Defaults to TRUE.</p></li>
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
 <span class="r-in"><span><span class="co">## Note: datestamps in filenames are illustrative; user results will</span></span></span>
-<span class="r-in"><span><span class="co">## vary depending on the the date at runtime</span></span></span>
+<span class="r-in"><span><span class="co">## vary depending on the date at runtime</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Regular data frames</span></span></span>
 <span class="r-in"><span><span class="va">my_data</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link">tibble</a></span><span class="op">(</span>x <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">10</span>, y <span class="op">=</span> <span class="va">letters</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">10</span><span class="op">]</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Cache with automatic naming and datestamp</span></span></span>
-<span class="r-in"><span><span class="fu">cache_it</span><span class="op">(</span><span class="va">my_data</span><span class="op">)</span>  <span class="co"># Creates: my_data_2025_12_07.parquet</span></span></span>
+<span class="r-in"><span><span class="co"># Cache with automatic naming and datestamp (writes to current directory)</span></span></span>
+<span class="r-in"><span><span class="fu">cache_it</span><span class="op">(</span><span class="va">my_data</span><span class="op">)</span>  <span class="co"># Creates: ./my_data_2025_12_07.parquet</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Cache with custom filename</span></span></span>
-<span class="r-in"><span><span class="fu">cache_it</span><span class="op">(</span><span class="va">my_data</span>, file_name <span class="op">=</span> <span class="st">"custom_name"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># Cache with custom filename and path</span></span></span>
+<span class="r-in"><span><span class="fu">cache_it</span><span class="op">(</span><span class="va">my_data</span>, file_name <span class="op">=</span> <span class="st">"custom_name"</span>, path <span class="op">=</span> <span class="st">"data"</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Read most recent cached version if exists, otherwise write</span></span></span>
 <span class="r-in"><span><span class="va">cached_data</span> <span class="op">&lt;-</span> <span class="fu">cache_it</span><span class="op">(</span><span class="va">my_data</span>, read <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
@@ -120,9 +135,15 @@ Defaults to TRUE.</p></li>
 <span class="r-in"><span><span class="co"># Read specific file when object doesn't exist</span></span></span>
 <span class="r-in"><span><span class="va">old_data</span> <span class="op">&lt;-</span> <span class="fu">cache_it</span><span class="op">(</span>read <span class="op">=</span> <span class="st">"my_data_2025_12_01.parquet"</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Keep only the 3 most recent cached versions</span></span></span>
+<span class="r-in"><span><span class="fu">cache_it</span><span class="op">(</span><span class="va">my_data</span>, keep_n <span class="op">=</span> <span class="fl">3</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Keep all cached versions (no cleanup)</span></span></span>
+<span class="r-in"><span><span class="fu">cache_it</span><span class="op">(</span><span class="va">my_data</span>, keep_n <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># SF objects (automatically uses sfarrow)</span></span></span>
 <span class="r-in"><span><span class="va">my_sf</span> <span class="op">&lt;-</span> <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_read.html" class="external-link">st_read</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"shape/nc.shp"</span>, package<span class="op">=</span><span class="st">"sf"</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu">cache_it</span><span class="op">(</span><span class="va">my_sf</span><span class="op">)</span>  <span class="co"># Creates: my_sf_2025_12_07_sf.parquet</span></span></span>
+<span class="r-in"><span><span class="fu">cache_it</span><span class="op">(</span><span class="va">my_sf</span><span class="op">)</span>  <span class="co"># Creates: ./my_sf_2025_12_07_sf.parquet</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Read most recent sf cached file</span></span></span>
 <span class="r-in"><span><span class="va">cached_sf</span> <span class="op">&lt;-</span> <span class="fu">cache_it</span><span class="op">(</span><span class="va">my_sf</span>, read <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>

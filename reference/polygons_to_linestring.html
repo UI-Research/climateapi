@@ -16,6 +16,13 @@
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/economic_recovery_factsheet.html">Economic Recovery Post Disaster</a></li>
+    <li><a class="dropdown-item" href="../articles/get_sheldus.html">SHELDUS Hazard Data</a></li>
+    <li><a class="dropdown-item" href="../articles/get_structures.html">USA Structures Data</a></li>
+    <li><a class="dropdown-item" href="../articles/get_wildfire_burn_zones.html">Wildfire Burn Zones</a></li>
+  </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -51,7 +58,20 @@
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A simple feature collection of linestrings derived from the inputted polygons; all attributes are retained, and two new attributes–<code>polygon_id</code> and <code>line_id</code>–are prepended to the output</p>
+    <p>An <code>sf</code> object (simple feature collection) with geometry type LINESTRING. The returned object contains:</p><dl><dt>polygon_id</dt>
+<dd><p>Integer. The row index of the originating polygon from the input <code>.sf</code> object, enabling linkage back to the source polygon.</p></dd>
+
+<dt>line_id</dt>
+<dd><p>Integer. A sequential identifier for each line segment within its originating polygon. Line segments are ordered according to the vertex sequence of the polygon boundary.</p></dd>
+
+<dt>...</dt>
+<dd><p>All original attributes from the input <code>.sf</code> object are preserved and joined back via <code>polygon_id</code>.</p></dd>
+
+<dt>geometry</dt>
+<dd><p>LINESTRING geometry. Each line segment represents one edge of the original polygon boundary.</p></dd>
+
+
+</dl><p>The CRS of the output matches the input <code>.sf</code> object (transformed to EPSG:5070 during processing).</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

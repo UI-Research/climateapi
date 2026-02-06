@@ -16,6 +16,13 @@
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/economic_recovery_factsheet.html">Economic Recovery Post Disaster</a></li>
+    <li><a class="dropdown-item" href="../articles/get_sheldus.html">SHELDUS Hazard Data</a></li>
+    <li><a class="dropdown-item" href="../articles/get_structures.html">USA Structures Data</a></li>
+    <li><a class="dropdown-item" href="../articles/get_wildfire_burn_zones.html">Wildfire Burn Zones</a></li>
+  </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -63,8 +70,56 @@
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>The inputted parcels datasets with attributes describing estimated unit counts by unit type.</p>
-    </div>
+    <p>An <code>sf</code> object (point geometry, representing parcel centroids) containing the input parcel data augmented with estimated residential unit information. The returned object includes:</p><dl><dt>parcel_id</dt>
+<dd><p>Character or numeric. The unique parcel identifier from the input data.</p></dd>
+
+<dt>tract_geoid</dt>
+<dd><p>Character. The 11-digit Census tract GEOID containing the parcel centroid.</p></dd>
+
+<dt>jurisdiction</dt>
+<dd><p>Character. The jurisdiction name associated with the parcel.</p></dd>
+
+<dt>municipality_name</dt>
+<dd><p>Character. The municipality name associated with the parcel.</p></dd>
+
+<dt>residential_unit_count</dt>
+<dd><p>Numeric. The estimated number of residential units on the parcel, benchmarked against ACS estimates at the tract level.</p></dd>
+
+<dt>residential_unit_categories</dt>
+<dd><p>Factor (ordered). Categorical classification of unit counts: "0", "1", "2", "3-4", "5-9", "10-19", "20-49", "50+".</p></dd>
+
+<dt>median_value_improvement_sf</dt>
+<dd><p>Numeric. Tract-level median improvement value for single-family parcels.</p></dd>
+
+<dt>median_value_improvement_mh</dt>
+<dd><p>Numeric. Tract-level median improvement value for manufactured home parcels.</p></dd>
+
+<dt>acs_units_N</dt>
+<dd><p>Numeric columns (acs_units_1, acs_units_2, etc.). ACS-reported housing unit counts by units-in-structure category for the tract.</p></dd>
+
+<dt>zone</dt>
+<dd><p>Character. Zoning designation from the zoning dataset.</p></dd>
+
+<dt>zoned_housing_type</dt>
+<dd><p>Character. Housing type allowed by zoning.</p></dd>
+
+<dt>far</dt>
+<dd><p>Numeric. Floor area ratio.</p></dd>
+
+<dt>setback_front</dt>
+<dd><p>Numeric. Front setback requirement in feet.</p></dd>
+
+<dt>setback_rear</dt>
+<dd><p>Numeric. Rear setback requirement in feet.</p></dd>
+
+<dt>setback_side</dt>
+<dd><p>Numeric. Side setback requirement in feet.</p></dd>
+
+<dt>height_maximum</dt>
+<dd><p>Numeric. Maximum building height allowed.</p></dd>
+
+
+</dl></div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>

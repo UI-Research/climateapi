@@ -33,5 +33,9 @@ read_xlsx_from_url(urls, directory, file_names = NULL, silent = TRUE)
 
 ## Value
 
-Either nothing (silent == TRUE) or a list of dataframes from the
-specified URLs.
+When `silent = TRUE` (default): Returns NULL invisibly. Files are
+downloaded and saved to `directory`. When `silent = FALSE`: Returns a
+list of data frames, one per URL, containing the contents of each
+downloaded .xlsx file as read by
+[`openxlsx::read.xlsx()`](https://rdrr.io/pkg/openxlsx/man/read.xlsx.html).
+List elements are in the same order as the input `urls`.

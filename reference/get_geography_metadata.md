@@ -23,5 +23,20 @@ get_geography_metadata(geography_type = c("state", "county"), year = 2023)
 
 ## Value
 
-A data frame containing metadata about the specified geography type and
-area.
+A tibble containing geographic metadata. The structure varies by
+`geography_type`:
+
+- For "county":
+
+  Returns county-level data with columns: `state_code` (2-digit FIPS),
+  `state_name`, `state_abbreviation` (2-letter USPS),
+  `state_population`, `county_code` (5-digit FIPS), `county_name`,
+  `county_population`.
+
+- For "state":
+
+  Returns state-level data with columns: `state_abbreviation`,
+  `state_code`, `state_name` (one row per state, no county information).
+
+Population data are sourced from the ACS 5-year estimates for the
+specified `year`.

@@ -17,4 +17,10 @@ get_dataset_columns(dataset)
 
 ## Value
 
-A vector of raw column names to be selected from the specified dataset
+A character vector containing the raw column names (in camelCase format
+as they appear in the source data) to be selected when reading the
+specified dataset. The columns returned are curated subsets of the full
+dataset columns, excluding administrative/metadata fields. For
+"nfip_policies": 20 columns including location, policy details, and
+building characteristics. For "ihp_registrations": ~20 columns including
+disaster info, geographic identifiers, and assistance amounts.

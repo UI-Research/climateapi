@@ -10,7 +10,9 @@ get_system_username()
 
 ## Value
 
-The username of the user running the script
+A character string containing the system username. Uses
+`Sys.info()["user"]` which works reliably across Windows, Mac, and
+Linux.
 
 ## Examples
 

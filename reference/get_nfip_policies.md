@@ -1,6 +1,7 @@
 # Access county-level data on NFIP policies
 
-Access county-level data on NFIP policies
+Retrieves National Flood Insurance Program (NFIP) policy data at the
+county level, including both current and historical policies.
 
 ## Usage
 
@@ -92,6 +93,9 @@ variables that can be aggregated to the county level.
   The insurer's estimated cost to replace the building.
 
 ## Details
+
+Data are from FEMA's OpenFEMA API. See
+<https://www.fema.gov/openfema-data-page/fima-nfip-redacted-policies-v2>.
 
 The following dataset houses information on NFIP policies (both historic
 and current). In order to filter to current policies, the analyst will

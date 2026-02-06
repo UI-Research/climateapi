@@ -16,6 +16,13 @@
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/economic_recovery_factsheet.html">Economic Recovery Post Disaster</a></li>
+    <li><a class="dropdown-item" href="../articles/get_sheldus.html">SHELDUS Hazard Data</a></li>
+    <li><a class="dropdown-item" href="../articles/get_structures.html">USA Structures Data</a></li>
+    <li><a class="dropdown-item" href="../articles/get_wildfire_burn_zones.html">Wildfire Burn Zones</a></li>
+  </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -61,7 +68,7 @@
           <code><a href="get_lodes.html">get_lodes()</a></code>
 
         </dt>
-        <dd>Get LEHD Origin-Destination Employment Statistics (LODES) data Returned data are from LODES Version 8, which is enumerated in 2020-vintage geometries.</dd>
+        <dd>Get LEHD Origin-Destination Employment Statistics (LODES) data</dd>
       </dl></div><div class="section level2">
       <h2 id="cities-data">Cities data<a class="anchor" aria-label="anchor" href="#cities-data"></a></h2>
 
@@ -93,7 +100,7 @@
           <code><a href="get_government_finances.html">get_government_finances()</a></code>
 
         </dt>
-        <dd>Get government unit-level expenses from the Census of Governments</dd>
+        <dd>Get county government revenues and expenditures</dd>
       </dl></div><div class="section level2">
       <h2 id="county-data">County data<a class="anchor" aria-label="anchor" href="#county-data"></a></h2>
 
@@ -141,6 +148,13 @@
 
         <dt>
 
+          <code><a href="get_nfip_residential_penetration.html">get_nfip_residential_penetration()</a></code>
+
+        </dt>
+        <dd>Get the share of residential structures covered by NFIP</dd>
+
+        <dt>
+
           <code><a href="get_public_assistance.html">get_public_assistance()</a></code>
 
         </dt>
@@ -151,7 +165,7 @@
           <code><a href="get_sheldus.html">get_sheldus()</a></code>
 
         </dt>
-        <dd>Access temporal county-level SHELDUS hazard damage data.</dd>
+        <dd>Access temporal county-level SHELDUS hazard damage data</dd>
 
         <dt>
 
@@ -181,7 +195,14 @@
           <code><a href="get_emergency_management_performance.html">get_emergency_management_performance()</a></code>
 
         </dt>
-        <dd>Get EMPG data</dd>
+        <dd>Get Emergency Management Performance Grant (EMPG) data</dd>
+
+        <dt>
+
+          <code><a href="get_disaster_dollar_database.html">get_disaster_dollar_database()</a></code>
+
+        </dt>
+        <dd>Get Disaster Dollar Database Data</dd>
       </dl></div><div class="section level2">
       <h2 id="event-boundaries">Event boundaries<a class="anchor" aria-label="anchor" href="#event-boundaries"></a></h2>
 
@@ -197,7 +218,14 @@
           <code><a href="get_current_fire_perimeters.html">get_current_fire_perimeters()</a></code>
 
         </dt>
-        <dd>Acquire wildfire perimeters</dd>
+        <dd>Acquire current wildfire perimeters</dd>
+
+        <dt>
+
+          <code><a href="get_wildfire_burn_zones.html">get_wildfire_burn_zones()</a></code>
+
+        </dt>
+        <dd>Get wildfire burn zones</dd>
       </dl></div><div class="section level2">
       <h2 id="land-use">Land use<a class="anchor" aria-label="anchor" href="#land-use"></a></h2>
 
@@ -365,6 +393,13 @@
 
         </dt>
         <dd>Cache an object to a parquet file; optionally read from disk</dd>
+
+        <dt>
+
+          <code><a href="get_naics_codes.html">get_naics_codes()</a></code>
+
+        </dt>
+        <dd>Get NAICS Codes for County Business Patterns</dd>
       </dl></div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>

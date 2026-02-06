@@ -1,6 +1,8 @@
 # Get major disaster declarations by county
 
-Get major disaster declarations by county
+Retrieves FEMA Major Disaster Declarations at the county level,
+aggregated by year and month. Tribal declarations are stored separately
+as an attribute.
 
 ## Usage
 
@@ -26,8 +28,47 @@ get_fema_disaster_declarations(
 ## Value
 
 A dataframe comprising Major Disaster Declarations by month by year by
-county. Tribal declarations are stored as an attribute of the primary
-dataframe called `tribal_declarations`.
+county. Tribal declarations are stored as an attribute
+(`tribal_declarations`). Columns include:
+
+- unique_id:
+
+  Unique identifier for each observation.
+
+- GEOID:
+
+  Five-digit county FIPS code.
+
+- year_declared:
+
+  Year the disaster was declared.
+
+- month_declared:
+
+  Month the disaster was declared (1-12).
+
+- declaration_title:
+
+  Title(s) of the disaster declaration(s).
+
+- incidents_all:
+
+  Total count of disaster declarations in the county-month.
+
+- incidents_natural_hazard:
+
+  Count of natural hazard declarations.
+
+- incidents\_\*:
+
+  Additional columns for other incident types, each of which reflects
+  the count of the given incident type.
+
+## Details
+
+Data are from FEMA's OpenFEMA API. See
+<https://www.fema.gov/openfema-data-page/disaster-declarations-summaries-v2>.
+Statewide declarations are expanded to all counties in the state.
 
 ## Examples
 

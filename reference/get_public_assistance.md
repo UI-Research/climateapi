@@ -1,6 +1,7 @@
 # Get FEMA Public Assistance (PA) funding
 
-Project- and county-level data on PA funding over time
+Retrieves FEMA Public Assistance (PA) project funding data, crosswalked
+to the county level for geographic analysis.
 
 ## Usage
 
@@ -94,6 +95,9 @@ variables that can be aggregated to the county level.
 
 ## Details
 
+Data are from FEMA's OpenFEMA API. See
+<https://www.fema.gov/openfema-data-page/public-assistance-funded-projects-details-v2>.
+
 These data have been crosswalked so that estimates can be aggregated at
 the county level. This is necessary (for county-level estimates) because
 many projects are statewide projects and do not have county-level
@@ -102,12 +106,12 @@ observations in the data.
 Analysts thus have two options for working with these data: (1)
 De-select the variables suffixed with `_split` and then run
 `distinct(df)`. This will provide unique observations for projects;
-projects are both county-level and statewide. These data can be
+projects can be either county-level or statewide. These data can be
 aggregated to the state level but cannot be comprehensively aggregated
 to the county level. (2) Group the data at the county level and
 summarize to produce county-level characterizations of PA projects and
 funding, using the `_split`-suffixed variables to calculate funding
-totals. For example, this might look like:
+totals.
 
 The attribution of statewide projects to the county level occurs by
 proportionally attributing project costs based on county-level

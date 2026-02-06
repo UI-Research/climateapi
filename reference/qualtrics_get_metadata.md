@@ -33,4 +33,8 @@ qualtrics_get_metadata(
 
 ## Value
 
-A character vector of the requested metadata
+A character vector containing the values from the column specified by
+`return_values` (default: "text_sub"), filtered to rows matching either
+the `question_name` or `survey_section` pattern. The length of the
+vector corresponds to the number of matching rows in the metadata.
+Returns an empty character vector if no matches are found.

@@ -34,6 +34,13 @@ downloading the extract (again user-specified) to the given filepath."></head><b
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/economic_recovery_factsheet.html">Economic Recovery Post Disaster</a></li>
+    <li><a class="dropdown-item" href="../articles/get_sheldus.html">SHELDUS Hazard Data</a></li>
+    <li><a class="dropdown-item" href="../articles/get_structures.html">USA Structures Data</a></li>
+    <li><a class="dropdown-item" href="../articles/get_wildfire_burn_zones.html">Wildfire Burn Zones</a></li>
+  </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -95,7 +102,14 @@ downloading the extract (again user-specified) to the given filepath.</p>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A dataframe corresponding to the supplied <code>extract_definition</code></p>
+    <p>A tibble containing IPUMS data corresponding to the supplied <code>extract_definition</code>. The structure varies by collection type:</p><dl><dt>For microdata collections (e.g., "usa", "cps")</dt>
+<dd><p>Returns individual-level records with columns corresponding to the variables specified in the extract definition. Column names and types are determined by IPUMS variable specifications. The data are read via <code><a href="https://tech.popdata.org/ipumsr/reference/read_ipums_micro.html" class="external-link">ipumsr::read_ipums_micro()</a></code>.</p></dd>
+
+<dt>For aggregate collections ("nhgis", "ihgis")</dt>
+<dd><p>Returns aggregate data (typically at geographic summary levels) with columns corresponding to the requested tables/variables. IPUMS variable attributes are applied via the collection's codebook. The data are read via <code><a href="https://tech.popdata.org/ipumsr/reference/read_ipums_agg.html" class="external-link">ipumsr::read_ipums_agg()</a></code>.</p></dd>
+
+
+</dl><p>If a cached file exists at the specified path and <code>refresh = FALSE</code>, the cached data are returned with a warning. Otherwise, the extract is submitted to IPUMS, downloaded, and cached for future use.</p>
     </div>
 
     <div class="section level2">

@@ -41,4 +41,9 @@ convert_delimited_to_parquet(
 
 ## Value
 
-Nothing. Parquet data are written to local path.
+NULL (invisibly). This function is called for its side effect of writing
+a parquet file to disk at the specified `outpath` (or a path derived
+from `inpath` with a .parquet extension). The function reads the input
+file in chunks to handle large files efficiently, optionally subsets to
+specified columns, and writes the result in Apache Parquet format using
+[`arrow::write_parquet()`](https://arrow.apache.org/docs/r/reference/write_parquet.html).

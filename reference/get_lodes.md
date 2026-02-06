@@ -1,8 +1,6 @@
-# Get LEHD Origin-Destination Employment Statistics (LODES) data Returned data are from LODES Version 8, which is enumerated in 2020-vintage geometries.
+# Get LEHD Origin-Destination Employment Statistics (LODES) data
 
-Get LEHD Origin-Destination Employment Statistics (LODES) data Returned
-data are from LODES Version 8, which is enumerated in 2020-vintage
-geometries.
+Get LEHD Origin-Destination Employment Statistics (LODES) data
 
 ## Usage
 

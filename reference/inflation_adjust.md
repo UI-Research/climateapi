@@ -43,7 +43,13 @@ inflation_adjust(
 
 ## Value
 
-A dataframe with inflation-adjusted values
+A tibble identical to the input `df` with additional inflation-adjusted
+columns. For each column specified in `dollar_variables`, a new column
+is created with the same name plus `names_suffix` (default:
+"\_base_year"). The adjusted values are calculated by multiplying
+original values by an inflation factor derived from the PCE Price Index
+ratio between the base year and each observation's year. Original
+columns are preserved unchanged.
 
 ## Examples
 

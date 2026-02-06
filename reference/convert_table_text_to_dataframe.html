@@ -16,6 +16,13 @@
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/economic_recovery_factsheet.html">Economic Recovery Post Disaster</a></li>
+    <li><a class="dropdown-item" href="../articles/get_sheldus.html">SHELDUS Hazard Data</a></li>
+    <li><a class="dropdown-item" href="../articles/get_structures.html">USA Structures Data</a></li>
+    <li><a class="dropdown-item" href="../articles/get_wildfire_burn_zones.html">Wildfire Burn Zones</a></li>
+  </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -83,7 +90,17 @@
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A list of dataframes, with each item corresponding to one page of the inputted text. The dataframes have the same column names and types as specified in <code>column_types</code>. Use <code>purrr::bind_rows()</code> to consolidate results into a single dataframe, if needed.</p>
+    <p>A list of tibbles, where each list element corresponds to one item (typically one page) in the input <code>text</code> vector/list. Each tibble contains:</p><dl><dt>Structure</dt>
+<dd><p>Columns match the names and types defined in <code>column_types</code>. Each row represents one record extracted from the table text by the LLM.</p></dd>
+
+<dt>NULL values</dt>
+<dd><p>When <code>required = FALSE</code> (default), columns may contain NULL/NA values if the LLM could not extract a value for that cell.</p></dd>
+
+<dt>Empty dataframes</dt>
+<dd><p>If the LLM encounters an error processing a page, that list element will be an empty <code><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame()</a></code>.</p></dd>
+
+
+</dl><p>Use <code><a href="https://purrr.tidyverse.org/reference/list_c.html" class="external-link">purrr::list_rbind()</a></code> or <code><a href="https://dplyr.tidyverse.org/reference/bind_rows.html" class="external-link">dplyr::bind_rows()</a></code> to consolidate results into a single dataframe. A warning is issued reminding users to review AI-generated results for accuracy.</p>
     </div>
 
     <div class="section level2">

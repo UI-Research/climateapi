@@ -1,6 +1,8 @@
 # Access county-level data on NFIP claims
 
-Access county-level data on NFIP claims
+Retrieves National Flood Insurance Program (NFIP) claims data at the
+county level, including damage amounts, payments, and building
+characteristics.
 
 ## Usage
 
@@ -117,8 +119,8 @@ A data frame comprising county-level data on current NFIP policies
 
 ## Details
 
-These data are from:
-https://www.fema.gov/openfema-data-page/fima-nfip-redacted-claims-v2.
+Data are from FEMA's OpenFEMA API. See
+<https://www.fema.gov/openfema-data-page/fima-nfip-redacted-claims-v2>.
 Per FEMA: This data set represents more than 2,000,000 NFIP claims
 transactions. It is derived from the NFIP system of record, staged in
 the NFIP reporting platform and redacted to protect policy holder

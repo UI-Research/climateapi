@@ -1,6 +1,7 @@
-# Get EMPG data
+# Get Emergency Management Performance Grant (EMPG) data
 
-Get EMPG data
+Retrieves Emergency Management Performance Grant (EMPG) award data from
+FEMA, which supports state and local emergency management agencies.
 
 ## Usage
 
@@ -27,4 +28,53 @@ get_emergency_management_performance(
 ## Value
 
 A data frame containing emergency management performance grant (EMPG)
-data.
+data. Columns include:
+
+- id:
+
+  Unique identifier for the grant record.
+
+- state_name:
+
+  Full state name.
+
+- state_code:
+
+  Two-digit state FIPS code.
+
+- state_abbreviation:
+
+  Two-letter state abbreviation.
+
+- year_project_start:
+
+  Year the project started.
+
+- project_start_date:
+
+  Date the project started.
+
+- project_end_date:
+
+  Date the project ended.
+
+- grant_amount:
+
+  Total grant amount in dollars.
+
+- federal_share:
+
+  Federal portion of the grant in dollars.
+
+- non_federal_share:
+
+  Non-federal cost share in dollars.
+
+- program:
+
+  EMPG program type.
+
+## Details
+
+Data are from FEMA's OpenFEMA API. See
+<https://www.fema.gov/openfema-data-page/emergency-management-performance-grants-v2>.

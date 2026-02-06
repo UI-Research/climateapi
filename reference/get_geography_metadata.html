@@ -16,6 +16,13 @@
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/economic_recovery_factsheet.html">Economic Recovery Post Disaster</a></li>
+    <li><a class="dropdown-item" href="../articles/get_sheldus.html">SHELDUS Hazard Data</a></li>
+    <li><a class="dropdown-item" href="../articles/get_structures.html">USA Structures Data</a></li>
+    <li><a class="dropdown-item" href="../articles/get_wildfire_burn_zones.html">Wildfire Burn Zones</a></li>
+  </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -55,7 +62,14 @@
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A data frame containing metadata about the specified geography type and area.</p>
+    <p>A tibble containing geographic metadata. The structure varies by <code>geography_type</code>:</p><dl><dt>For "county"</dt>
+<dd><p>Returns county-level data with columns: <code>state_code</code> (2-digit FIPS), <code>state_name</code>, <code>state_abbreviation</code> (2-letter USPS), <code>state_population</code>, <code>county_code</code> (5-digit FIPS), <code>county_name</code>, <code>county_population</code>.</p></dd>
+
+<dt>For "state"</dt>
+<dd><p>Returns state-level data with columns: <code>state_abbreviation</code>, <code>state_code</code>, <code>state_name</code> (one row per state, no county information).</p></dd>
+
+
+</dl><p>Population data are sourced from the ACS 5-year estimates for the specified <code>year</code>.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
