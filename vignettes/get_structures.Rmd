@@ -7,17 +7,7 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-```{r, include = FALSE}
-knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>",
-  warning = FALSE,
-  message = FALSE,
-  fig.width = 8,
-  fig.height = 6,
-  dpi = 150
-)
-```
+
 
 ## Overview
 
@@ -31,7 +21,8 @@ See [https://geoplatform.gov/metadata/9d4a3ae3-8637-4707-92a7-b7d67b769a6b](http
 
 ## Loading the data
 
-```{r setup}
+
+``` r
 library(climateapi)
 library(tidyverse)
 library(sf)
@@ -42,7 +33,8 @@ set_urbn_defaults(style = "print")
 
 The function requires a `boundaries` argument specifying the geographic area of interest. This must be a spatial polygon object with a defined coordinate reference system.
 
-```{r load-data, eval = FALSE}
+
+``` r
 # Example: Get structures in Washington, DC
 dc_boundary <- tigris::states(cb = TRUE) |>
   filter(STUSPS == "DC")
@@ -52,13 +44,16 @@ dc_structures <- get_structures(
   geography = "tract")
 ```
 
-```{r load-data-hidden, echo = FALSE}
-dc_boundary <- tigris::states(cb = TRUE) |>
-  filter(STUSPS == "DC")
 
-dc_structures <- get_structures(
-  boundaries = dc_boundary,
-  geography = "tract")
+```
+#> Reading layer `DC_Structures' from data source 
+#>   `C:\Users\WCurranGroome\Box\METRO Climate and Communities Practice Area\github-repository\built-environment\housing-units\usa-structures\raw\DC\DC_Structures.gdb' 
+#>   using driver `OpenFileGDB'
+#> Simple feature collection with 64701 features and 33 fields
+#> Geometry type: MULTIPOLYGON
+#> Dimension:     XY
+#> Bounding box:  xmin: -77.11509 ymin: 38.79307 xmax: -76.90971 ymax: 38.99554
+#> Geodetic CRS:  WGS 84
 ```
 
 ## Function parameters
@@ -71,8 +66,15 @@ dc_structures <- get_structures(
 
 Each row represents a unique combination of geographic unit (tract or county) and structure type.
 
-```{r structure}
+
+``` r
 glimpse(dc_structures)
+#> Rows: 1,951
+#> Columns: 4
+#> $ GEOID             <chr> "11001000101", "11001000101", "11001000101", "11001000101", "11001000101", "11001000101", "11001000102", "11001000102", "11001000102", "11001…
+#> $ primary_occupancy <chr> "Single Family Dwelling", "Multi - Family Dwelling", "Religious", "Retail Trade", "General Services", "Temporary Lodging", "Single Family Dwe…
+#> $ occupancy_class   <chr> "Residential", "Residential", "Assembly", "Commercial", "Government", "Residential", "Residential", "Residential", "Commercial", "Commercial"…
+#> $ count             <int> 63, 24, 5, 4, 1, 1, 384, 48, 42, 21, 19, 15, 13, 10, 8, 5, 5, 4, 2, 1, 1, 53, 8, 8, 1, 1, 1, 310, 60, 42, 23, 12, 9, 8, 7, 3, 3, 3, 3, 2, 2, …
 ```
 
 Key variables include:
@@ -84,17 +86,33 @@ Key variables include:
 
 ### Occupancy types
 
-```{r occupancy-types}
+
+``` r
 dc_structures |>
   distinct(occupancy_class, primary_occupancy) |>
   arrange(occupancy_class, primary_occupancy)
+#> # A tibble: 27 × 2
+#>    occupancy_class primary_occupancy              
+#>    <chr>           <chr>                          
+#>  1 Assembly        Indoor Arena                   
+#>  2 Assembly        Religious                      
+#>  3 Commercial      Entertainment and Recreation   
+#>  4 Commercial      Hospital                       
+#>  5 Commercial      Medical Office/Clinic          
+#>  6 Commercial      Parking                        
+#>  7 Commercial      Personal and Repair Services   
+#>  8 Commercial      Professional/Technical Services
+#>  9 Commercial      Retail Trade                   
+#> 10 Commercial      Theaters                       
+#> # ℹ 17 more rows
 ```
 
 ## Example analyses
 
 ### Structure composition by tract
 
-```{r tract-composition}
+
+``` r
 dc_summary <- dc_structures |>
   summarize(
     .by = GEOID,
@@ -115,9 +133,12 @@ dc_summary |>
     y = "Share residential")
 ```
 
+![plot of chunk tract-composition](figure/get_structures-tract-composition-1.png)
+
 ### Mapping structure density
 
-```{r map-structures, fig.height = 8}
+
+``` r
 dc_tracts <- tigris::tracts(state = "DC", cb = TRUE, year = 2023, progress_bar = FALSE) |>
   st_transform(5070)
 
@@ -141,11 +162,14 @@ ggplot(dc_map) +
   theme_urbn_map()
 ```
 
+![plot of chunk map-structures](figure/get_structures-map-structures-1.png)
+
 ### Analyzing structures in a disaster area
 
 A common use case is estimating structures within a hazard-affected area. This example shows how to combine structure data with wildfire burn zones.
 
-```{r disaster-example, eval = FALSE}
+
+``` r
 # Get a specific wildfire's burn zone
 burn_zones <- get_wildfire_burn_zones()
 
@@ -171,7 +195,8 @@ camp_fire_structures$structures_summarized |>
 
 Setting `keep_structures = TRUE` returns both the summarized data and the raw point-level structure data.
 
-```{r raw-structures, eval = FALSE}
+
+``` r
 dc_full <- get_structures(
   boundaries = dc_boundary,
   geography = "county",
@@ -198,7 +223,8 @@ ggplot() +
 
 For larger areas, county-level aggregation provides a useful summary.
 
-```{r county-example, eval = FALSE}
+
+``` r
 # Get structures for multiple states
 southeast_boundary <- tigris::states(cb = TRUE) |>
   filter(STUSPS %in% c("FL", "GA", "AL", "SC"))

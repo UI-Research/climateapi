@@ -7,20 +7,7 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-```{r, include = FALSE}
-knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>",
-  warning = FALSE,
-  message = FALSE,
-  fig.width = 8,
-  fig.height = 6,
-  dpi = 1000,
-  eval = TRUE,
-  echo = TRUE)
 
-options(scipen = 999)
-```
 
 
 ## Overview
@@ -41,7 +28,8 @@ Accordingly, we want our pre-period to be long--say, 8 years preceding the disas
 
 ## Setup
 
-```{r setup}
+
+``` r
 library(climateapi)
 library(tidyverse)
 library(urbnthemes)
@@ -53,7 +41,8 @@ set_urbn_defaults(style = "print")
 ## Parameters
 
 Define the affected county and disaster characteristics. These would be updated for each new event.
-```{r parameters}
+
+``` r
 # Affected county
 affected_county_fips <- "12087"
 affected_county_name <- "Monroe County, FL"
@@ -69,7 +58,8 @@ years_after <- 4
 ```
 
 ### Preceding Disasters
-```{r}
+
+``` r
 disasters = get_fema_disaster_declarations(api = FALSE)
 disasters_affected = disasters %>%
   filter(GEOID %in% affected_county_fips, incidents_natural_hazard > 0)
@@ -83,7 +73,8 @@ Establish the pre-disaster economic conditions of the affected county.
 
 ## Sociodemographic Characteristics
 
-```{r}
+
+``` r
 acs_df_2023 = arrow::read_parquet(file.path(get_box_path(), "sociodemographics", "acs", "acs_county_2023.parquet"))
 
 acs_matching_variables = c(
@@ -97,7 +88,8 @@ acs_matching_variables = c(
 
 ## Hazard Damages over Time
 
-```{r}
+
+``` r
 sheldus_df = get_sheldus() %>%
    summarize(.by = c(GEOID, year), damage_property_millions = sum(damage_property, na.rm = TRUE) / 1000000)
 
@@ -110,12 +102,15 @@ sheldus_df %>%
     labs(x = "Year", y = "Property damage (millions)")
 ```
 
+![plot of chunk unnamed-chunk-4](figure/economic_recovery_factsheet-unnamed-chunk-4-1.png)
+
 
 ## Industry Composition over Time
 
 Identify sectors that may be particularly vulnerable to this disaster type.
 
-```{r baseline-industry}
+
+``` r
 cbp_df = cache_it(
   cbp_df, 
   file_name = "cbp_2016_2023", 
@@ -148,11 +143,14 @@ cbp_affected %>%
   labs(y = "Employees (n)", x = "")
 ```
 
+![plot of chunk baseline-industry](figure/economic_recovery_factsheet-baseline-industry-1.png)
+
 ## Small Businesses over Time
 
 Identify smaller businesses, which may be more vulnerable to disaster-related economic shocks.
 
-```{r}
+
+``` r
 total_employers = cbp_affected %>%
   filter(industry == "total", employee_size_range_label == "All establishments") %>%
   slice_max(year) %>%
@@ -185,9 +183,12 @@ cbp_affected %>%
     scale_y_continuous(labels = scales::comma)
 ```
 
+![plot of chunk unnamed-chunk-5](figure/economic_recovery_factsheet-unnamed-chunk-5-1.png)
+
 ## County Fiscal Capacity Over Time
 
-```{r baseline-fiscal}
+
+``` r
 county_expenses = get_government_finances()
 finances_years = county_expenses %>% pull(year) %>% unique()
 
@@ -210,6 +211,8 @@ county_expenses %>%
     labs(x = "Year", y = "USD (Millions)") 
 ```
 
+![plot of chunk baseline-fiscal](figure/economic_recovery_factsheet-baseline-fiscal-1.png)
+
 ---
 
 # Section 2: Selecting Comparison Counties
@@ -220,7 +223,8 @@ Identify historical analogs: counties that experienced similar disasters 5+ year
 
 Build a county-level dataset with all variables needed for matching.
 
-```{r matching-disasters}
+
+``` r
 # Disaster history: count and binary indicators by hazard type in past 5 years
 disaster_lookback_years <- 5
 reference_year <- disaster_year - 1  # Use year before disaster for matching
@@ -242,14 +246,16 @@ disaster_history <- disasters %>%
   as_tibble()
 ```
 
-```{r matching-sheldus}
+
+``` r
 sheldus_reference_year = if_else(reference_year < 2023, reference_year, 2023)
 
 sheldus_matching = sheldus_df %>%
   filter(year == sheldus_reference_year)
 ```
 
-```{r matching-industry}
+
+``` r
 # Industry employment shares from County Business Patterns
 # Use 2-digit NAICS codes for broad sector shares
 cbp_reference_year = if_else(reference_year < 2023, reference_year, 2023)
@@ -285,14 +291,16 @@ industry_matching <- industry_shares %>%
   left_join(cbp_totals, by = "GEOID")
 ```
 
-```{r matching-nfip}
+
+``` r
 # NFIP residential coverage rate by county
 nfip_matching <- get_nfip_residential_penetration() %>%
   mutate(share_residential_structures_sfha = residential_structures_sfha / residential_structures) %>%
   select(GEOID, share_residential_structures_sfha, penetration_rate_sfha)
 ```
 
-```{r matching-fiscal}
+
+``` r
 finance_reference_year = if_else(reference_year < 2023, reference_year, 2022)
 
 # Total county government expenses
@@ -300,13 +308,15 @@ county_finances_matching = county_expenses %>%
   filter(year == finance_reference_year)
 ```
 
-```{r matching-acs}
+
+``` r
 # Sociodemographic characteristics from ACS
 acs_matching <- acs_df_2023 %>%
   select(GEOID, all_of(acs_matching_variables))
 ```
 
-```{r matching-combine}
+
+``` r
 # Combine all matching variables into single dataset
 matching_data <- acs_matching %>%
   left_join(disaster_history, by = "GEOID") %>%
@@ -322,7 +332,8 @@ matching_data <- acs_matching %>%
 
 ## Select Comparison Counties
 
-```{r comparison-selection}
+
+``` r
 # Hard filter: same disaster type, disaster occurred 5+ years ago
 comparison_pool <- disasters %>%
   filter(
@@ -347,7 +358,8 @@ comparison_candidates <- comparison_pool %>%
     GEOID != affected_county_fips)  # Exclude affected county
 ```
 
-```{r comparison-distance}
+
+``` r
 # Calculate Mahalanobis distance to affected county
 
 # Select numeric variables for distance calculation
@@ -390,7 +402,8 @@ comparison_counties <- comparison_candidates %>%
 
 Align all outcome datasets to event time (t=0 is disaster year).
 
-```{r event-study-reference}
+
+``` r
 # Create reference table: affected county + comparison counties with disaster years
 county_reference <- bind_rows(
   # Affected county
@@ -409,7 +422,8 @@ county_reference <- bind_rows(
 event_window <- c(-5, 4)
 ```
 
-```{r event-study-employment}
+
+``` r
 # Align to event time
 cbp_event_aligned <- cbp_df %>%
   mutate(GEOID = str_c(state, county)) %>%
@@ -421,7 +435,8 @@ cbp_event_aligned <- cbp_df %>%
          industry, employees, employers, annual_payroll)   
 ```
 
-```{r event-study-fiscal}
+
+``` r
 # Align to event time
 fiscal_event_aligned <- county_expenses %>%
   rename(calendar_year = year) %>%
@@ -432,7 +447,8 @@ fiscal_event_aligned <- county_expenses %>%
          expenditure_total, revenue_total)
 ```
 
-```{r event-study-sba}
+
+``` r
 # SBA disaster loans
 sba_raw <- get_sba_loans()
 
@@ -471,9 +487,11 @@ sba_event_aligned <- sba_county %>%
          matches("loan"))
 ```
 
-```{r event-study-pa}
+
+``` r
 # FEMA Public Assistance
 pa_raw <- get_public_assistance()
+#> Processed 360244 groups out of 656351. 55% done. Time elapsed: 3s. ETA: 2s.Processed 550614 groups out of 656351. 84% done. Time elapsed: 4s. ETA: 0s.Processed 656351 groups out of 656351. 100% done. Time elapsed: 4s. ETA: 0s.
 
 # Aggregate to county-year level
 pa_county_year <- pa_raw %>%
@@ -493,7 +511,8 @@ pa_event_aligned <- pa_county_year %>%
          pa_federal_funding_obligated_split)
 ```
 
-```{r event-study-ihp}
+
+``` r
 # FEMA Individual and Households Program
 # ihp_raw <- get_ihp_registrations()
 
@@ -526,7 +545,8 @@ Plot employment trends with time relative to disaster (t=0).
 - **Affected county**: t-6 through t=0 (present)
 - **Comparison counties**: full t-6 through t+6 window, aligned to their disaster year
 
-```{r employment-total}
+
+``` r
 # Total employment over event time
 cbp_event_aligned %>%
   filter(industry == "total", employees > 0) %>%
@@ -545,13 +565,16 @@ cbp_event_aligned %>%
   theme(legend.position = "none")
 ```
 
+![plot of chunk employment-total](figure/economic_recovery_factsheet-employment-total-1.png)
+
 ---
 
 # Section 5: Local Government Fiscal Trajectories (Event-Study Style)
 
 Examine how local government finances evolved in comparison counties post-disaster.
 
-```{r fiscal-expenses}
+
+``` r
 # Total county expenses over event time
 fiscal_event_aligned %>%
   mutate(county_type = if_else(str_detect(county_type, "affected"), "Impacted", "Comparison")) %>%
@@ -569,7 +592,10 @@ fiscal_event_aligned %>%
   theme(legend.position = "none")
 ```
 
-```{r fiscal-revenue}
+![plot of chunk fiscal-expenses](figure/economic_recovery_factsheet-fiscal-expenses-1.png)
+
+
+``` r
 # Total county expenses over event time
 fiscal_event_aligned %>%
   mutate(county_type = if_else(str_detect(county_type, "affected"), "Impacted", "Comparison")) %>%
@@ -586,6 +612,8 @@ fiscal_event_aligned %>%
   theme(legend.position = "none")
 ```
 
+![plot of chunk fiscal-revenue](figure/economic_recovery_factsheet-fiscal-revenue-1.png)
+
 ---
 
 # Section 6: Recovery Resources in Comparison Cases
@@ -594,7 +622,8 @@ Describe typical federal assistance flows based on historical analogs. Since the
 
 ## SBA Disaster Loans
 
-```{r recovery-sba}
+
+``` r
 # SBA loans over event time (comparison counties only for post-period)
 
 sba_event_aligned %>%
@@ -614,6 +643,11 @@ sba_event_aligned %>%
     y = "SBA loans (cumulative)",
     title = "Cumulative SBA Loans - Residential") +
   theme(legend.position = "none")
+```
+
+![plot of chunk recovery-sba](figure/economic_recovery_factsheet-recovery-sba-1.png)
+
+``` r
 
 sba_event_aligned %>%
   arrange(GEOID, event_time) %>%
@@ -632,9 +666,12 @@ sba_event_aligned %>%
   theme(legend.position = "none")
 ```
 
+![plot of chunk recovery-sba](figure/economic_recovery_factsheet-recovery-sba-2.png)
+
 ## FEMA Public Assistance
 
-```{r recovery-pa}
+
+``` r
 # PA funding over event time (comparison counties only for post-period)
 pa_event_aligned %>%
   mutate(county_type = if_else(str_detect(county_type, "affected"), "Impacted", "Comparison")) %>%
@@ -649,9 +686,12 @@ pa_event_aligned %>%
     title = "FEMA Public Assistance in Comparison Counties")
 ```
 
+![plot of chunk recovery-pa](figure/economic_recovery_factsheet-recovery-pa-1.png)
+
 ## Individual and Households Program
 
-```{r recovery-ihp}
+
+``` r
 # # IHP funding over event time (comparison counties only for post-period)
 # ihp_event_aligned %>%
 #   ggplot(aes(x = event_time, y = ihp_amount_total / 1e6, group = GEOID)) +
@@ -671,7 +711,8 @@ pa_event_aligned %>%
 
 # Section 7: Key Takeaways
 
-```{r takeaways}
+
+``` r
 # Programmatically generate summary statistics for the factsheet:
 # - Pre-disaster vulnerability indicators for affected county
 # - Median/range of recovery trajectories from comparison counties
@@ -680,7 +721,8 @@ pa_event_aligned %>%
 
 ## Summary Table
 
-```{r summary-table}
+
+``` r
 # Create summary table of key indicators
 ```
 

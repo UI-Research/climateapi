@@ -1,0 +1,215 @@
+---
+title: "Wildfire Burn Zones"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Wildfire Burn Zones}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  warning = FALSE,
+  message = FALSE,
+  fig.width = 8,
+  fig.height = 6,
+  dpi = 150
+)
+```
+
+## Overview
+
+The `get_wildfire_burn_zones()` function provides access to a harmonized dataset of wildfire burn zone disasters in the United States from 2000-2025. 
+
+## Data sources and methodology
+
+This dataset combines six authoritative wildfire data sources to identify wildfires that burned near communities and resulted in civilian fatalities, destroyed structures, or received federal disaster relief. These sources are:
+
+- **FIRED (Fire Event Delineation)**: Satellite-derived fire perimeters
+- **MTBS (Monitoring Trends in Burn Severity)**: Burn severity and perimeters for large fires
+- **NIFC (National Interagency Fire Center)**: Official fire incident data
+- **ICS-209 (Incident Status Summary)**: Incident management records
+- **RedBook**: Historical wildfire statistics
+- **FEMA**: Federal disaster declarations
+
+Wildfires are classified as "disasters" if they:
+
+1. Burned near a community AND
+2. Resulted in at least one of:
+   - Civilian fatality
+   - Destroyed structure
+   - Federal disaster relief
+
+These data are described and provided in association with the journal article: Wilner, L.B., Piepmeier, L., Gordon, M. et al. Two and a half decades of United States wildfire burn zone disaster data, 2000-2025. Sci Data 12, 1948 (2025). https://doi.org/10.1038/s41597-025-06226-8. 
+
+## Loading the data
+
+```{r setup}
+library(climateapi)
+library(tidyverse)
+library(sf)
+library(urbnthemes)
+
+set_urbn_defaults(style = "print")
+```
+
+```{r load-data, eval = FALSE}
+burn_zones <- get_wildfire_burn_zones()
+```
+
+```{r load-data-hidden, echo = FALSE}
+# For vignette building, we'll create example output structure
+# In practice, users would run the above code
+burn_zones <- get_wildfire_burn_zones()
+```
+
+## Data structure
+
+Each row in the dataset represents a single wildfire burn zone disaster.
+
+```{r structure}
+glimpse(burn_zones)
+```
+
+Key variables include:
+
+- `wildfire_id`: Unique identifier for each wildfire event
+- `year`: Year the wildfire occurred (2000-2025)
+- `wildfire_name`: Name of the wildfire or fire complex
+- `county_fips`: Pipe-delimited string of county FIPS codes for all affected counties
+- `county_name`: Pipe-delimited string of county names for all affected counties
+- `area_sq_km`: Burned area in square kilometers
+- `fatalities_total` and `injuries_total`: Human impacts
+- `structures_destroyed` and `structures_threatened`: Built environment impacts
+- `geometry`: Burn zone polygon boundaries
+
+## Example analyses
+
+### Annual trends in wildfire disasters
+
+```{r annual-trends}
+# Extract state FIPS from the first county in the pipe-delimited list
+df1 = burn_zones |>
+  st_drop_geometry() |>
+  mutate(state_fips = str_sub(county_fips, 1, 2)) |>
+  summarize(
+    .by = c(year, state_fips),
+    n_wildfires = n(),
+    total_area_sq_km = sum(area_sq_km, na.rm = TRUE),
+    total_structures_destroyed = sum(structures_destroyed, na.rm = TRUE)) |>
+  left_join(
+    tigris::fips_codes %>% distinct(state, state_code),
+    by = c("state_fips" = "state_code"))
+
+top_five_states = df1 %>%
+  arrange(desc(n_wildfires)) %>%
+  distinct(state) %>%
+  slice(1:5)
+
+df1 %>%
+  filter(state %in% top_five_states$state) %>%
+  mutate(state = factor(state, levels = top_five_states %>% pull(state), ordered = TRUE)) %>%
+  ggplot(aes(x = year, y = n_wildfires)) +
+  geom_col() +
+  labs(
+    title = "Many states frequently experience more than 50 wildfires per year",
+    subtitle = "Disasters defined as wildfires causing fatalities, structure loss, or federal relief",
+    x = "",
+    y = "Number of wildfires") +
+  facet_wrap(~state)
+```
+
+### Geographic distribution of impacts
+
+```{r state-impacts}
+state_impacts <- burn_zones |>
+  st_drop_geometry() |>
+  mutate(state_fips = str_sub(county_fips, 1, 2)) |>
+  summarize(
+    .by = state_fips,
+    n_wildfires = n_distinct(wildfire_id),
+    total_structures_destroyed = sum(structures_destroyed, na.rm = TRUE),
+    total_fatalities = sum(fatalities_total, na.rm = TRUE)
+  ) |>
+  left_join(
+    tidycensus::fips_codes |>
+      distinct(state_code, state_name),
+    by = c("state_fips" = "state_code")
+  ) |>
+  filter(!is.na(state_name))
+
+state_impacts |>
+  slice_max(n_wildfires, n = 10) |>
+  mutate(state_name = fct_reorder(state_name, n_wildfires)) |>
+  ggplot(aes(y = state_name, x = n_wildfires)) +
+  geom_col() +
+  labs(
+    title = "States with Most Wildfire Burn Zone Disasters (2000-2025)",
+    x = "Number of distinct wildfires",
+    y = ""
+  )
+```
+
+### Mapping wildfire burn zones
+
+```{r map-example, fig.height = 8}
+# Get wildfires from a recent year in California
+ca_2020_fires <- burn_zones |>
+  filter(str_detect(county_fips, "^06"), year == 2020)
+
+# Get California counties for context
+ca_counties <- tigris::counties(state = "CA", cb = TRUE, year = 2022, progress_bar = FALSE) |>
+  st_transform(5070)
+
+ggplot() +
+  geom_sf(data = ca_counties, fill = "grey95", color = "grey70") +
+  geom_sf(data = ca_2020_fires, aes(fill = structures_destroyed), alpha = 0.8) +
+  scale_fill_continuous(trans = "reverse") +
+  labs(
+    title = "California Wildfire Burn Zone Disasters (2020)",
+    subtitle = "Burn zone perimeters colored by structures destroyed",
+    fill = "Structures\ndestroyed") +
+  theme_urbn_map()
+```
+
+### Analyzing structure loss severity
+
+```{r severity-analysis}
+burn_zones |>
+  st_drop_geometry() |>
+  distinct(wildfire_id, year, wildfire_name, structures_destroyed) |>
+  filter(!is.na(structures_destroyed), structures_destroyed > 0) |>
+  mutate(
+    severity = case_when(
+      structures_destroyed >= 1000 ~ "1,000+ structures",
+      structures_destroyed >= 100 ~ "100-999",
+      structures_destroyed >= 10 ~ "10-99",
+      TRUE ~ "1-9 structures"),
+    severity = factor(
+      severity,
+      levels = c("1-9 structures", "10-99", "100-999", "1,000+ structures"))) |>
+  count(year, severity) |>
+  mutate(
+    .by = year,
+    percent = n / sum(n, na.rm = TRUE)) |>
+  ggplot(aes(x = year, y = percent, fill = severity)) +
+  geom_col() +
+  scale_fill_manual(values = c(
+    "1-9 structures" = palette_urbn_cyan[1],
+    "10-99" = palette_urbn_cyan[3],
+    "100-999" = palette_urbn_cyan[5],
+    "1,000+ structures" = palette_urbn_cyan[7])) +
+  scale_y_continuous(labels = scales::percent) +
+  labs(
+    title = "Most wildifres destroy under 10 structures",
+    x = "",
+    y = "")
+```
+
+## See also
+
+- `get_current_fire_perimeters()`: Access current/active wildfire perimeters
+- `get_fema_disaster_declarations()`: FEMA disaster declarations including fire-related declarations
+- `get_structures()`: Estimate structures within geographic boundaries

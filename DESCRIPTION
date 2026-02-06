@@ -62,7 +62,6 @@ Remotes:
     UrbanInstitute/urbnthemes
 URL: https://ui-research.github.io/climateapi/
 Suggests:
-    crosswalk,
     knitr,
     qualtRics,
     rmarkdown,
