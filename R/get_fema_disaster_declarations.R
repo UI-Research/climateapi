@@ -28,41 +28,100 @@ get_fema_disaster_declarations = function(
 	} else {
 		disaster_declarations1 = rfema::open_fema(
 				data_set = "DisasterDeclarationsSummaries",
-				# Major Disaster Declarations Only
-				filters = list(declarationType = "=DR"),
 				ask_before_call = FALSE) |>
 			janitor::clean_names() }
 
-	# Defining natural hazards so we can filter out disaster declarations for things like terrorist attacks/biological
-	natural_hazards <- paste0(
-		  "incidents_",
-		  c(
-		    "Fire", "Flood", "Hurricane", "Severe Storm", "Winter Storm", "Tornado", "Snowstorm",
-		    "Earthquake", "Mud/Landslide", "Coastal Storm", "Severe Ice Storm",
-		    "Tropical Storm", "Typhoon", "Volcanic Eruption", "Tsunami", "Freezing", "Drought")) |>
-		janitor::make_clean_names()
+	natural_hazards <- c(
+    "Fire", "Flood", "Hurricane", "Severe Storm", "Winter Storm", "Tornado", "Snowstorm",
+    "Earthquake", "Mud/Landslide", "Coastal Storm", "Severe Ice Storm",
+    "Tropical Storm", "Typhoon", "Volcanic Eruption", "Tsunami", "Freezing", "Drought",
+    "Tropical Depression", "Straight-Line Winds", "Other Natural Hazards")
 
-	## the data date back multiple decades, so there are some valid observations for counties that
-	## no longer exist as of 2010 or 2022; we drop those counties
-	## counties that exist in 2010 or 2022
-	benchmark_geographies = dplyr::bind_rows(
-	  tigris::counties(cb = TRUE, year = 2010, progress_bar = FALSE) |>
-	    dplyr::transmute(GEOID = stringr::str_c(STATE, COUNTY)) |>
-	    sf::st_drop_geometry(),
-	  tigris::counties(cb = TRUE, year = 2022, progress_bar = FALSE) |>
-	    dplyr::select(GEOID) |>
-	    sf::st_drop_geometry()) |>
-	  dplyr::pull(GEOID) |>
-	  unique()
+	temp = disaster_declarations1 %>%
+	  dplyr::mutate(
+	    designated_area = designated_area %>% stringr::str_squish() %>% stringr::str_trim(),
+	    county_fips_code = stringr::str_c(fips_state_code, fips_county_code))
 
-	# Counting disaster declarations by county by year and month
+	## most declarations where the county code == 000 are "Statewide" designations
+	temp %>%
+	  dplyr::filter(fips_county_code == "000") %>%
+	  dplyr::count(designated_area, sort = TRUE)
+
+	## seemingly all such declarations have a "designated_area" corresponding to an Indigenous community
+	## (i.e., a tribe, tribal area, or pacific island area)
+	temp %>%
+	  dplyr::filter(
+	    fips_county_code == "000",
+	    designated_area != "Statewide") %>%
+	  dplyr::count(designated_area, sort = TRUE) %>%
+	  print(n = Inf)
+
+	## let's double check that's right
+	## TDSA: Tribally-Designated Service Area
+	## OTSA: Oklahoma Tribal Statistical Area
+	## ANV: Alaskan Native Village
+	## Joint Area: areas shared by multiple tribes
+	temp %>%
+	  dplyr::filter(
+	    fips_county_code == "000",
+	    designated_area != "Statewide",
+	    !stringr::str_detect(designated_area, "OTSA|Reservation|Tribe|Native|ANV|Band|Indians|Trust|Indian|Pueblo|TDSA|Joint Area")) %>%
+	  dplyr::count(designated_area, sort = TRUE) %>%
+	  print(n = Inf)
+	## the few remaining areas are all tribal areas as well
+
+	## disaster declaration observations are fundamentally not at the county level
+	## they include townships, independent cities, educational areas, remote maine areas,
+	## and more
 	disaster_declarations2 <- disaster_declarations1 |>
 		dplyr::mutate(
 			fips_state_code = stringr::str_pad(as.character(fips_state_code), width = 2, side = "left", pad = "0"),
 			fips_county_code = stringr::str_pad(as.character(fips_county_code), width = 3, side = "left", pad = "0"),
 			GEOID = stringr::str_c(fips_state_code, fips_county_code),
 			year_declared = lubridate::year(declaration_date),
-			month_declared = lubridate::month(declaration_date)) |>
+			month_declared = lubridate::month(declaration_date),
+			tribal_designated_area = dplyr::case_when(
+			  fips_county_code == "000" & designated_area != "Statewide" ~ 1,
+			  TRUE ~ 0),
+			incident_type = dplyr::case_when(
+			  incident_type == "Other" & stringr::str_detect(declaration_title, "STRAIGHT-LINE") ~ "Straight-Line Winds",
+			  incident_type == "Other" & stringr::str_detect(declaration_title, "WIND STORM|TIDAL WAVE|SEISMIC SEA WAVE|SEVERE WEATHER CONDITIONS|HIGH WINDS") ~ "Other Natural Hazards",
+			  TRUE ~ incident_type)) %>%
+	  dplyr::transmute(
+	    disaster_number,
+	    declaration_title,
+	    type_declaration = dplyr::case_when(
+	      declaration_type == "DR" ~ "Major disaster declaration",
+	      declaration_type == "EM" ~ "Emergency declaration",
+	      declaration_type == "FM" ~ "Fire management declaration",
+	      TRUE ~ declaration_type),
+	    type_incident = incident_type,
+	    type_incident_natural_hazard = dplyr::case_when(
+        type_incident %in% natural_hazards ~ TRUE,
+        TRUE ~ FALSE),
+	    designated_area,
+	    state_fips_code = stringr::str_sub(GEOID, 1, 2),
+	    GEOID,
+	    date_declaration = declaration_date,
+	    date_incident_begin = incident_begin_date,
+	    date_incident_end = incident_end_date,
+	    tribal_request,
+	    tribal_designated_area,
+	    program_declared_individuals_households = ih_program_declared,
+	    program_declared_individual_assistance = ia_program_declared,
+	    program_declared_public_assistance = pa_program_declared,
+	    program_declared_hazard_mitigation_assistance = hm_program_declared) %>%
+	  dplyr::mutate(dplyr::across(.cols = dplyr::matches("tribal|program_declared"), as.logical)) %>%
+	  dplyr::arrange(dplyr::desc(date_declaration))
+
+	disaster_declarations2 %>%
+	  dplyr::count(type_incident, type_incident_natural_hazard) %>%
+	  dplyr::filter(type_incident_natural_hazard == FALSE)
+
+	disaster_declarations2 %>%
+	  dplyr::filter(!stringr::str_detect(designated_area, "County|Parish|Municipio")) %>%
+	  dplyr::count(designated_area, tribal_designated_area, sort = TRUE) %>%
+	  dplyr::arrange(dplyr::desc(tribal_designated_area), dplyr::desc(n))
 		## Major Disaster Declarations only
 		dplyr::filter(declaration_type == "DR") |>
 		## produce counts at the county x incident-type x year x month level
@@ -149,11 +208,6 @@ get_fema_disaster_declarations = function(
 	  prep_data() |>
 	  dplyr::select(-fips_county_code)
 
-	colnames(disaster_declarations_tribal)
-	colnames(disaster_declarations_nontribal)
-
-
-
 	result = disaster_declarations_nontribal
 	attr(result, "tribal_declarations") = disaster_declarations_tribal
 
@@ -193,3 +247,4 @@ utils::globalVariables(c(
   "declaration_type", "incident_type", "GEOID", "year_declared", "month_declared",
   ".", "n", "count", "incidents_all", "incidents_natural_hazard", "benchmark_geographies",
   "declaration_title", "place_code", "tribal_request"))
+
