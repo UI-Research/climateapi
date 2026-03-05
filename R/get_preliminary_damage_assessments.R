@@ -51,8 +51,9 @@ scrape_pda_pdfs = function(
 
   options(timeout = 200)
   urls1 = purrr::map(
-    c(0:1),
+    c(0:pages),
     function(page_number) {
+      page_number = 0
       tryCatch({
         page = rvest::read_html_live(stringr::str_c(base_url, page_number))
 
@@ -113,6 +114,8 @@ extract_pda_attributes = function(path) {
     stringr::str_remove("On.*") %>%
     stringr::str_c(collapse = " ") %>%
     stringr::str_replace_all("\\\n", " ")
+
+  print(text_event_name)
 
   event_type = "approved"
   if (stringr::str_detect(text1, "Denial of Appeal")) { event_type = "appeal_denial" }
@@ -205,7 +208,8 @@ extract_pda_attributes = function(path) {
     "January", "February", "March", "April", "May", "June", "July", "August",
     "September", "October", "November", "December") %>%
     stringr::str_c(collapse = "|")
-  date_match_string = stringr::str_c("Denied (on |)(", months, ") [0-9]{1,2} [0-9]{4}")
+  date_match_string_denied = stringr::str_c("Denied (on |)(", months, ") [0-9]{1,2} [0-9]{4}")
+  date_match_string_approved = stringr::str_c("Declared (on |)(", months, ") [0-9]{1,2} [0-9]{4}")
   result2 = result %>%
     dplyr::mutate(
       dplyr::across(dplyr::everything(), ~ stringr::str_squish(.x) %>% stringr::str_trim()),
@@ -223,9 +227,15 @@ extract_pda_attributes = function(path) {
         pa_per_capita_impact_countywide_1 %>%
           purrr::map_dbl(~ .x %>% stringr::str_remove_all("\\(|\\)") %>% as.numeric %>% min(na.rm = TRUE))),
       event_date_determined = event_title %>% date_string_to_date,
+      ## if a denied event
       event_date_determined = dplyr::if_else(
         is.na(event_date_determined),
-        stringr::str_extract(text, date_match_string) %>% stringr::str_remove("Denied (on |)") %>% date_string_to_date,
+        stringr::str_extract(text, date_match_string_denied) %>% stringr::str_remove("Denied (on |)") %>% date_string_to_date,
+        event_date_determined),
+      ## if still missing and a declared event
+      event_date_determined = dplyr::if_else(
+        is.na(event_date_determined),
+        stringr::str_extract(text, date_match_string_approved) %>% stringr::str_remove("Denied (on |)") %>% date_string_to_date,
         event_date_determined),
       dplyr::across(
         .cols = -c(path, disaster_number, event_title, event_type, event_date_determined,

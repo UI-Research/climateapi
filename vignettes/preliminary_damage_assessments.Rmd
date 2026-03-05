@@ -1,0 +1,224 @@
+---
+title: "preliminary_damage_assessments"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{preliminary_damage_assessments}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(climateapi)
+library(dplyr)
+library(tidyr)
+library(tidyverse)
+library(urbnthemes)
+```
+
+
+```{r}
+## we use this to extract state names from PDAs
+states_match = str_c(tigris::fips_codes %>% select(state_name) %>% distinct() %>% pull(), collapse = "|")
+
+pdas = get_preliminary_damage_assessments(use_cache = TRUE)
+
+disaster_declarations1 = rfema::open_fema(
+				data_set = "DisasterDeclarationsSummaries",
+				# Major Disaster Declarations Only
+				filters = list(declarationType = "=DR"),
+				ask_before_call = FALSE) |>
+			janitor::clean_names()
+
+disaster_rejections1 = 
+  rfema::open_fema(
+    data_set = "DeclarationDenials",
+    ask_before_call = FALSE) |>
+  janitor::clean_names() %>%
+  filter(
+    current_request_status == "Turndown",
+    year(declaration_request_date) > 2023,
+    declaration_request_type == "Major Disaster") %>%
+  select(
+    disaster_number = declaration_request_number,
+    state,
+    declaration_date = declaration_request_date,
+    declaration_title = incident_name)
+
+pdas_2025 = pdas %>%
+  filter(year(event_date_determined) > 2024) %>%
+  mutate(
+    cost_estimate_ia_pa_total = rowSums(select(., pa_cost_estimate_total, ia_cost_estimate_total), na.rm = TRUE),
+    state = str_extract(text, states_match),
+    declaration_title = str_remove_all(event_title, str_c("Preliminary Damage Assessment Report (", states_match, ") – | Preliminary Damage Assessment Report") %>% str_trim()),
+    disaster_number = case_when(
+      disaster_number == 4653 ~ "4853",
+      disaster_number == 4657 ~ "4857",
+      TRUE ~ disaster_number),
+      decision = case_when(
+        str_detect(event_type, "denial") ~ "Denied",
+        str_detect(event_type, "approv") ~ "Approved")) %>%
+  select(disaster_number, decision, declaration_title, state, matches("per_capita|date|cost_estimate")) %>%
+  select(-matches("county"))
+
+declarations_2025 = disaster_declarations1 %>% 
+  filter(
+    year(declaration_date) > 2024) %>%
+  distinct(fema_declaration_string, .keep_all = TRUE) %>%
+  select(disaster_number, state, declaration_type, declaration_date, declaration_title) %>%
+  left_join(tigris::fips_codes %>% distinct(state_name, state)) %>%
+  select(-state) %>%
+  rename(state = state_name)
+
+fema_data_combined = bind_rows(
+  declarations_2025 %>% mutate(decision = "Approved"), 
+  disaster_rejections1 %>% 
+    mutate(
+      disaster_number = NA,
+      decision = "Denied",
+      across(where(is.character), str_trim)))
+
+pdas_join = pdas_2025 %>%
+  filter(!is.na(state)) 
+
+joined_denied %>% filter(decision == "Denied") %>%
+  select(matches("cost_estimate"))
+
+fema_data_combined_join = fema_data_combined %>% 
+  mutate(join_flag = 1) %>% 
+  filter(!is.na(state))
+
+# Approved: disaster_number is available on both sides
+joined_approved = tidylog::left_join(
+  pdas_join %>% filter(decision == "Approved"),
+  fema_data_combined_join %>% filter(decision == "Approved"),
+  by = c(
+    "disaster_number",
+    "decision",
+    "state"),
+  relationship = "one-to-one")
+
+anti_join(
+  fema_data_combined_join %>% filter(decision == "Approved"),
+  pdas_join %>% filter(decision == "Approved"),
+  by = c(
+    "disaster_number",
+    "decision",
+    "state"))
+
+left_join(
+  fema,
+  pda,
+  by = join_by(
+    state,
+    closest(pda_date >= fema_date)),
+  relationship = "one-to-one")
+
+# Denied: disaster_number is NA on the FEMA side, so drop it from join keys
+joined_denied = tidylog::left_join(
+  fema_data_combined_join %>% filter(decision == "Denied"),
+  pdas_join %>% filter(decision == "Denied"),
+  by = join_by(
+    decision,
+    state,
+    closest(event_date_determined >= declaration_date)),
+  relationship = "one-to-one") %>%
+  ## this was requested in 2023, does not relate to a natural hazard
+  ## and further it appears no PDA was conducted (though, obviously, there's a PDA report)
+  filter(!str_detect(declaration_title.x, "Train"))
+
+joined_denied %>%
+  select(matches("date"), matches("title"), state, everything()) %>%
+  select(-matches("join|per_capita|number|type")) %>%
+  arrange(state, declaration_date) %>%
+  print(n = 50)
+
+bind_rows(
+  joined_approved,
+  joined_denied) %>%
+select(disaster_number, matches("date"), declaration_type, decision, matches("per_capita")) %>%
+  ggplot() +
+  geom_boxplot(aes(y = pa_per_capita_impact_statewide / pa_per_capita_impact_indicator_statewide, color = decision, x = decision)) +
+  theme_urbn_print() +
+  geom_hline(yintercept = 1)
+
+bind_rows(
+  joined_approved,
+  joined_denied) %>% 
+    filter(decision == "Denied") %>%
+    select(matches("cost_estimate"))
+    filter(cost_estimate_ia_pa_total != 0) %>%
+    ggplot() +
+    geom_point(aes(
+      x = pa_per_capita_impact_statewide / pa_per_capita_impact_indicator_statewide, 
+      y = cost_estimate_ia_pa_total, 
+      color = decision)) +
+    theme_urbn_print()
+
+```
+
+
+```{r}
+test = 
+  rfema::open_fema(
+    data_set = "PublicAssistanceGrantAwardActivities",
+    ask_before_call = FALSE,
+    top_n = 10000) |>
+  janitor::clean_names() 
+
+test %>%
+  add_count(pw_number, disaster_number) %>% 
+  arrange(desc(n), disaster_number, pw_number, date_obligated) %>%
+  select(n, disaster_number, pw_number, matches("oblig"), matches("date"), everything()) %>%
+  head() %>%
+  View()
+
+?rfema::open_fema
+```
+
+
+```{r}
+
+rfema::fema_data_sets() %>% print(n = 50) %>% pull(name) %>% sort()
+test_pa_summaries = 
+  rfema::open_fema(
+    data_set = "PublicAssistanceFundedProjectsSummaries",
+    ask_before_call = FALSE,
+    top_n = 10000) |>
+  janitor::clean_names() 
+
+pa_summaries = read_csv(here::here("data", "PublicAssistanceFundedProjectsSummaries.csv")) %>%
+  janitor::clean_names()
+
+pa_summary_details = arrow::read_parquet(here::here("data", "PublicAssistanceFundedProjectsDetails.parquet")) %>%
+  janitor::clean_names()
+
+pa_summary_details %>% 
+  filter(state_abbreviation == "NY") %>%
+  select(state_abbreviation, declaration_date, incident_type, last_refresh, matches("oblig")) %>%
+  arrange(desc(last_refresh)) %>%
+  filter(incident_type == "Biological", year(first_obligation_date) == 2026)
+  glimpse()
+
+pa_activities %>%
+  arrange(desc(date_obligated)) %>%
+  select(matches("date"))
+  glimpse()
+  colnames()
+  arrange(desc(last_refresh)) %>%
+  count(last_refresh, sort = TRUE)
+
+pa_summaries %>%
+  arrange(desc(last_refresh)) %>%
+  filter(state == "New York", year(last_refresh) == 2026, incident_type == "Biological")
+
+temp = climateapi::get_sba_loans()
+
+renv::status()
+```
