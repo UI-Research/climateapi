@@ -87,8 +87,7 @@ list_openfema_endpoints <- function() {
 #' # Download a single small dataset
 #' download_openfema_datasets(
 #'   endpoints = "DisasterDeclarationsSummaries",
-#'   download_directory = "data/openfema"
-#' )
+#'   download_directory = "data/openfema")
 #'
 #' # Download all datasets
 #' download_openfema_datasets(download_directory = "data/openfema")
@@ -176,8 +175,7 @@ download_openfema_datasets <- function(
 
       tibble::tibble(
         name = name, format = chosen_format,
-        file_path = file_path, status = dl_result
-      )
+        file_path = file_path, status = dl_result)
     }
   )
 
