@@ -1,5 +1,3 @@
-# Author: Will Curran-Groome
-
 #' @importFrom magrittr %>%
 
 #' @title Access SBA data on disaster loans
@@ -49,7 +47,7 @@ get_sba_loans = function() {
       sba_eidl_declaration_number = dplyr::if_else(is.na(sba_eidl_declaration_number), sba_eidl_declaration, sba_eidl_declaration_number),
       damaged_property_zip_code = dplyr::if_else(is.na(damaged_property_zip_code), damaged_property_zip, damaged_property_zip_code),
       damaged_property_city_name = dplyr::if_else(is.na(damaged_property_city_name), damaged_property_city, damaged_property_city_name),
-      damaged_property_state_code = dplyr::if_else(is.na(damaged_property_state_code), damaged_property_state, damaged_property_state_code),
+      damaged_property_state_abbreviation = dplyr::if_else(is.na(damaged_property_state_code), damaged_property_state, damaged_property_state_code),
       total_approved_loan_amount = dplyr::if_else(is.na(total_approved_loan_amount), total_approved, total_approved_loan_amount),
       approved_amount_real_estate = dplyr::if_else(is.na(approved_amount_real_estate), approved_amount_real, approved_amount_real_estate),
       total_verified_loss = dplyr::if_else(is.na(total_verified_loss), total_verified, total_verified_loss)) %>%
@@ -77,7 +75,7 @@ get_sba_loans = function() {
       sba_eidl_declaration_number = dplyr::if_else(is.na(sba_eidl_declaration_number), sba_eidl_declaration, sba_eidl_declaration_number),
       damaged_property_zip_code = dplyr::if_else(is.na(damaged_property_zip_code), damaged_property_zip, damaged_property_zip_code),
       damaged_property_city_name = dplyr::if_else(is.na(damaged_property_city_name), damaged_property_city, damaged_property_city_name),
-      damaged_property_state_code = dplyr::if_else(is.na(damaged_property_state_code), damaged_property_state, damaged_property_state_code),
+      damaged_property_state_abbreviation = dplyr::if_else(is.na(damaged_property_state_code), damaged_property_state, damaged_property_state_code),
       total_approved_loan_amount = dplyr::if_else(is.na(total_approved_loan_amount), total_approved, total_approved_loan_amount),
       approved_amount_real_estate = dplyr::if_else(is.na(approved_amount_real_estate), approved_amount_real, approved_amount_real_estate),
       total_verified_loss = dplyr::if_else(is.na(total_verified_loss), total_verified, total_verified_loss)) %>%
@@ -87,18 +85,40 @@ get_sba_loans = function() {
       approved_amount_real)) %>%
     dplyr::rename(
       disaster_number_fema = fema_disaster_number,
+      disaster_number_sba = sba_disaster_number,
       disaster_number_sba_physical = sba_physical_declaration_number,
       disaster_number_sba_eidl = sba_eidl_declaration_number,
       verified_loss_total = total_verified_loss,
       approved_amount_total = total_approved_loan_amount)
 
   result = dplyr::bind_rows(
-    business_loans %>% dplyr::mutate(loan_type = "business"),
-    home_loans %>% dplyr::mutate(loan_type = "residential")) %>%
-    ## these are weird, meaningless records that are either embedded in the raw data
-    ## or that are accidentally created as rows when data are read-in from file
-    dplyr::filter(!stringr::str_detect(disaster_number_sba_physical, "Business Data Only|United States Small Business"))
-
+      business_loans %>% dplyr::mutate(loan_type = "business"),
+      home_loans %>% dplyr::mutate(loan_type = "residential")) %>%
+    suppressWarnings({dplyr::mutate(
+      ## state codes should be characters, not numbers (e.g., "AL")
+      damaged_property_state_code = dplyr::if_else(!is.na(as.numeric(damaged_property_state_code)), NA, damaged_property_state_code),
+      damaged_property_zip_code = dplyr::case_when(
+        ## sometimes these are represented as three digits in the raw data, but in PR, all zip codes are prefixed with "00", so padding is safe/correct
+        damaged_property_state_code == "PR" ~ stringr::str_pad(damaged_property_zip_code, width = 5, side = "left", pad = "0"),
+        ## in the raw data, these columns are transposed in some cases; as.numeric(city) should be NA if city is accurate, so this is safe  
+        is.na(as.numeric(damaged_property_zip_code)) ~ as.numeric(damaged_property_city_name) %>% stringr::str_pad(width = 5, side = "left", pad = "0"),
+        TRUE ~ damaged_property_zip_code),
+      damaged_property_state_code = dplyr::case_when(
+        ## we infer state codes from disaster codes, where state codes are prefixed on the disaster number
+        is.na(damaged_property_state_code) & stringr::str_detect(sba_disaster_number, "^[A-Z]{2}-") ~ stringr::str_sub(sba_disaster_number, 1, 2),
+        is.na(damaged_property_state_code) & stringr::str_detect(disaster_number_fema, "^[A-Z]{2}-") ~ stringr::str_sub(disaster_number_fema, 1, 2),
+        ## another transposition issue; we only use the city name when it is two, uppercase characters
+        is.na(damaged_property_state_code) & stringr::str_detect(damaged_property_city_name, "^[A-Z]{2}$") ~ damaged_property_city_name,
+        TRUE ~ damaged_property_state_code),
+      damaged_property_city_name = dplyr::case_when(
+        ## yet another raw data transposition issue
+        stringr::str_detect(damaged_property_city_name, "^[A-Z]{2}$") & !stringr::str_detect(sba_disaster_number, "-") ~ sba_disaster_number,
+        TRUE ~ damaged_property_city_name))}) %>%
+    dplyr::filter(
+      ## these are weird, meaningless records that are either embedded in the raw data
+      ## or that are accidentally created as rows when data are read-in from file
+      !stringr::str_detect(disaster_number_sba_physical, "Business Data Only|United States Small Business|Home Data Only"))
+  
   return(result)
 }
 
