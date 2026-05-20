@@ -19,8 +19,8 @@
 #'     \item{year}{Year of the hazard event(s).}
 #'     \item{month}{Month of the hazard event(s).}
 #'     \item{hazard}{Type of hazard (e.g., "Flooding", "Hurricane/Tropical Storm").}
-#'     \item{damage_property}{Property damage in 2023 inflation-adjusted dollars.}
-#'     \item{damage_crop}{Crop damage in 2023 inflation-adjusted dollars.}
+#'     \item{damage_property}{Property damage in 2024 inflation-adjusted dollars.}
+#'     \item{damage_crop}{Crop damage in 2024 inflation-adjusted dollars.}
 #'     \item{fatalities}{Number of fatalities.}
 #'     \item{injuries}{Number of injuries.}
 #'     \item{records}{Number of individual events aggregated into this observation.}
@@ -35,8 +35,8 @@
 get_sheldus = function(
     file_path = file.path(
       get_box_path(),"hazards", "sheldus",
-      "SHELDUS_23.0_12312023_AllCounties_CountyAggregate_YearMonthHazard_2023USD",
-      "direct_loss_aggregated_output_24075.csv")) {
+      "SHELDUS_24.0_12312024_AllCounties_CountyAggregate_YearMonthHazard_2024USD",
+      "direct_loss_aggregated_output_30457.csv")) {
 
   ## is the file path valid/accessible?
   if (!file.exists(file_path)) {
@@ -109,9 +109,9 @@ get_sheldus = function(
       year,
       month,
       hazard,
-      damage_property = property_damage_adjusted_2023,
+      damage_property = property_damage_adjusted_2024,
       # damage_property_per_capita = property_damage_per_capita,
-      damage_crop = crop_damage_adjusted_2023,
+      damage_crop = crop_damage_adjusted_2024,
       # damage_crop_per_capita = crop_damage_per_capita,
       dplyr::matches("injuries|fatalities"),
       records) |>
@@ -142,7 +142,8 @@ get_sheldus = function(
   df4 = df3 %>%
     dplyr::mutate(
       unique_id = uuid::UUIDgenerate(n = nrow(df3))) %>%
-    dplyr::select(unique_id, dplyr::everything())
+    dplyr::select(unique_id, dplyr::everything()) %>%
+    dplyr::select(-allocation_factor)
 
   message(stringr::str_c(
     "The unit of observation is: county x year x month x hazard. ",
@@ -150,14 +151,14 @@ get_sheldus = function(
     "Not all counties have observations for each month x year x hazard. ",
     "That is, only counties with a disaster event have an observation for a given month x year x hazard. ",
     "The `records` field reflects the number of events that were aggregated to ",
-    "calculate the values reflected in the given observation.",
-    "All dollar-denominated values are in 2023 dollars."))
+    "calculate the values reflected in the given observation. ",
+    "All dollar-denominated values are in 2024 dollars."))
 
   return(df4)
 }
 
 utils::globalVariables(c(
   "state_name", "county_fips", "unique_id", "GEOID", "county_name", "year", "month",
-  "damage_property", "damage_property_per_capita", "damage_crop", "property_damage_adjusted_2023",
-  "damage_crop_per_capita", "records", "benchmark_geographies", "crop_damage_adjusted_2023",
+  "damage_property", "damage_property_per_capita", "damage_crop", "property_damage_adjusted_2024",
+  "damage_crop_per_capita", "records", "benchmark_geographies", "crop_damage_adjusted_2024",
   "STATE", "COUNTY", "."))
