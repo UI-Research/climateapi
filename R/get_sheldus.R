@@ -164,7 +164,8 @@ get_sheldus = function(file_path = NULL) {
   df4 = df3 %>%
     dplyr::mutate(
       unique_id = uuid::UUIDgenerate(n = nrow(df3))) %>%
-    dplyr::select(unique_id, dplyr::everything())
+    dplyr::select(unique_id, dplyr::everything()) %>%
+    dplyr::select(-allocation_factor)
 
   message(stringr::str_c(
     "The unit of observation is: county x year x month x hazard. ",
