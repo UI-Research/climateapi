@@ -6,8 +6,16 @@ testthat::test_that("states clearly errors when invalid state abbreviation is su
 })
 
 testthat::test_that("warning generated when missing state and year combination is supplied", {
-  testthat::expect_warning({get_lodes(lodes_type = "od", year = 2022, states = c("AK", "MN"))})
-  testthat::expect_warning({get_lodes(lodes_type = "wac", year = 2009, states = c("DC", "MN"))})
+  testthat::expect_warning(
+    {get_lodes(lodes_type = "od", years = 2022, states = c("AK", "MN"))},
+    "state-year combinations")
+  ## pre-2015 years also trigger the federal-jobs reporting warning; capture both
+  ## so neither escapes the expectation
+  testthat::expect_warning(
+    testthat::expect_warning(
+      {get_lodes(lodes_type = "wac", years = 2009, states = c("DC", "MN"))},
+      "state-year combinations"),
+    "federal jobs")
 })
 
 testthat::test_that("error generated when invalid lodes_type is supplied", {
@@ -16,7 +24,9 @@ testthat::test_that("error generated when invalid lodes_type is supplied", {
 })
 
 testthat::test_that("variables have no negative values", {
-  test <- get_lodes(lodes_type = "wac", year = 2022, states = "all")
+  ## states = "all" includes state-years missing from LODES (e.g., AK/MI in 2022),
+  ## which triggers an expected availability warning
+  test <- suppressWarnings(get_lodes(lodes_type = "wac", years = 2022, states = "all"))
 
   # Select numeric columns
   num_df <- dplyr::select(test, where(is.numeric))
@@ -32,7 +42,7 @@ testthat::test_that("variables have no negative values", {
   testthat::expect_true(
     length(neg_cols) == 0,
     info = if (length(neg_cols) > 0)
-      sprintf("Negative values found in: %s", paste(bad_cols, collapse = ", "))
+      sprintf("Negative values found in: %s", paste(neg_cols, collapse = ", "))
     else
       NULL
   )

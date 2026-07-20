@@ -6,8 +6,9 @@
 #'     codes for use with `get_business_patterns()`. This is a wrapper around
 #'     `censusapi::listCensusMetadata(name = "cbp")`.
 #'
-#' @param year The vintage year for NAICS codes. Data are available from 1986 through 2023.
-#'     Default is 2023.
+#' @param year The vintage year for NAICS codes. Data are available from 2008 through 2023.
+#'     Years 1986-2007 use SIC or older NAICS classification systems that are not currently
+#'     supported. Default is 2023.
 #' @param digits The number of digits for desired NAICS codes. Must be between 2 and 6.
 #'     Default is 3. Two-digit codes represent broad industry sectors (20 codes),
 #'     while six-digit codes represent detailed industries.
@@ -33,18 +34,12 @@
 #' get_naics_codes(year = 2020, digits = 4)
 #' }
 get_naics_codes <- function(year = 2023, digits = 3) {
-  if (year < 1986) { stop("Year must be 1986 or later.") }
+  if (year < 2008) { stop("Year must be 2008 or later. Years 1986-2007 use SIC or older NAICS classification systems that are not currently supported.") }
   if (year > 2023) { stop("Most recent year for data is 2023.") }
   if (!digits %in% 2:6) { stop("`digits` must be between 2 and 6.") }
 
-  naics_metadata <- censusapi::listCensusMetadata(
-      name = "cbp",
-      vintage = as.character(year),
-      type = "variables",
-      include_values = TRUE) |>
-    dplyr::filter(
-      !is.na(values_code),
-      nchar(values_code) == digits) |>
+  naics_metadata <- get_cbp_naics_metadata(year) |>
+    dplyr::filter(nchar(values_code) == digits) |>
     dplyr::transmute(
       naics_code = values_code,
       naics_label = values_label,
@@ -53,6 +48,36 @@ get_naics_codes <- function(year = 2023, digits = 3) {
     dplyr::arrange(naics_code) |>
     tibble::as_tibble()
 
+}
+
+#' Get CBP NAICS code/label metadata, falling back to a bundled reference table for
+#' 2008-2011 vintages where the Census API serves no code/label lookup at all
+#'
+#' @param year The CBP vintage year.
+#'
+#' @return A tibble with (at least) `values_code` and `values_label` columns, matching
+#'   the schema `censusapi::listCensusMetadata(..., include_values = TRUE)` returns for
+#'   vintages where a lookup table is available.
+#' @noRd
+get_cbp_naics_metadata = function(year) {
+  naics_metadata_raw = censusapi::listCensusMetadata(
+      name = "cbp",
+      vintage = as.character(year),
+      type = "variables",
+      include_values = TRUE)
+
+  if ("values_code" %in% colnames(naics_metadata_raw)) {
+    naics_metadata_raw %>%
+      dplyr::filter(!is.na(values_code)) %>%
+      tibble::as_tibble()
+  } else {
+    ## years 2008-2011: the Census API returns unlabeled variable definitions only for
+    ## this vintage (no values_code/values_label columns at all); fall back to Census's
+    ## own official, bundled NAICS2007 code/label reference table
+    readr::read_csv(
+        system.file("extdata", "naics2007_codes.csv", package = "climateapi"),
+        show_col_types = FALSE) %>%
+      dplyr::rename(values_code = naics_code, values_label = naics_label) }
 }
 
 #' @title Obtain County Business Patterns (CBP) Estimates per County
@@ -106,16 +131,27 @@ get_naics_codes <- function(year = 2023, digits = 3) {
 #' Accounts (NAICS 525920); Offices of Notaries (NAICS 541120); Private Households (NAICS 814);
 #' and Public Administration (NAICS 92)
 #'
-#' @return A tibble with data on county-level employees, employers, and aggregate
-#'     annual payrolls by industry and employer size
+#' For `geo = "zipcode"`, Census's ZIP Code Business Patterns (ZBP) only publishes
+#' `employees`/`annual_payroll` for `naics_code == "00"` (total, all sectors); the Census API
+#' returns a literal `0` for every other NAICS code at the zip-code level, which reflects a
+#' suppression convention, not a true absence of establishments. This function coerces those
+#' values to `NA` and emits a one-time message explaining this.
+#'
+#' @return A tibble with data on employees, employers, and aggregate annual payrolls by
+#'     industry and employer size. The geographic columns differ by `geo`:
 #'     \describe{
 #'         \item{year}{the year for which CBP data is pulled from}
-#'         \item{state}{A two-digit state identifier.}
-#'         \item{county}{A three-digit county identifier.}
+#'         \item{state}{(geo = "county" only) A two-digit state identifier.}
+#'         \item{county}{(geo = "county" only) A three-digit county identifier.}
+#'         \item{zip_code}{(geo = "zipcode" only) A five-digit ZIP code.}
 #'         \item{employees}{number of individual employees employed in that particular industry
-#'              and establishment size combination}
+#'              and establishment size combination. For geo = "zipcode", this is only published
+#'              by Census for `naics_code == "00"` (total, all sectors); all other NAICS codes
+#'              are NA -- see `@details`.}
 #'         \item{employers}{number of establishments of each employment size}
-#'         \item{annual_payroll}{total annual payroll expenditures measured in $1,000's of USD}
+#'         \item{annual_payroll}{total annual payroll expenditures measured in $1,000's of USD.
+#'              For geo = "zipcode", this is only published by Census for `naics_code == "00"`
+#'              (total, all sectors); all other NAICS codes are NA -- see `@details`.}
 #'         \item{industry}{industry classification according to North American Industry Classification System.
 #'              Refer to details for additional information}
 #'         \item{employee_size_range_label}{range for the employment size of establishments included in each
@@ -152,20 +188,26 @@ get_business_patterns = function(year = 2023, geo = "county", naics_code_digits 
     year >= 2008 ~ "NAICS2007",
     TRUE ~ "NAICS2007"
   )
-  naics_label_var <- paste0(naics_version, "_LABEL")
+  ## the 2008-2011 CBP API vintage uses a "_TTL" (title) suffix for the NAICS label
+  ## variable rather than the "_LABEL" suffix used from 2012 onward
+  naics_label_var <- if (year %in% 2008:2011) {
+    paste0(naics_version, "_TTL") } else {
+    paste0(naics_version, "_LABEL") }
 
-  naics_codes_metadata = censusapi::listCensusMetadata(
-      name = "cbp",
-      vintage = as.character(year),
-      type = "variables",
-      include_values = TRUE) %>%
-    #filter out codes 92 and 95 which do not appear to have data associated and
-    #don't appear on the census list of naics codes at
-    #https://www2.census.gov/programs-surveys/cbp/technical-documentation/reference/naics-descriptions/naics2017.txt
-    dplyr::filter(!stringr::str_starts(values_code, "92|95")) %>%
-    tibble::as_tibble()
+  ## single source of truth for NAICS code/label metadata, shared with get_naics_codes()
+  naics_codes_metadata = get_cbp_naics_metadata(year)
 
   if (!is.null(naics_codes)) {
+    ## sectors 92 and 95 are valid NAICS classification codes but CBP has no data for them
+    ## at all; give an honest, distinct error here rather than the generic "not a valid
+    ## NAICS code" message below
+    requested_92_95 = naics_codes[stringr::str_starts(as.character(naics_codes), "92|95")]
+    if (length(requested_92_95) > 0) {
+      stop(stringr::str_c(
+        "NAICS sector(s) ", stringr::str_c(requested_92_95, collapse = ", "),
+        " (92/95) have no CBP data available -- these sectors are excluded from Census's ",
+        "County Business Patterns series entirely (see `@details`).")) }
+
     naics_code_check = naics_codes_metadata %>%
       dplyr::filter(values_code %in% naics_codes) %>%
       nrow()
@@ -178,40 +220,58 @@ get_business_patterns = function(year = 2023, geo = "county", naics_code_digits 
 
     naics_code_digits = NULL }
 
+  ## sectors 92 and 95 have no CBP data at all (see above); exclude them from the
+  ## digit-based query, which has no user-supplied codes to individually validate/error on
+  naics_codes_metadata_queryable = naics_codes_metadata %>%
+    dplyr::filter(!stringr::str_starts(values_code, "92|95"))
+
   if (!is.null(naics_code_digits)) {
-    naics_codes_to_query = naics_codes_metadata %>%
+    naics_codes_to_query = naics_codes_metadata_queryable %>%
       dplyr::filter(
         nchar(values_code) == naics_code_digits,
         !is.na(values_code)) %>%
       dplyr::pull(values_code) } else {
-    naics_codes_to_query = naics_codes_metadata %>%
+    naics_codes_to_query = naics_codes_metadata_queryable %>%
       dplyr::filter(
         values_code %in% naics_codes,
         !is.na(values_code)) %>%
       dplyr::pull(values_code) }
 
-  cbp = purrr::map_dfr(
-    naics_codes_to_query,
-    ## some high-level codes (92 and 94) error with a "No data to return"
-    ## message, so we wrap this in a tryCatch(). this doesn't appear to be an
-    ## error with our query--there's no data for these codes on data.census.gov
-    ## either
-    ~ tryCatch({
-      # Build the API call dynamically based on NAICS version
-      api_args <- list(
-        name = "cbp",
-        vintage = year,
-        vars = c("EMP", "YEAR", "ESTAB", "PAYANN", "EMPSZES", naics_label_var),
-        region = paste0(geo, ":*")
-      )
-      # Add the NAICS filter with the correct variable name
-      api_args[[naics_version]] <- .x
+  ## fetches CBP data for one NAICS code, nationwide in a single call. Some older CBP
+  ## vintages (2008-2011) reject a single nationwide county-level query for exceeding the
+  ## Census API's cell limit; when that specific error occurs, fall back to querying
+  ## state-by-state instead (some high-level codes also error with "No data to return",
+  ## which doesn't appear to be an error with our query -- there's no data for these codes
+  ## on data.census.gov either -- so any other error is treated as "no data").
+  fetch_cbp_data = function(naics_code) {
+    api_args <- list(
+      name = "cbp",
+      vintage = year,
+      vars = c("EMP", "YEAR", "ESTAB", "PAYANN", "EMPSZES", naics_label_var),
+      region = paste0(geo, ":*"))
+    api_args[[naics_version]] <- naics_code
 
+    tryCatch(
       do.call(censusapi::getCensus, api_args) %>%
-        dplyr::mutate(naics_code = .x)},
-      error = function(e) { return(tibble::tibble()) })) %>%
+        dplyr::mutate(naics_code = naics_code),
+      error = function(e) {
+        if (geo == "county" && stringr::str_detect(conditionMessage(e), "cell limit")) {
+          state_codes = tidycensus::fips_codes$state_code |> unique()
+
+          purrr::map_dfr(
+            state_codes,
+            function(state_code) {
+              state_api_args = api_args
+              state_api_args$regionin = stringr::str_c("state:", state_code)
+              tryCatch(
+                do.call(censusapi::getCensus, state_api_args) %>%
+                  dplyr::mutate(naics_code = naics_code),
+                error = function(e2) tibble::tibble()) })
+        } else { tibble::tibble() } }) }
+
+  cbp = purrr::map_dfr(naics_codes_to_query, fetch_cbp_data) %>%
     # Rename the NAICS label column to a standard name
-    dplyr::rename_with(~ "NAICS_LABEL", dplyr::matches("NAICS[0-9]+_LABEL")) %>%
+    dplyr::rename_with(~ "NAICS_LABEL", dplyr::matches("NAICS[0-9]+_(LABEL|TTL)")) %>%
     dplyr::mutate(
       # state,
       # county,
@@ -280,11 +340,28 @@ get_business_patterns = function(year = 2023, geo = "county", naics_code_digits 
     { if (geo == "county") {
         dplyr::select(.,
           year, state, county, employees, employers, annual_payroll,
-          industry, employee_size_range_label, employee_size_range_code, naics_code)} 
+          industry, employee_size_range_label, employee_size_range_code, naics_code)}
       else if (geo == "zipcode") {
         dplyr::select(.,
           year, zip_code, employees, employers, annual_payroll,
           industry, employee_size_range_label, employee_size_range_code, naics_code) } }
+
+  ## Census's ZIP Code Business Patterns (ZBP) only publishes employees/annual_payroll for
+  ## naics_code == "00" (total, all sectors); every other NAICS code returns a literal 0 at
+  ## the zip-code level, which reflects a suppression convention, not a true absence of
+  ## establishments -- coerce these to NA and disclose the convention once per call
+  if (geo == "zipcode" && any(cbp$naics_code != "00", na.rm = TRUE)) {
+    message(stringr::str_c(
+      "For geo = 'zipcode', Census's ZIP Code Business Patterns (ZBP) only publishes ",
+      "`employees`/`annual_payroll` for NAICS code '00' (total, all sectors); every other ",
+      "NAICS code returns a literal 0 from the Census API for these fields, which is NOT a ",
+      "true zero -- it reflects a suppression convention, not an absence of establishments. ",
+      "These values have been coerced to NA."))
+
+    cbp = cbp %>%
+      dplyr::mutate(
+        employees = dplyr::if_else(naics_code != "00", NA_real_, employees),
+        annual_payroll = dplyr::if_else(naics_code != "00", NA_real_, annual_payroll)) }
 
   return(cbp %>% tibble::as_tibble())
 }
@@ -293,4 +370,5 @@ utils::globalVariables(
   c("EMP", "EMPSZES", "ESTAB", "NAICS2017_LABEL", "NAICS2012_LABEL", "NAICS2007_LABEL",
     "NAICS_LABEL", "PAYANN", "annual_payroll",
     "employee_size_range", "employee_size_range_code", "employee_size_range_label",
-    "employees", "employers", "industry", "values_code", "values_label", "naics_code"))
+    "employees", "employers", "industry", "values_code", "values_label", "naics_code",
+    "naics_label"))

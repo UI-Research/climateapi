@@ -5,7 +5,11 @@
 #'
 #' @param state_abbreviation A 2 letter state abbreviation (e.g. TX).
 #' @param county_geoids A character vector of five-digit county codes.
-#' @param file_name The name (not the full path) of the Box file containing the raw data.
+#' @param file_name The name (not the full path) of a per-state Box file containing the raw
+#'   data (see `@details`). If NULL (default), reads `state_abbreviation`'s records directly
+#'   from the most recently cached nationwide file for this dataset (see
+#'   `get_openfema_cache_path()`), which avoids the cross-border duplication issue described
+#'   below entirely.
 #' @param api If TRUE, query the API. If FALSE (default), read from `file_name`.
 #'
 #' @details Data are from FEMA's OpenFEMA API. See
@@ -18,8 +22,18 @@
 #' The dataset also contains both residential and commercial policies. In order to filter
 #' to residential policies, the analyst can filter out the "non-residential" occupancy type.
 #'
+#' When `file_name` is supplied explicitly, per-state files (in the `intermediate/` Box
+#' folder) are not mutually exclusive: a policy whose county sits near a state border can
+#' appear in more than one state's file. When looping this function over multiple states
+#' this way and combining results, run `dplyr::distinct(id, .keep_all = TRUE)` on the
+#' combined data to remove these duplicates (verified: 72 Delaware-file rows keyed to
+#' Maryland counties, all also present in Maryland's own file). This does not apply to the
+#' default (cache-backed) mode, which reads directly from the single nationwide file.
+#'
 #' @return A dataframe of project-level funding requests and awards, along with variables that can be aggregated to the county level.
 #' \describe{
+#'      \item{id}{Unique identifier for the policy record; use this to de-duplicate
+#'             cross-border policies after combining results from multiple states -- see `@details`.}
 #'      \item{state_fips}{A two-digit state identifier.}
 #'      \item{state_abbreviation}{The two-character abbreviation of the state.}
 #'      \item{county_code}{The five-digit county identifier.}
@@ -45,7 +59,7 @@
 #'       file_name = "fima_nfip_policies_2025_10_14.parquet",
 #'       api = FALSE) |>
 #'     dplyr::filter(
-#'       !occupancy_type %in% c("non-residential"), ### only residential claims,
+#'       !building_occupancy_type %in% c("non-residential"), ### only residential claims,
 #'       policy_date_termination >= as.Date("2025-10-15"),
 #'       policy_date_effective <= as.Date("2025-10-15")) |>
 #'     dplyr::group_by(county_geoid)|>
@@ -56,45 +70,76 @@
 get_nfip_policies = function(
     state_abbreviation,
     county_geoids = NULL,
-    file_name = "fima_nfip_policies_2025_10_14.parquet",
+    file_name = NULL,
     api = FALSE) {
 
   if (isFALSE(api)) {
 
-    file <- paste0(state_abbreviation, "_", file_name)
+    if (is.null(file_name)) {
 
-    inpath = file.path(
-      get_box_path(),"hazards", "fema", "national-flood-insurance-program", "intermediate", file)
+      ## this dataset is >1GB; filter at the arrow scan level (before collect) rather than
+      ## loading the full nationwide file into memory. countyCode is the primary geography
+      ## field; censusTract's county prefix is a fallback for rows with an invalid/missing
+      ## countyCode (mirrors the county_geoid derivation below) -- both branches of that
+      ## fallback are covered here so no eventually-surviving row is excluded up front.
+      df1a_lazy = arrow::open_dataset(find_openfema_cache_file("FimaNfipPolicies")) %>%
+        dplyr::filter(propertyState %in% state_abbreviation)
 
-    if (! file.exists(inpath)) {
-      stop("The provided `file_name` is invalid.") }
+      if (!is.null(county_geoids)) {
+        df1a_lazy = df1a_lazy %>%
+          dplyr::filter(countyCode %in% county_geoids | substr(censusTract, 1, 5) %in% county_geoids)
+      }
 
-    if (! (stringr::str_detect(inpath, "parquet"))) {
+      df1a = df1a_lazy |>
+        dplyr::collect() |>
+        janitor::clean_names()
 
-      convert_delimited_to_parquet(
-        inpath = inpath,
-        delimit_character = ",",
-        dataset = "nfip_policies") }
+    } else {
 
-    df1a = arrow::read_parquet(file = inpath) |>
-      janitor::clean_names()
+      file <- paste0(state_abbreviation, "_", file_name)
+
+      inpath = file.path(
+        get_box_path(),"hazards", "fema", "national-flood-insurance-program", "intermediate", file)
+
+      if (! file.exists(inpath)) {
+        stop("The provided `file_name` is invalid.") }
+
+      if (! (stringr::str_detect(inpath, "parquet"))) {
+
+        convert_delimited_to_parquet(
+          inpath = inpath,
+          delimit_character = ",",
+          dataset = "nfip_policies") }
+
+      df1a = arrow::read_parquet(file = inpath) |>
+        janitor::clean_names()
+    }
 
   } else {
+    ## rfema::open_fema()'s filter builder (rfema:::gen_api_query()) incorrectly coerces
+    ## the all-digit countyCode value to an unquoted number, stripping leading zeros and
+    ## producing a 400 Bad Request; query the API directly instead, always quoting countyCode
     df1a = purrr::map_dfr(
       county_geoids,
-      ~ rfema::open_fema(
-        data_set = "fimanfippolicies",
-        filters = list(countyCode = .x),
-        ask_before_call = FALSE) |>
+      ~ query_openfema_quoted_filter(
+        data_set_endpoint = "https://www.fema.gov/api/open/v2/FimaNfipPolicies",
+        field_name = "countyCode",
+        field_value = .x) |>
         janitor::clean_names())
   }
 
+  valid_county_geoids = tidycensus::fips_codes |>
+    dplyr::transmute(county_geoid = stringr::str_c(state_code, county_code)) |>
+    dplyr::pull(county_geoid)
+
   df1b = df1a |>
     tidytable::mutate(county_geoid = tidytable::if_else(
-      !is.na(county_code),
+      !is.na(county_code) & county_code %in% valid_county_geoids,
       county_code,
-      ### taking county_code if it exists, if not extract from census_tract
-      stringr::str_sub(census_tract, 1, 5))) 
+      ### taking county_code if it exists AND is a real FIPS county code; a bogus
+      ### placeholder value (e.g. "10000") otherwise silently overrides a resolvable
+      ### census_tract, orphaning valid rows to NA geography
+      stringr::str_sub(census_tract, 1, 5)))
 
   if (!is.null(county_geoids)) {
     df1b = df1b |>
@@ -114,6 +159,7 @@ get_nfip_policies = function(
 
   result = df1c |>
     dplyr::transmute(
+      id,
       state_fips,
       state_abbreviation,
       county_geoid,
@@ -152,4 +198,4 @@ utils::globalVariables(c(
   "mandatory_purchase_flag", "id", "censusTract", "policyCost", "policyCount", "ratedFloodZone",
   "totalInsurancePremiumOfThePolicy", "policyTerminationDate", "policyEffectiveDate", "occupancyType",
   "originalConstructionDate", "buildingReplacementCost", "primaryResidenceIndicator", "floodproofedIndicator",
-  "rentalPropertyIndicator", "tenantIndicator"))
+  "rentalPropertyIndicator", "tenantIndicator", "propertyState", "countyCode"))

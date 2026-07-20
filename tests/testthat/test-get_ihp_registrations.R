@@ -23,7 +23,7 @@ local({
   if (!is.null(box_path) && dir.exists(box_path)) {
     ihp_test_data <<- tryCatch(
       suppressWarnings(suppressMessages(
-        get_ihp_registrations(state_fips = "DC", api = FALSE)
+        get_ihp_registrations(state_abbreviation = "DC", api = FALSE)
       )),
       error = function(e) NULL
     )
@@ -49,14 +49,14 @@ test_that("get_ihp_registrations function signature is correct", {
   # Check parameter names
 
 params <- names(formals(get_ihp_registrations))
-  expect_true("state_fips" %in% params)
+  expect_true("state_abbreviation" %in% params)
   expect_true("file_name" %in% params)
   expect_true("api" %in% params)
   expect_true("outpath" %in% params)
 
   # Check defaults
   f <- get_ihp_registrations
-  expect_null(formals(f)$state_fips)
+  expect_null(formals(f)$state_abbreviation)
   expect_false(formals(f)$api)
   expect_null(formals(f)$outpath)
 })

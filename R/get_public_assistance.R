@@ -7,7 +7,9 @@
 #'
 #' @param state_abbreviations A character vector of state abbreviations. NULL by default,
 #'   which returns records for all 51 states. Only the 51 states are supported at this time.
-#' @param file_path The file path to the raw data contained in a .parquet file.
+#' @param file_path The file path to the raw data contained in a .parquet file. If NULL
+#'   (default), reads the most recently cached file for this dataset from
+#'   `get_openfema_cache_path()`.
 #'
 #' @details Data are from FEMA's OpenFEMA API. See
 #'   \url{https://www.fema.gov/openfema-data-page/public-assistance-funded-projects-details-v2}.
@@ -62,22 +64,26 @@
 #' }
 
 get_public_assistance= function(
-    file_path = file.path(
-      get_box_path(), "hazards", "fema", "public-assistance", "raw",
-      "PublicAssistanceFundedProjectsDetailsV2_2025_09_26.parquet"),
+    file_path = NULL,
     state_abbreviations = NULL) {
 
   if (is.null(state_abbreviations)) { state_abbreviations = c(state.abb, "DC") }
   if (any(!state_abbreviations %in% c(state.abb, "DC"))) { stop("Only the 50 states and DC are supported at this time.") }
 
+  if (is.null(file_path)) { file_path = find_openfema_cache_file("PublicAssistanceFundedProjectsDetails") }
+
   state_fips = get_geography_metadata("state") |>
     dplyr::filter(state_abbreviation %in% state_abbreviations) |>
     dplyr::pull(state_code)
 
-  ## data on counties and their populations
+  ## data on counties and their populations -- fetched nationwide (not scoped to state_fips)
+  ## since the cross-state county/state reassignment patches below (e.g. WI -> MI, ND -> SD)
+  ## can move a project to a state the caller never requested; scoping this lookup to
+  ## state_fips caused those records' population joins to fail (NA population -> NA
+  ## allocation_factor -> NA split), which crashed the function for e.g.
+  ## state_abbreviations = "WI"/"ND"
   suppressMessages({suppressWarnings({
-    state_county_xwalk = get_geography_metadata(geography_type = "county") |>
-      dplyr::filter(state_code %in% state_fips) })})
+    state_county_xwalk = get_geography_metadata(geography_type = "county") })})
 
   public_assistance_raw = arrow::read_parquet(file_path) |>
     janitor::clean_names() |>
@@ -103,62 +109,53 @@ get_public_assistance= function(
   ## Connecticut counties are dated -- we need to crosswalk them to current county-
   ## equivalents (planning regions)
   if ("09" %in% state_fips) {
-    ct_county_crosswalk1 = readr::read_csv(
-      file.path(get_box_path(), "crosswalks", "ctdata_2022_tractcrosswalk_connecticut.csv")) |>
-      janitor::clean_names() |>
-      dplyr::select(
-        ## each tract has a single observation
-        tract_fips_2020,
-        ## each tract has a single observation
-        tract_fips_2022,
-        county_fips_2020,
-        county_fips_2022 = ce_fips_2022)
-
-    suppressMessages({
-      ct_tract_populations = tidycensus::get_acs(
-        year = 2021,
-        geography = "tract",
-        state = "CT",
-        variable = "B01003_001",
-        output = "wide") |>
-        dplyr::select(
-          tract_fips_2020 = GEOID,
-          population_2020 = B01003_001E) })
-
-    ct_county_crosswalk = ct_county_crosswalk1 |>
-      dplyr::left_join(ct_tract_populations, by = "tract_fips_2020") |>
-      dplyr::summarize(
-        .by = c("county_fips_2020", "county_fips_2022"),
-        population_2020 = sum(population_2020)) |>
-      dplyr::mutate(
-        .by = "county_fips_2020",
-        population_2020_total = sum(population_2020, na.rm = TRUE)) |>
-      dplyr::mutate(allocation_factor = population_2020 / population_2020_total) |>
-      dplyr::select(-dplyr::matches("population"))
-
-    crosswalked_ct_counties = public_assistance_raw |>
+    ct_crosswalk_table = crosswalk::get_crosswalk(
+        source_geography = "county",
+        target_geography = "county",
+        source_year = 2020,
+        target_year = 2022,
+        silent = TRUE)$crosswalks$step_1 |>
       dplyr::filter(state_fips == "09") |>
+      dplyr::select(source_geoid, target_geoid, allocation_factor_source_to_target)
+
+    ## some raw CT rows are labeled county_name = "Statewide"/"REAA" (or carry the "09000"
+    ## placeholder county_fips) yet still have -- inconsistently -- a real legacy county_fips
+    ## value too. These must bypass the per-region crosswalk entirely and flow through
+    ## unchanged, to be handled solely by the general statewide detection/expansion later on;
+    ## otherwise they get fanned out twice (once here by county, again later by the statewide
+    ## join), producing an inconsistent row count across CT's genuinely statewide projects.
+    ct_raw = public_assistance_raw |> dplyr::filter(state_fips == "09")
+    ct_statewide_like = ct_raw |>
+      dplyr::filter(
+        stringr::str_detect(county_name, "tatewide|REAA") | stringr::str_sub(county_fips, 3, 5) == "000")
+    ct_county_specific = ct_raw |> dplyr::filter(!id %in% ct_statewide_like$id)
+
+    ## one row per (project, target planning region) -- NOT `.by = "id"` alone, which would
+    ## collapse every eligible target region for a project into a single arbitrary one.
+    ## `pa_federal_funding_obligated` is kept as the original, UNDIVIDED project total on
+    ## every regional row (consistent with how every other multi-county project in this
+    ## pipeline carries its undivided total until the final population-based split further
+    ## down); `region_weight` carries the region-specific allocation share, to be applied
+    ## later in place of the general population-based split (which CT no longer needs).
+    crosswalked_ct_counties = ct_county_specific |>
       dplyr::left_join(
-        ct_county_crosswalk,
-        by = c("county_fips" = "county_fips_2020"),
+        ct_crosswalk_table,
+        by = c("county_fips" = "source_geoid"),
         relationship = "many-to-many") |>
       tidytable::summarize(
-        .by = c("id"),
+        .by = c("id", "target_geoid"),
+        region_weight = sum(allocation_factor_source_to_target, na.rm = TRUE),
         dplyr::across(
-          .cols = dplyr::all_of(interpolate_columns),
-          .fns = \(x) base::sum(x * allocation_factor, na.rm = TRUE)),
-        dplyr::across(
-          .cols = -dplyr::all_of(interpolate_columns),
+          .cols = -dplyr::all_of(c("county_fips", "allocation_factor_source_to_target")),
           .fns = \(x) dplyr::first(x))) |>
       tibble::as_tibble() |>
-      dplyr::select(-county_fips) |>
-      dplyr::rename(county_fips = county_fips_2022)
+      dplyr::rename(county_fips = target_geoid)
 
     #joining the non CT states with the CT crosswalk to create the updated dataset
     public_assistance1 = public_assistance_raw |>
       dplyr::filter(state_fips != "09") |>
-      dplyr::bind_rows(crosswalked_ct_counties) |>
-      dplyr::select(-allocation_factor) } else { public_assistance1 = public_assistance_raw }
+      dplyr::bind_rows(crosswalked_ct_counties, ct_statewide_like) } else {
+    public_assistance1 = public_assistance_raw |> dplyr::mutate(region_weight = NA_real_) }
 
   public_assistance2 <- public_assistance1 |>
     dplyr::filter(
@@ -286,9 +283,22 @@ get_public_assistance= function(
       by = c("state_fips", "statewide_flag"),
       relationship = "many-to-many")
 
-  public_assistance_5 = dplyr::bind_rows(
-      public_assistance_4a,
-      public_assistance_4b) |>
+  public_assistance_4 = dplyr::bind_rows(public_assistance_4a, public_assistance_4b)
+
+  ## CT's non-statewide projects were already fully attributed to target planning regions
+  ## by the crosswalk step above (one row per project x eligible region, each with its own
+  ## already-final dollar amount); they must not be re-split by population here, or the
+  ## same dollar amount gets divided a second time
+  public_assistance_5_ct = public_assistance_4 |>
+    dplyr::filter(state_fips == "09", statewide_flag == 0) |>
+    dplyr::mutate(
+      county_count = 1L,
+      project_counties_population = county_population,
+      allocation_factor = region_weight,
+      pa_federal_funding_obligated_split = pa_federal_funding_obligated * region_weight)
+
+  public_assistance_5_general = public_assistance_4 |>
+    dplyr::filter(!(state_fips == "09" & statewide_flag == 0)) |>
     ## obtain a count of counties per project and then create a denominator for summed
     ## county populations across all the counties per project
     tidytable::mutate(
@@ -305,7 +315,9 @@ get_public_assistance= function(
       .by = c("id", "county_fips"),
       tidytable::across(
         .cols = tidytable::all_of(interpolate_columns),
-        .fns = ~ .x * allocation_factor, .names = "{.col}_split")) |>
+        .fns = ~ .x * allocation_factor, .names = "{.col}_split"))
+
+  public_assistance_5 = dplyr::bind_rows(public_assistance_5_general, public_assistance_5_ct) |>
     tibble::as_tibble() |>
     dplyr::select(
       id,
@@ -329,8 +341,18 @@ get_public_assistance= function(
       pa_federal_funding_obligated_split = base::sum(pa_federal_funding_obligated_split, na.rm = TRUE)) |>
     tibble::as_tibble()
 
-  ## ensure that we haven't lost any projects
-  stopifnot(nrow(test) == nrow(public_assistance3b))
+  ## ensure that we haven't lost any projects -- compare distinct ids, not raw row counts:
+  ## `test` has exactly one row per id (grouped by id), but `public_assistance3b` can have
+  ## multiple rows per id for CT projects spanning more than one target planning region
+  if (nrow(test) != dplyr::n_distinct(public_assistance3b$id)) {
+    ids_missing = setdiff(unique(public_assistance3b$id), test$id)
+    ids_duplicated = test |> dplyr::count(id) |> dplyr::filter(n > 1) |> dplyr::pull(id)
+    stop(stringr::str_c(
+      "Distinct project ids do not align between the pre-split (",
+      dplyr::n_distinct(public_assistance3b$id), " ids) and post-split, re-aggregated (",
+      nrow(test), " ids) data. Missing ids: ",
+      stringr::str_c(utils::head(ids_missing, 10), collapse = ", "), ". Duplicated ids: ",
+      stringr::str_c(utils::head(ids_duplicated, 10), collapse = ", "), ".")) }
 
   ## total project costs are the same across both formulations (original and county-level)
   nonaligned_ids = test |>
@@ -343,7 +365,16 @@ get_public_assistance= function(
     dplyr::filter(difference > 1) |>
     dplyr::pull(id)
 
-  stopifnot(length(nonaligned_ids) == 0)
+  if (length(nonaligned_ids) > 0) {
+    nonaligned_detail = test |>
+      dplyr::filter(id %in% nonaligned_ids) |>
+      dplyr::mutate(difference = pa_federal_funding_obligated - pa_federal_funding_obligated_split)
+    stop(stringr::str_c(
+      length(nonaligned_ids), " project ids have county-split funding totals that do not ",
+      "match the original project-level total (tolerance: $1): ",
+      stringr::str_c(
+        stringr::str_c(nonaligned_detail$id, " (diff $", round(nonaligned_detail$difference), ")"),
+        collapse = "; "), ".")) }
 
   years = public_assistance_5 |> dplyr::pull(declaration_year)
 
@@ -356,23 +387,36 @@ get_public_assistance= function(
     dplyr::relocate(dplyr::matches("state_"), .after = id)
 
   ## checking row counts
-  stopifnot(
-    public_assistance_6 |> dplyr::distinct(id) |> nrow() == (
-      public_assistance_4a |> nrow() + ## non-statewide projects
-      public_assistance_4b |> dplyr::distinct(id) |> nrow()))
+  ## `distinct(id)` (not raw `nrow()`) for non-statewide: CT non-statewide projects can now
+  ## legitimately have multiple rows (one per eligible target planning region)
+  n_nonstatewide = public_assistance_4a |> dplyr::distinct(id) |> nrow()
+  n_statewide = public_assistance_4b |> dplyr::distinct(id) |> nrow()
+  n_output = public_assistance_6 |> dplyr::distinct(id) |> nrow()
+
+  if (n_output != n_nonstatewide + n_statewide) {
+    stop(stringr::str_c(
+      "Unexpected number of distinct project ids in the final output: expected ",
+      n_nonstatewide + n_statewide, " (", n_nonstatewide, " non-statewide + ", n_statewide,
+      " statewide), got ", n_output, ".")) }
 
   ## there should always be the same number of observations per id for statewide project
   ## ids within the same state
-  stopifnot(
-    public_assistance_4b |>
+  statewide_consistency = public_assistance_4b |>
     dplyr::count(id, state_fips, sort = TRUE) |>
     tidytable::summarize(
       .by = state_fips,
       distinct_state_records_per_id = dplyr::n_distinct(n)) |>
-    tibble::as_tibble() |>
-    dplyr::arrange(dplyr::desc(distinct_state_records_per_id)) |>
-    dplyr::slice(1) |>
-    dplyr::pull(distinct_state_records_per_id) == 1)
+    tibble::as_tibble()
+
+  inconsistent_states = statewide_consistency |>
+    dplyr::filter(distinct_state_records_per_id != 1) |>
+    dplyr::pull(state_fips)
+
+  if (length(inconsistent_states) > 0) {
+    stop(stringr::str_c(
+      "Statewide projects do not have a consistent number of county-level observations per ",
+      "project within these states (expected the same county count for every statewide ",
+      "project in a given state): ", stringr::str_c(inconsistent_states, collapse = ", "), ".")) }
 
   message(glue::glue("Public assistance records are filtered to include only 'natural' `incident_type`
   values, with records from the years {min(years)}-{max(years)}, inclusive. Tribal records are not included."))
@@ -393,10 +437,11 @@ get_public_assistance= function(
 }
 
 utils::globalVariables(c(
-  "tract_fips_2020", "tract_fips_2022", "county_fips_2020", "ce_fips_2022", "B01003_001E",
-  "population_2020", "population_2020_total", "state_number_code", "dcc", "damage_category",
-  "federal_share_obligated", "county_fips_2022", "allocation_factor", "county_population",
+  "state_number_code", "dcc", "damage_category",
+  "federal_share_obligated", "allocation_factor", "county_population",
   "statewide_flag", "project_counties_population", "pa_federal_funding_obligated",
   "pa_federal_funding_obligated_split", "difference", "declaration_year", "disaster_number",
   "damage_category_code", "damage_category_descrip", "damage_category_description",
-  "distinct_state_records_per_id", "imputed_statewide_flag", "pa_category", "project_status"))
+  "distinct_state_records_per_id", "imputed_statewide_flag", "pa_category", "project_status",
+  "source_geoid", "target_geoid", "allocation_factor_source_to_target", "state_fips",
+  "region_weight"))

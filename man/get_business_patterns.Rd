@@ -33,16 +33,21 @@ query all available codes with the specified number of digits. If not NULL,
 this argument overrides the \code{naics_code_digits} argument.}
 }
 \value{
-A tibble with data on county-level employees, employers, and aggregate
-annual payrolls by industry and employer size
+A tibble with data on employees, employers, and aggregate annual payrolls by
+industry and employer size. The geographic columns differ by \code{geo}:
 \describe{
 \item{year}{the year for which CBP data is pulled from}
-\item{state}{A two-digit state identifier.}
-\item{county}{A three-digit county identifier.}
+\item{state}{(geo = "county" only) A two-digit state identifier.}
+\item{county}{(geo = "county" only) A three-digit county identifier.}
+\item{zip_code}{(geo = "zipcode" only) A five-digit ZIP code.}
 \item{employees}{number of individual employees employed in that particular industry
-and establishment size combination}
+and establishment size combination. For geo = "zipcode", this is only published
+by Census for \code{naics_code == "00"} (total, all sectors); all other NAICS codes
+are NA -- see \verb{@details}.}
 \item{employers}{number of establishments of each employment size}
-\item{annual_payroll}{total annual payroll expenditures measured in $1,000's of USD}
+\item{annual_payroll}{total annual payroll expenditures measured in $1,000's of USD.
+For geo = "zipcode", this is only published by Census for \code{naics_code == "00"}
+(total, all sectors); all other NAICS codes are NA -- see \verb{@details}.}
 \item{industry}{industry classification according to North American Industry Classification System.
 Refer to details for additional information}
 \item{employee_size_range_label}{range for the employment size of establishments included in each
@@ -85,6 +90,12 @@ Rail Transportation (NAICS 482); Postal Service (NAICS 491); Pension, Health, We
 and Other Insurance Funds (NAICS 525110, 525120, 525190); Trusts, Estates, and Agency
 Accounts (NAICS 525920); Offices of Notaries (NAICS 541120); Private Households (NAICS 814);
 and Public Administration (NAICS 92)
+
+For \code{geo = "zipcode"}, Census's ZIP Code Business Patterns (ZBP) only publishes
+\code{employees}/\code{annual_payroll} for \code{naics_code == "00"} (total, all sectors); the Census API
+returns a literal \code{0} for every other NAICS code at the zip-code level, which reflects a
+suppression convention, not a true absence of establishments. This function coerces those
+values to \code{NA} and emits a one-time message explaining this.
 }
 \examples{
 \dontrun{

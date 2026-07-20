@@ -19,16 +19,18 @@ Description: This packages combines a set of utilities for acquiring and process
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.3
-Imports: 
+Imports:
     arrow,
     censusapi,
+    crosswalk,
+    curl,
     sfarrow,
     dplyr,
     esri2sf (>= 0.1.1),
     ellmer,
     glue,
-    ggplot2,
+    httr,
+    httr2,
     ipumsr,
     janitor,
     jsonlite,
@@ -43,7 +45,6 @@ Imports:
     rfema (>= 1.0.0),
     rlang,
     rvest,
-    scales,
     sf,
     stringr,
     tibble,
@@ -52,21 +53,23 @@ Imports:
     tidytable,
     tigris,
     utils,
-    uuid,
-    urbnindicators,
-    urbnthemes
+    uuid
 Remotes:
     ropensci/rfema,
     yonghah/esri2sf,
-    UI-Research/urbnindicators,
     UI-Research/crosswalk,
     UrbanInstitute/urbnthemes
 URL: https://ui-research.github.io/climateapi/
 Suggests:
+    ggplot2,
     knitr,
     qualtRics,
     rmarkdown,
+    scales,
     testthat (>= 3.0.0),
-    tidyverse
+    tidyverse,
+    urbnthemes
 Config/testthat/edition: 3
 VignetteBuilder: knitr
+Config/roxygen2/version: 8.0.0
+RoxygenNote: 7.3.2

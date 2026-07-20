@@ -2,62 +2,49 @@ url: https://ui-research.github.io/climateapi/
 template:
   bootstrap: 5
 reference:
-- title: Point data
-  contents:
-  - get_structures
-- title: Block data
-  contents:
-  - get_lodes
-- title: Cities data
-  contents:
-  - get_sba_loans
-- title: Government unit data
-  contents:
-  - get_government_finances
-- title: County data
-  contents:
-  - get_business_patterns
+- title: Disaster events
+  contents: 
   - get_fema_disaster_declarations
+  - get_current_fire_perimeters
+  - get_wildfire_burn_zones
+- title: Disaster-related damages and funding
+  contents: 
   - get_ihp_registrations
   - get_nfip_policies
   - get_nfip_claims
   - get_nfip_residential_penetration
   - get_public_assistance
+  - get_hazard_mitigation_assistance
+  - get_emergency_management_performance
+  - get_sba_loans
+  - get_disaster_dollar_database
   - get_sheldus
   - get_preliminary_damage_assessments
-  - get_hazard_mitigation_assistance
-- title: State data
-  contents:
-  - get_emergency_management_performance
-  - get_disaster_dollar_database
-- title: Event boundaries
-  contents:
-  - get_current_fire_perimeters
-  - get_wildfire_burn_zones
+- title: Disaster-impacted domains
+  contents: 
+  - get_lodes
+  - get_business_patterns
+  - get_structures
+  - get_government_finances
+  - get_national_risk_index
 - title: Land use
   contents:
   - estimate_zoning_envelope
-  - estimate_units_per_parcel
-  - interpolate_demographics
-- title: Surveys and Qualtrics
-  contents:
-  - qualtrics_format_metadata
-  - qualtrics_get_metadata
-  - qualtrics_plot_question
-  - qualtrics_define_missing
 - title: Utilities
   contents:
   - get_system_username
   - get_box_path
+  - get_openfema_cache_path
   - get_dataset_columns
   - get_geography_metadata
+  - list_openfema_endpoints
+  - download_openfema_datasets
   - convert_delimited_to_parquet
   - convert_table_text_to_dataframe
   - get_spatial_extent_census
   - read_xlsx_from_url
-  - subdivide_linestring
-  - polygons_to_linestring
   - read_ipums_cached
   - inflation_adjust
   - cache_it
   - get_naics_codes
+

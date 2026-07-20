@@ -12,30 +12,38 @@
 #'   FIRED, MTBS, NIFC, ICS-209, RedBook, and FEMA data sources. Geometries are in
 #'   NAD83 / Conus Albers (EPSG:5070).
 #'
-#' @returns An sf dataframe comprising wildfire burn zone disasters. Each row represents a
-#'   single wildfire event, with polygon geometries representing burn zones.
+#' @returns An sf dataframe comprising wildfire burn zone disasters, with one row per
+#'   wildfire x affected county (a wildfire spanning multiple counties appears as multiple
+#'   rows). `geometry`, `area_sq_km`, and the other wildfire-level summary columns
+#'   (`fatalities_total`, `injuries_total`, `structures_destroyed`, `structures_threatened`,
+#'   `evacuation_total`, `wui_type`, `density_people_sq_km_wildfire_buffer`) are wildfire-level
+#'   and repeat identically across a multi-county wildfire's rows; de-duplicate on
+#'   `wildfire_id` before summing these columns or unioning geometries (e.g.
+#'   `sum(area_sq_km[!duplicated(wildfire_id)])`) to avoid over-counting.
 #'   Columns include:
 #'   \describe{
 #'     \item{wildfire_id}{Unique identifier for the wildfire event.}
 #'     \item{id_fema}{FEMA disaster identifier (if applicable).}
 #'     \item{year}{Year of the wildfire.}
 #'     \item{wildfire_name}{Name of the wildfire or fire complex.}
-#'     \item{county_fips}{Pipe-delimited string of five-digit county FIPS codes for all
-#'       counties affected by the wildfire.}
-#'     \item{county_name}{Pipe-delimited string of county names for all counties
-#'       affected by the wildfire.}
-#'     \item{area_sq_km}{Burned area in square kilometers.}
+#'     \item{state_fips}{Two-digit state FIPS code, derived from `county_fips`.}
+#'     \item{county_fips}{Five-digit county FIPS code for a single county affected by the wildfire.}
+#'     \item{county_name}{Name of a single county affected by the wildfire, sourced from
+#'       Census's own canonical county names (joined on `county_fips`) rather than the raw
+#'       source data, to avoid mangling Mc-prefixed county names.}
+#'     \item{area_sq_km}{Burned area in square kilometers (wildfire-level; see above).}
 #'     \item{wildfire_complex_binary}{Whether the fire is a complex (multiple fires).}
 #'     \item{date_start}{Ignition date.}
 #'     \item{date_containment}{Containment date.}
-#'     \item{fatalities_total}{Total fatalities.}
-#'     \item{injuries_total}{Total injuries.}
-#'     \item{structures_destroyed}{Number of structures destroyed.}
-#'     \item{structures_threatened}{Number of structures threatened.}
-#'     \item{evacuation_total}{Total evacuations.}
-#'     \item{wui_type}{Wildland-urban interface type.}
-#'     \item{density_people_sq_km_wildfire_buffer}{Population density in wildfire buffer area.}
-#'     \item{geometry}{Burn zone polygon geometry.}
+#'     \item{fatalities_total}{Total fatalities (wildfire-level; see above).}
+#'     \item{injuries_total}{Total injuries (wildfire-level; see above).}
+#'     \item{structures_destroyed}{Number of structures destroyed (wildfire-level; see above).}
+#'     \item{structures_threatened}{Number of structures threatened (wildfire-level; see above).}
+#'     \item{evacuation_total}{Total evacuations (wildfire-level; see above).}
+#'     \item{wui_type}{Wildland-urban interface type (wildfire-level; see above).}
+#'     \item{density_people_sq_km_wildfire_buffer}{Population density in wildfire buffer
+#'       area (wildfire-level; see above).}
+#'     \item{geometry}{Burn zone polygon geometry (wildfire-level; see above).}
 #'   }
 #' @export
 #' @examples
@@ -77,11 +85,32 @@ get_wildfire_burn_zones <- function(
       wui_type = wildfire_wui,
       ## codebook says this is per square meter, but that must be a typo based on distribution of density values
       ## other values are per square kilometer, which makes more sense
-      density_people_sq_km_wildfire_buffer = wildfire_buffered_avg_pop_den)
+      density_people_sq_km_wildfire_buffer = wildfire_buffered_avg_pop_den) |>
+    ## one row per wildfire x affected county (previously one row per wildfire, with all
+    ## affected counties packed into pipe-delimited strings); county_fips and county_name
+    ## always have matching pipe-delimited counts per record, so exploding both in lockstep
+    ## keeps them correctly paired
+    ## tidyr::separate_longer_delim() drops the sf class (though the geometry list-column
+    ## itself stays intact as sfc), so it must be re-wrapped with sf::st_as_sf()
+    tidyr::separate_longer_delim(c(county_fips, county_name), delim = "|") |>
+    sf::st_as_sf() |>
+    dplyr::mutate(
+      county_fips = stringr::str_trim(county_fips),
+      state_fips = stringr::str_sub(county_fips, 1, 2)) |>
+    ## county_name is re-derived from Census's own canonical county names (keyed on
+    ## county_fips) rather than title-casing the raw source string, which would mangle
+    ## Mc-prefixed county names (e.g. str_to_title("MCKENZIE") -> "Mckenzie", not "McKenzie")
+    dplyr::select(-county_name) |>
+    dplyr::left_join(
+      tidycensus::fips_codes |>
+        dplyr::transmute(county_fips = stringr::str_c(state_code, county_code), county_name = county),
+      by = "county_fips",
+      relationship = "many-to-one") |>
+    dplyr::relocate(state_fips, county_fips, county_name, .after = wildfire_name)
 
   message(stringr::str_c(
-    "Each observation represents a wildfire burn zone disaster. ",
-    "Counties affected by each wildfire are stored as pipe-delimited strings in county_fips and county_name columns. ",
+    "Each observation represents a county affected by a wildfire burn zone disaster. ",
+    "Wildfires spanning multiple counties appear as multiple rows. ",
     "Disasters are defined as wildfires that burned near a community and resulted in ",
     "at least one civilian fatality, one destroyed structure, or received federal disaster relief. ",
     "Geometries represent burn zone perimeters sourced from FIRED, MTBS, or NIFC datasets."))
@@ -94,4 +123,5 @@ utils::globalVariables(c(
   "wildfire_counties_fips", "wildfire_area", "wildfire_complex", "wildfire_ignition_date",
   "wildfire_containment_date", "wildfire_total_fatalities", "wildfire_total_injuries",
   "wildfire_struct_destroyed", "wildfire_struct_threatened", "wildfire_total_evacuation",
-  "wildfire_wui", "wildfire_buffered_avg_pop_den"))
+  "wildfire_wui", "wildfire_buffered_avg_pop_den", "state_code", "county_code", "county",
+  "state_fips", "county_fips", "county_name", "wildfire_name"))

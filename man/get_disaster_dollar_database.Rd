@@ -13,13 +13,23 @@ get_disaster_dollar_database(
 \item{file_path}{The path (on Box) to the file containing the raw data.}
 }
 \value{
-A dataframe comprising disaster-level observations with financial assistance metrics from FEMA's Individual and Households Program (IHP), Public Assistance (PA), HUD's Community Development Block Grant Disaster Recovery (CDBG-DR), and SBA disaster loans.
+A dataframe comprising disaster-level observations with financial assistance metrics
+from FEMA's Individual and Households Program (IHP), Public Assistance (PA), HUD's Community
+Development Block Grant Disaster Recovery (CDBG-DR), and SBA disaster loans.
+\code{incident_start}, \code{incident_end}, and \code{declaration_date} are returned as \code{Date} objects
+(parsed from the raw source's M/D/YY-formatted strings).
 }
 \description{
 Get Disaster Dollar Database Data
 }
 \details{
-These data are sourced from: https://carnegieendowment.org/features/disaster-dollar-database. The data returned from this function are unchanged, though some columns have been renamed slightly for clarity and consistency.
+These data are sourced from: https://carnegieendowment.org/features/disaster-dollar-database.
+The raw source file has 86 columns; this function returns a curated 17-column subset
+(renamed slightly for clarity and consistency). Columns dropped include: the Federal
+Register Notice grantee detail columns (\verb{frn\{1-4\}_date}/\verb{_url}, and each FRN's
+\verb{grantee\{1-9\}_name}/\verb{_url}/\verb{_amount} columns), \code{declaration_url}, and the SBA home/business
+loan split columns (\code{sba_home_approved_loan_amount}, \code{sba_home_loan_count},
+\code{sba_business_approved_loan_amount}, \code{sba_business_loan_count}).
 }
 \examples{
 \dontrun{

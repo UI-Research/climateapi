@@ -10,7 +10,7 @@ test_that("get_emergency_management_performance function signature is correct", 
 
   # Check defaults
   f <- get_emergency_management_performance
-  expect_true(formals(f)$api)
+  expect_false(formals(f)$api)
 })
 
 test_that("get_emergency_management_performance validates file_path when api=FALSE", {

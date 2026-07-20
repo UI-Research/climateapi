@@ -50,6 +50,9 @@ get_current_fire_perimeters = function(
   if (!is.null(geography)) {
     stop("Invalid geography. Geography must be NULL.")}
 
+  if (!is.null(file_path)) {
+    stop("Invalid file_path. file_path must be NULL.")}
+
   ## data may only be queried from the API
   if (!isTRUE(api)) {
     stop("Data must be queried from the API; set `api = TRUE`.")}
@@ -64,8 +67,10 @@ get_current_fire_perimeters = function(
       incident_size_acres = attr_incident_size,
       incident_short_description = attr_incident_short_description,
       percent_contained = attr_percent_contained,
-      identified_date = attr_fire_discovery_date_time %>% lubridate::as_datetime(),
-      updated_date = attr_modified_on_date_time_dt %>% lubridate::as_datetime())
+      ## the source fields are epoch milliseconds, but lubridate::as_datetime() expects
+      ## epoch seconds; dividing by 1000 avoids dates ~1000x too far in the future
+      identified_date = (attr_fire_discovery_date_time / 1000) %>% lubridate::as_datetime(),
+      updated_date = (attr_modified_on_date_time_dt / 1000) %>% lubridate::as_datetime())
 
   message(stringr::str_c(
     "Each observation represents a distinct wildfire and its perimeters. ",

@@ -8,12 +8,19 @@
 # Load data once for success tests (skip if Box path unavailable)
 # ---------------------------------------------------------------------------
 nfip_policies_test_data <- NULL
+nfip_policies_load_error <- NULL
 
 skip_if_no_box <- function() {
   box_path <- tryCatch(get_box_path(), error = function(e) NULL)
   if (is.null(box_path) || !dir.exists(box_path)) {
     skip("Box path not available")
   }
+}
+
+skip_if_data_not_loaded <- function() {
+  skip_if(
+    is.null(nfip_policies_test_data),
+    paste("NFIP policies test data not loaded:", nfip_policies_load_error))
 }
 
 # Attempt to load data once for all success tests (small state: DC)
@@ -24,7 +31,11 @@ local({
       suppressWarnings(suppressMessages(
         get_nfip_policies(state_abbreviation = "DC", api = FALSE)
       )),
-      error = function(e) NULL
+      ## surface the error in the skip message rather than swallowing it silently
+      error = function(e) {
+        nfip_policies_load_error <<- conditionMessage(e)
+        NULL
+      }
     )
   }
 })
@@ -64,7 +75,7 @@ test_that("get_nfip_policies function signature is correct", {
 # ---------------------------------------------------------------------------
 test_that("get_nfip_policies returns expected columns", {
   skip_if_no_box()
-  skip_if(is.null(nfip_policies_test_data), "NFIP policies test data not loaded")
+  skip_if_data_not_loaded()
 
   expected_cols <- c(
     "state_fips", "state_abbreviation", "county_geoid", "county_name",
@@ -80,14 +91,14 @@ test_that("get_nfip_policies returns expected columns", {
 
 test_that("get_nfip_policies returns a data frame", {
   skip_if_no_box()
-  skip_if(is.null(nfip_policies_test_data), "NFIP policies test data not loaded")
+  skip_if_data_not_loaded()
 
   expect_true(is.data.frame(nfip_policies_test_data))
 })
 
 test_that("get_nfip_policies county_geoid is 5 characters", {
   skip_if_no_box()
-  skip_if(is.null(nfip_policies_test_data), "NFIP policies test data not loaded")
+  skip_if_data_not_loaded()
 
   geoids <- nfip_policies_test_data$county_geoid[!is.na(nfip_policies_test_data$county_geoid)]
   if (length(geoids) > 0) {
@@ -97,7 +108,7 @@ test_that("get_nfip_policies county_geoid is 5 characters", {
 
 test_that("get_nfip_policies building_occupancy_type has expected categories", {
   skip_if_no_box()
-  skip_if(is.null(nfip_policies_test_data), "NFIP policies test data not loaded")
+  skip_if_data_not_loaded()
 
   valid_types <- c("single family", "multi-family", "mobile/manufactured home", "non-residential", NA)
   occupancy <- nfip_policies_test_data$building_occupancy_type

@@ -23,23 +23,49 @@ at which to cache the resulting data.}
 data will be generated anew. Else, if a file exists at \code{file_path}, this file will be returned.}
 }
 \value{
-A dataframe of preliminary damage assessment reports. Key columns include:
+A dataframe of preliminary damage assessment reports. Columns include:
 \describe{
+\item{path}{The local file path to the source PDA PDF.}
 \item{disaster_number}{FEMA disaster number.}
 \item{event_type}{Type of decision: "approved", "denial", "appeal_approved", or "appeal_denial".}
 \item{event_title}{Title/description of the disaster event.}
 \item{event_date_determined}{Date the PDA determination was made.}
 \item{event_native_flag}{1 if tribal request, 0 otherwise.}
+\item{pa_requested}{1 if Public Assistance was requested, 0 otherwise.}
+\item{pa_preemptive_declaration}{1 if the joint PDA requirement was waived due to the severity of the event, 0 otherwise.}
+\item{pa_primary_impact}{The primary type of impact described for Public Assistance purposes.}
+\item{pa_cost_estimate_total}{Estimated total Public Assistance cost.}
+\item{pa_per_capita_impact_statewide}{Statewide (or territory/commonwealth) per capita impact amount.}
+\item{pa_per_capita_impact_indicator_statewide}{Numeric ratio of the statewide per capita impact
+to the applicable threshold -- a decimal ratio (e.g. 1.5, 1.89), not a "Met"/"Not Met"
+categorical indicator despite the field's FEMA-assigned name.}
+\item{pa_per_capita_impact_countywide}{Raw text of countywide per capita impact ratios (may list
+multiple values across affected counties for a multi-county event).}
+\item{pa_per_capita_impact_indicator_countywide}{Truncated text of the countywide per capita impact indicator.}
+\item{pa_per_capita_impact_countywide_max}{Maximum countywide per capita impact ratio parsed
+from \code{pa_per_capita_impact_countywide}.}
+\item{pa_per_capita_impact_countywide_min}{Minimum countywide per capita impact ratio parsed
+from \code{pa_per_capita_impact_countywide}.}
 \item{ia_requested}{1 if Individual Assistance was requested, 0 otherwise.}
 \item{ia_residences_impacted}{Total residences impacted.}
 \item{ia_residences_destroyed}{Number of residences destroyed.}
 \item{ia_residences_major_damage}{Number of residences with major damage.}
 \item{ia_residences_minor_damage}{Number of residences with minor damage.}
+\item{ia_residences_affected}{Number of residences affected (lowest damage category).}
+\item{ia_residences_insured_total_percent}{Percentage of impacted residences with any insurance coverage.}
+\item{ia_residences_insured_flood_percent}{Percentage of impacted residences with flood insurance coverage.}
+\item{ia_households_poverty_percent}{Percentage of households in poverty (or low income,
+depending on report vintage).}
+\item{ia_households_owner_percent}{Percentage of households that are owner-occupied.}
+\item{ia_population_other_government_assistance_percent}{Percentage of the population receiving
+other government assistance (e.g. SSI, SNAP).}
+\item{ia_pre_disaster_unemployment_percent}{Pre-disaster unemployment rate.}
+\item{ia_65plus_percent}{Percentage of the population age 65 and older.}
+\item{ia_18below_percent}{Percentage of the population age 18 and under.}
+\item{ia_disability_percent}{Percentage of the population with a disability.}
+\item{ia_ihp_cost_to_capacity_ratio}{Individuals and Households Program (IHP) Cost to Capacity (ICC) ratio.}
 \item{ia_cost_estimate_total}{Estimated total Individual Assistance cost.}
-\item{pa_requested}{1 if Public Assistance was requested, 0 otherwise.}
-\item{pa_cost_estimate_total}{Estimated total Public Assistance cost.}
-\item{pa_per_capita_impact_statewide}{Statewide per capita impact amount.}
-\item{pa_per_capita_impact_indicator_statewide}{Met/Not Met indicator for statewide threshold.}
+\item{text}{The cleaned text extracted from the PDA PDF used to derive the fields above.}
 }
 }
 \description{

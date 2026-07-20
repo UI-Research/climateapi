@@ -179,6 +179,9 @@ get_lodes = function(
   if (!state_part %in% c("main", "aux")) {
     stop("`state_part` must be one of 'main' or 'aux'.")}
 
+  if (lodes_type != "od" && state_part == "aux") {
+    warning("state_part is only meaningful for lodes_type = 'od'; wac/rac results are identical for 'main' and 'aux'.") }
+
 
   # if states == "all" then set states parameter as all 50 states plus DC
   if ("all" %in% states) {
@@ -298,10 +301,22 @@ include federal jobs for 2010 and later. Records for pre-2010 federal jobs are l
 as NA.\n") }
 
 
-  ## if only years are pre-2010, returns jobs without federal job data
+  ## if only years are pre-2010, run through the same rename/pivot/rename_lodes_variables()
+  ## pipeline as post-2010 pulls (skipping only the federal-jobs join, since federal jobs
+  ## are not available prior to 2010 at all), so the returned schema is always consistent
   if (years %>% max < 2010) {
 
-    return(lodes_all_jobs)
+    lodes_all_nonfederal_jobs = lodes_all_jobs %>%
+      dplyr::rename_with(.cols = -c(year, dplyr::matches("GEOID"), state), .fn = ~ stringr::str_c("all_", .x)) %>%
+      dplyr::mutate(year = as.numeric(year)) %>%
+      tidyr::pivot_longer(
+        cols = -c(year, state, dplyr::matches("GEOID")),
+        names_pattern = "(all)_(.*)",
+        names_to = c("job_type", "variable")) %>%
+      tidyr::pivot_wider(names_from = "variable", values_from = value) %>%
+      rename_lodes_variables()
+
+    return(lodes_all_nonfederal_jobs)
 
   } else {
 
@@ -357,4 +372,4 @@ as NA.\n") }
 }
 
 utils::globalVariables(c(
-  "Explanation", "Variable", "Var1", "Var2", "flag"))
+  "Explanation", "Variable", "Var1", "Var2", "flag", "value"))

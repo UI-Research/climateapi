@@ -8,12 +8,30 @@ test_that("get_current_fire_perimeters validates geography parameter", {
   )
 })
 
+test_that("get_current_fire_perimeters validates file_path parameter", {
+  # file_path must be NULL
+  expect_error(
+    get_current_fire_perimeters(file_path = "some/path.csv"),
+    "must be NULL"
+  )
+})
+
 test_that("get_current_fire_perimeters validates api parameter", {
   # api must be TRUE
   expect_error(
     get_current_fire_perimeters(api = FALSE),
     "must be queried from the API"
   )
+})
+
+test_that("get_current_fire_perimeters dates are in a sane year range", {
+  # regression test for an epoch-milliseconds-fed-to-a-seconds-parser bug, which produced
+  # dates ~1000x too far in the future
+  result <- tryCatch(get_current_fire_perimeters(), error = function(e) NULL)
+  skip_if(is.null(result) || nrow(result) == 0, "Live NIFC API data not available")
+
+  expect_true(all(lubridate::year(result$identified_date) %in% 2000:2100, na.rm = TRUE))
+  expect_true(all(lubridate::year(result$updated_date) %in% 2000:2100, na.rm = TRUE))
 })
 
 test_that("get_current_fire_perimeters validates bbox parameter", {

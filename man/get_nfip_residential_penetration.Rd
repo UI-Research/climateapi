@@ -4,15 +4,13 @@
 \alias{get_nfip_residential_penetration}
 \title{Get the share of residential structures covered by NFIP}
 \usage{
-get_nfip_residential_penetration(
-  states = NULL,
-  file_name = "nfip_residential_penetration_rates_12_12_2025.csv"
-)
+get_nfip_residential_penetration(states = NULL, file_name = NULL)
 }
 \arguments{
 \item{states}{NULL by default.}
 
-\item{file_name}{The name (not full path) of the raw dataset.}
+\item{file_name}{The name (not full path) of the raw dataset. If NULL (default),
+reads the most recently cached file for this dataset from \code{get_openfema_cache_path()}.}
 }
 \value{
 A tibble with the following columns:

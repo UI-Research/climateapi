@@ -1,7 +1,8 @@
 #' Get the share of residential structures covered by NFIP
 #'
-#' @param states NULL by default. 
-#' @param file_name The name (not full path) of the raw dataset.
+#' @param states NULL by default.
+#' @param file_name The name (not full path) of the raw dataset. If NULL (default),
+#'   reads the most recently cached file for this dataset from `get_openfema_cache_path()`.
 #'
 #' @return A tibble with the following columns:
 #'     \describe{
@@ -24,14 +25,20 @@
 #' }
 get_nfip_residential_penetration <- function(
     states = NULL,
-    file_name = "nfip_residential_penetration_rates_12_12_2025.csv") {
-  
-  inpath <- file.path(
-    get_box_path(), "hazards", "fema", "national-flood-insurance-program", "raw", file_name)
-  
-  if (!file.exists(inpath)) { stop("The provided `file_name` is invalid.") }
-  
-  df1 <- readr::read_csv(file = inpath) %>% 
+    file_name = NULL) {
+
+  if (is.null(file_name)) {
+    df0 <- arrow::read_parquet(find_openfema_cache_file("NfipResidentialPenetrationRates"))
+  } else {
+    inpath <- file.path(
+      get_box_path(), "hazards", "fema", "national-flood-insurance-program", "raw", file_name)
+
+    if (!file.exists(inpath)) { stop("The provided `file_name` is invalid.") }
+
+    df0 <- readr::read_csv(file = inpath)
+  }
+
+  df1 <- df0 %>%
     janitor::clean_names() %>%
     dplyr::transmute(
       state_name = state, 
@@ -52,8 +59,20 @@ get_nfip_residential_penetration <- function(
   
   # Apply filter only when states is not NULL
   if (!is.null(states)) {
-    df1 <- df1 %>% 
-      dplyr::filter(state %in% states) }
-  
+    ## this column holds full state names (e.g. "Florida"), not abbreviations; warn if
+    ## any supplied value doesn't match, since an abbreviation would otherwise silently
+    ## return 0 rows
+    unmatched_states = setdiff(states, unique(df1$state_name))
+    if (length(unmatched_states) > 0) {
+      stop(stringr::str_c(
+        "The following `states` values do not match any state_name in the data (this ",
+        "column holds full state names, e.g. 'Florida', not abbreviations): ",
+        stringr::str_c(unmatched_states, collapse = ", "), ".")) }
+
+    df1 <- df1 %>%
+      dplyr::filter(state_name %in% states) }
+
   return(df1)
 }
+
+utils::globalVariables(c("fips_code", "as_of_date"))

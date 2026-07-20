@@ -9,7 +9,7 @@
 #'   10.1371/journal.pone.0130119. See \url{https://my.willamette.edu/site/mba/public-datasets}.
 #' 
 #'   This is a survey in most years--i.e., only a subset of the full population of governments
-#'   comprises the sampling frame--but is a true census with relatively high response rates (90%%+)
+#'   comprises the sampling frame--but is a true census with relatively high response rates (90%+)
 #'   in years ending in 2 and 7.
 #'
 #'   Definitions of key constructs:
@@ -164,19 +164,21 @@ get_government_finances = function() {
       revenue_intergovernmental_total = total_intergovernmental_revenue,
       revenue_intergovernmental_federal = total_federal_intergovernmental_revenue,
       revenue_intergovernmental_state = total_state_intergovernmental_revenue,
+      revenue_charges_total = revenue_total_chgs_and_miscellaneous,
+      revenue_utility_total = total_utility_revenue,
       ## Total expenditures and major subtotals
       expenditure_total,
-      expenditure_general = general_expenditure#,
-      # expenditure_capital_outlay = expenditure_total_capital_outlay,
-      # expenditure_construction = expenditure_total_construction,
-      # expenditure_salaries_wages = expenditure_total_salaries_wages,
-      # expenditure_intergovernmental = expenditure_total_intergovernmental,
-      # expenditure_education_total = expenditure_total_education,
-      # expenditure_public_safety = expenditure_total_police_protection,
-      # expenditure_health_hospitals = expenditure_total_health,
-      # expenditure_highways = expenditure_total_highways,
-      # expenditure_public_welfare = expenditure_total_public_welfare,
-      # expenditure_utility_total = expenditure_total_utility
+      expenditure_general = general_expenditure,
+      expenditure_capital_outlay = total_capital_outlays,
+      expenditure_construction = total_construction,
+      expenditure_salaries_wages = total_salaries_wages,
+      expenditure_intergovernmental = total_intergovernmental_expenditure,
+      expenditure_education_total = expenditure_total_education_total,
+      expenditure_public_safety = expenditure_police_prot_total,
+      expenditure_health_hospitals = expenditure_health_total,
+      expenditure_highways = expenditure_total_highways_total,
+      expenditure_public_welfare = expenditure_public_welfare_total,
+      expenditure_utility_total = expenditure_total_utility_total
     )
 
   return(df_final)
@@ -184,15 +186,14 @@ get_government_finances = function() {
 
 utils::globalVariables(c(
   "year4", "fips_code_state", "fips_county", "name",
-  "revenue_total", "revenue_total_general", "revenue_tax_total", "revenue_tax_property",
-
-  "revenue_tax_total_sales_gross_receipts", "revenue_tax_total_income",
- "revenue_total_intergovernmental", "revenue_total_federal_intergovernmental",
-  "revenue_total_state_intergovernmental", "revenue_total_charges_miscellaneous_general",
-  "revenue_total_utility",
-  "expenditure_total", "expenditure_total_general", "expenditure_total_capital_outlay",
-  "expenditure_total_construction", "expenditure_total_salaries_wages",
-  "expenditure_total_intergovernmental", "expenditure_total_education",
-  "expenditure_total_police_protection", "expenditure_total_health",
-  "expenditure_total_highways", "expenditure_total_public_welfare",
-  "expenditure_total_utility"))
+  "revenue_total", "general_revenue", "revenue_tax_total", "revenue_tax_property",
+  "revenue_tax_total_sales_gr_rec", "revenue_tax_total_income",
+  "total_intergovernmental_revenue", "total_federal_intergovernmental_revenue",
+  "total_state_intergovernmental_revenue", "revenue_total_chgs_and_miscellaneous",
+  "total_utility_revenue",
+  "expenditure_total", "general_expenditure", "total_capital_outlays",
+  "total_construction", "total_salaries_wages",
+  "total_intergovernmental_expenditure", "expenditure_total_education_total",
+  "expenditure_police_prot_total", "expenditure_health_total",
+  "expenditure_total_highways_total", "expenditure_public_welfare_total",
+  "expenditure_total_utility_total"))

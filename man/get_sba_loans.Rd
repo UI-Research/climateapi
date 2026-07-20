@@ -11,15 +11,23 @@ A dataframe comprising city- and zip-level data on SBA loanmaking.
 Columns include:
 \describe{
 \item{fiscal_year}{The federal fiscal year of the loan.}
+\item{disaster_description}{Text description of the disaster (only populated for
+older, FY01-FY03 vintages; NA otherwise).}
 \item{disaster_number_fema}{FEMA disaster number associated with the loan.}
 \item{disaster_number_sba_physical}{SBA physical disaster declaration number.}
+\item{disaster_number_sba}{SBA disaster declaration number (distinct from
+\code{disaster_number_sba_physical}).}
 \item{disaster_number_sba_eidl}{SBA Economic Injury Disaster Loan (EIDL) declaration number.}
 \item{damaged_property_zip_code}{ZIP code of the damaged property.}
 \item{damaged_property_city_name}{City name of the damaged property.}
 \item{damaged_property_state_code}{Two-letter state abbreviation.}
 \item{verified_loss_total}{Total verified loss amount in dollars.}
+\item{verified_loss_real_estate}{Verified loss amount for real estate in dollars.}
+\item{verified_loss_content}{Verified loss amount for contents in dollars.}
 \item{approved_amount_total}{Total approved loan amount in dollars.}
 \item{approved_amount_real_estate}{Approved loan amount for real estate in dollars.}
+\item{approved_amount_content}{Approved loan amount for contents in dollars.}
+\item{approved_amount_eidl}{Approved EIDL amount in dollars (business loans only; NA for residential).}
 \item{loan_type}{Type of loan: "residential" or "business".}
 }
 }
@@ -30,6 +38,13 @@ for both home and business loans at the city and zip code level.
 \details{
 Data are sourced from the SBA's disaster loan reports. See
 \url{https://www.sba.gov/funding-programs/disaster-assistance}.
+
+The FY16 source workbook (\code{sba_disaster_loan_data_fy16.xlsx}) is anomalous: its Home
+and Business sheets have identical row counts and dollar totals, suggesting possible
+~2x double-counting in the source file itself. This function selects the correct
+Home/Business sheet by name (avoiding the sheet-order swap present in this vintage),
+but the underlying FY16 data should be manually re-verified against
+\url{https://data.sba.gov} before being trusted.
 }
 \examples{
 \dontrun{

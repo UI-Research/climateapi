@@ -3,9 +3,10 @@
 #' @description Retrieves Emergency Management Performance Grant (EMPG) award data
 #'   from FEMA, which supports state and local emergency management agencies.
 #'
-#' @param file_path Path to the downloaded dataset on Box.
+#' @param file_path Path to the raw data. If NULL (default), reads the most recently
+#'   cached file for this dataset from `get_openfema_cache_path()`.
 #' @param api Logical indicating whether to use the OpenFEMA API to retrieve the data.
-#'   Default is TRUE.
+#'   Default is FALSE (read from `file_path`, or the local OpenFEMA cache if NULL).
 #'
 #' @details Data are from FEMA's OpenFEMA API. See
 #'   \url{https://www.fema.gov/openfema-data-page/emergency-management-performance-grants-v2}.
@@ -14,27 +15,31 @@
 #'   Columns include:
 #'   \describe{
 #'     \item{id}{Unique identifier for the grant record.}
+#'     \item{reporting_period}{The reporting period associated with the record.}
 #'     \item{state_name}{Full state name.}
 #'     \item{state_code}{Two-digit state FIPS code.}
 #'     \item{state_abbreviation}{Two-letter state abbreviation.}
-#'     \item{year_project_start}{Year the project started.}
+#'     \item{legal_agency_name}{The name of the legal agency administering the grant.}
+#'     \item{project_type}{The type of project funded.}
+#'     \item{year_project_start}{Year the project started (derived from `project_start_date`,
+#'        with corrections for a handful of records with typos in the raw data).}
 #'     \item{project_start_date}{Date the project started.}
 #'     \item{project_end_date}{Date the project ended.}
-#'     \item{grant_amount}{Total grant amount in dollars.}
-#'     \item{federal_share}{Federal portion of the grant in dollars.}
-#'     \item{non_federal_share}{Non-federal cost share in dollars.}
-#'     \item{program}{EMPG program type.}
+#'     \item{name_of_program}{The name of the EMPG program.}
+#'     \item{funding_amount}{Funding amount in dollars.}
 #'   }
 #' @export
 
 get_emergency_management_performance = function(
-    file_path = file.path(
-      get_box_path(), "hazards", "FEMA", "emergency-management-performance",
-      "emergency_management_performance_grants_2025_06_29.csv"),
-    api = TRUE) {
+    file_path = NULL,
+    api = FALSE) {
 
   if (isTRUE(api)) {
     df1 = rfema::open_fema(data_set = "emergencymanagementperformancegrants", ask_before_call = FALSE) %>%
+      janitor::clean_names()
+  } else if (is.null(file_path)) {
+
+    df1 = arrow::read_parquet(find_openfema_cache_file("EmergencyManagementPerformanceGrants")) %>%
       janitor::clean_names()
   } else {
 
@@ -44,9 +49,11 @@ get_emergency_management_performance = function(
       janitor::clean_names()
   }
 
-  df2 %>% dplyr::count(year_project_start)
+  ## funding_amount is character in api mode, numeric in file mode
+  df1 = df1 %>%
+    dplyr::mutate(funding_amount = as.numeric(funding_amount))
 
-  df2 = df1 %>%
+  df2a = df1 %>%
     dplyr::rename(state_name = state) %>%
     dplyr::mutate(
       year_project_start = lubridate::year(project_start_date),
@@ -60,19 +67,23 @@ get_emergency_management_performance = function(
         id == "ebc64764-a62e-4d98-8a73-bc14a7c78ee3" ~ 2021,
         id == "a1932015-40ff-4f3d-8a01-f4946da70444" ~ 2022,
         id == "c8917cc1-853b-4ac5-b3ef-0a607c6e6881" ~ 2022,
-        TRUE ~ year_project_start)) %>%
+        TRUE ~ year_project_start))
+
+  n_excluded_years = df2a %>% dplyr::filter(year_project_start <= 2012) %>% nrow()
+
+  df2 = df2a %>%
     dplyr::filter(year_project_start > 2012) %>%
     dplyr::left_join(get_geography_metadata(geography_type = "state"))
 
 warning(stringr::str_c(
 "At the time of writing, there are virtually no records with `year_project_start` values in 2024 and 2025 ",
 "although the dataset was reported as last being updated on August 24, 2025. ",
-"Users should be cautious in interpreting these data as being complete for either year.",
-"Further, some records have erroneous project start years in the raw data; these have been ",
-"addressed by the authors of the `climateapi` package in part, but some records are included ",
-"for years 2004, 2010, 2011, and 2012, those these awards likely correspond to different years."))
+"Users should be cautious in interpreting these data as being complete for either year. ",
+n_excluded_years, " records with `year_project_start` <= 2012 have been excluded, due to ",
+"suspected year mislabeling in the source data for years this far outside the program's ",
+"typical reporting window."))
 
     return(df2)
 }
 
-utils::globalVariables(c("year_project_start", "project_start_date"))
+utils::globalVariables(c("year_project_start", "project_start_date", "funding_amount"))

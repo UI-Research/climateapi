@@ -13,3 +13,5 @@
 ^temporary-scripts$
 \.Rmd\.orig$
 ^vignettes/precompile\.R$
+^reviews$
+^\.claude$
