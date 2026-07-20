@@ -6,18 +6,16 @@ to the county level for geographic analysis.
 ## Usage
 
 ``` r
-get_public_assistance(
-  file_path = file.path(get_box_path(), "hazards", "fema", "public-assistance", "raw",
-    "PublicAssistanceFundedProjectsDetailsV2_2025_09_26.parquet"),
-  state_abbreviations = NULL
-)
+get_public_assistance(file_path = NULL, state_abbreviations = NULL)
 ```
 
 ## Arguments
 
 - file_path:
 
-  The file path to the raw data contained in a .parquet file.
+  The file path to the raw data contained in a .parquet file. If NULL
+  (default), reads the most recently cached file for this dataset from
+  [`get_openfema_cache_path()`](https://ui-research.github.io/climateapi/reference/get_openfema_cache_path.md).
 
 - state_abbreviations:
 

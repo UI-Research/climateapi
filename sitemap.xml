@@ -1,6 +1,5 @@
 <urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
 <url><loc>https://ui-research.github.io/climateapi/404.html</loc></url>
-<url><loc>https://ui-research.github.io/climateapi/CLAUDE.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/LICENSE-text.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/LICENSE.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/articles/economic_recovery_factsheet.html</loc></url>
@@ -8,13 +7,15 @@
 <url><loc>https://ui-research.github.io/climateapi/articles/get_structures.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/articles/get_wildfire_burn_zones.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/articles/index.html</loc></url>
+<url><loc>https://ui-research.github.io/climateapi/articles/preliminary_damage_assessments.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/authors.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/index.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/news/index.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/cache_it.html</loc></url>
+<url><loc>https://ui-research.github.io/climateapi/reference/climateapi-package.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/convert_delimited_to_parquet.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/convert_table_text_to_dataframe.html</loc></url>
-<url><loc>https://ui-research.github.io/climateapi/reference/estimate_units_per_parcel.html</loc></url>
+<url><loc>https://ui-research.github.io/climateapi/reference/download_openfema_datasets.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/estimate_zoning_envelope.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/get_box_path.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/get_business_patterns.html</loc></url>
@@ -29,9 +30,11 @@
 <url><loc>https://ui-research.github.io/climateapi/reference/get_ihp_registrations.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/get_lodes.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/get_naics_codes.html</loc></url>
+<url><loc>https://ui-research.github.io/climateapi/reference/get_national_risk_index.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/get_nfip_claims.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/get_nfip_policies.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/get_nfip_residential_penetration.html</loc></url>
+<url><loc>https://ui-research.github.io/climateapi/reference/get_openfema_cache_path.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/get_preliminary_damage_assessments.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/get_public_assistance.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/get_sba_loans.html</loc></url>
@@ -42,14 +45,8 @@
 <url><loc>https://ui-research.github.io/climateapi/reference/get_wildfire_burn_zones.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/index.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/inflation_adjust.html</loc></url>
-<url><loc>https://ui-research.github.io/climateapi/reference/interpolate_demographics.html</loc></url>
-<url><loc>https://ui-research.github.io/climateapi/reference/polygons_to_linestring.html</loc></url>
-<url><loc>https://ui-research.github.io/climateapi/reference/qualtrics_define_missing.html</loc></url>
-<url><loc>https://ui-research.github.io/climateapi/reference/qualtrics_format_metadata.html</loc></url>
-<url><loc>https://ui-research.github.io/climateapi/reference/qualtrics_get_metadata.html</loc></url>
-<url><loc>https://ui-research.github.io/climateapi/reference/qualtrics_plot_question.html</loc></url>
+<url><loc>https://ui-research.github.io/climateapi/reference/list_openfema_endpoints.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/read_ipums_cached.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/read_xlsx_from_url.html</loc></url>
-<url><loc>https://ui-research.github.io/climateapi/reference/subdivide_linestring.html</loc></url>
 </urlset>
 

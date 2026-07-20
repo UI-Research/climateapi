@@ -8,11 +8,8 @@ harmonized at the project-county level.
 
 ``` r
 get_hazard_mitigation_assistance(
-  file_path_old_grant_system = file.path(get_box_path(), "hazards", "fema",
-    "hazard-mitigation-assistance", "raw",
-    "HazardMitigationAssistanceProjects_2025_09_27.parquet"),
-  file_path_new_grant_system = file.path(get_box_path(), "hazards", "fema",
-    "hazard-mitigation-assistance", "raw", "HmaSubapplications_2025_09_27.parquet"),
+  file_path_old_grant_system = NULL,
+  file_path_new_grant_system = NULL,
   state_abbreviations = NULL
 )
 ```
@@ -24,12 +21,18 @@ get_hazard_mitigation_assistance(
   The file path to raw data for HMA applications from the older
   grant-reporting system. These data are typically available from:
   <https://www.fema.gov/openfema-data-page/hazard-mitigation-assistance-projects-v4>
+  If NULL (default), reads the most recently cached file for this
+  dataset from
+  [`get_openfema_cache_path()`](https://ui-research.github.io/climateapi/reference/get_openfema_cache_path.md).
 
 - file_path_new_grant_system:
 
   The file path to raw data for HMA applications from the newer (FEMA
   GO) grant-reporting system. These data are typically available from:
-  <https://www.fema.gov/openfema-data-page/hma-subapplications-v2>
+  <https://www.fema.gov/openfema-data-page/hma-subapplications-v2> If
+  NULL (default), reads the most recently cached file for this dataset
+  from
+  [`get_openfema_cache_path()`](https://ui-research.github.io/climateapi/reference/get_openfema_cache_path.md).
 
 - state_abbreviations:
 
@@ -77,7 +80,8 @@ aggregations. Columns include:
 
 - project_status:
 
-  Current project status (e.g., "Closed", "Active").
+  Current project status (e.g., "Closed", "Active") – spans the full
+  application lifecycle; see `@details`.
 
 - project_cost_federal:
 
@@ -93,6 +97,13 @@ Data are from FEMA's OpenFEMA API, combining two data sources: the
 legacy Hazard Mitigation Assistance Projects (v4) and the newer HMA
 Subapplications (v2). Multi-county projects are split across counties
 based on population proportions.
+
+Records span the full application lifecycle, not only approved/funded
+projects – this includes Denied, Withdrawn, Void, Not Selected, and
+other pre-decision statuses (the FEMA GO source in particular contains
+no funded/"Selected" status records at all). Users must filter on
+`project_status` themselves before summing `project_cost_federal_split`
+if only approved or funded projects are of interest.
 
 ## Examples
 

@@ -22,6 +22,7 @@ Access to SHELDUS requires a subscription. See
 ## Loading the data
 
 ``` r
+
 library(climateapi)
 library(tidyverse)
 library(sf)
@@ -31,6 +32,7 @@ set_urbn_defaults(style = "print")
 ```
 
 ``` r
+
 sheldus <- get_sheldus()
 ```
 
@@ -41,6 +43,7 @@ hazard type. Only county-month-hazard combinations with recorded events
 are included.
 
 ``` r
+
 glimpse(sheldus)
 #> Rows: 1,000,189
 #> Columns: 13
@@ -76,6 +79,7 @@ Key variables include:
 ### Hazard types in the database
 
 ``` r
+
 sheldus |>
   distinct(hazard) |>
   arrange(hazard) |>
@@ -89,6 +93,7 @@ sheldus |>
 ### Annual property damage by hazard type
 
 ``` r
+
 df1 <- sheldus |>
   summarize(
     .by = c(year, hazard),
@@ -122,6 +127,7 @@ plot of chunk annual-damage
 ### Geographic distribution of flood damage
 
 ``` r
+
 flood_damage <- sheldus |>
   filter(hazard == "Flooding") |>
   summarize(
@@ -168,6 +174,7 @@ plot of chunk flood-damage-map
 ### Seasonal patterns in hazard events
 
 ``` r
+
 seasonal <- sheldus |>
   filter(hazard %in% top_hazards) |>
   summarize(
@@ -196,6 +203,7 @@ plot of chunk seasonal-patterns
 ### Counties with highest fatalities
 
 ``` r
+
 high_fatality_counties <- sheldus |>
   summarize(
     .by = c(GEOID, state_name, county_name),
@@ -224,6 +232,7 @@ The county-level structure makes it straightforward to join with
 demographic data.
 
 ``` r
+
 county_demographics <- tidycensus::get_acs(
   geography = "county",
   variables = c(

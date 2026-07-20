@@ -7,11 +7,7 @@ characteristics.
 ## Usage
 
 ``` r
-get_nfip_claims(
-  county_geoids = NULL,
-  file_name = "fima_nfip_claims_2025_09_09.parquet",
-  api = FALSE
-)
+get_nfip_claims(county_geoids = NULL, file_name = NULL, api = FALSE)
 ```
 
 ## Arguments
@@ -24,6 +20,9 @@ get_nfip_claims(
 - file_name:
 
   The name (not the full path) of the Box file containing the raw data.
+  If NULL (default), reads the most recently cached file for this
+  dataset from
+  [`get_openfema_cache_path()`](https://ui-research.github.io/climateapi/reference/get_openfema_cache_path.md).
 
 - api:
 
@@ -36,10 +35,6 @@ A data frame comprising county-level data on current NFIP policies
 - state_fips:
 
   A two-digit state identifier.
-
-- state_abbreviation:
-
-  The name of the state.
 
 - county_geoid:
 
@@ -113,7 +108,7 @@ A data frame comprising county-level data on current NFIP policies
 
   Net contents payment amount.
 
-- net_payment_increased_compliance:
+- net_payment_icc:
 
   Net Increased Cost of Compliance (ICC) payment amount.
 
@@ -147,11 +142,11 @@ if (FALSE) { # \dontrun{
 
 test <- get_nfip_claims(county_geoids = c("01001", "48201")) |>
   dplyr::filter(
-    year_of_loss >= 2015,  ### in the past 10 years
+    year_loss >= 2015,  ### in the past 10 years
     !occupancy_type %in% c("non-residential")) |> ### only residential claims
   dplyr::summarize(
     .by = county_geoid,
     dplyr::across(dplyr::matches("payment"), sum, na.rm = TRUE),
-    residential_claims = dplyr::n_distinct(nfip_claim_id))
+    residential_claims = dplyr::n())
 } # }
 ```

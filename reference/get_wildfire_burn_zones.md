@@ -24,9 +24,16 @@ get_wildfire_burn_zones(
 
 ## Value
 
-An sf dataframe comprising wildfire burn zone disasters. Each row
-represents a single wildfire event, with polygon geometries representing
-burn zones. Columns include:
+An sf dataframe comprising wildfire burn zone disasters, with one row
+per wildfire x affected county (a wildfire spanning multiple counties
+appears as multiple rows). `geometry`, `area_sq_km`, and the other
+wildfire-level summary columns (`fatalities_total`, `injuries_total`,
+`structures_destroyed`, `structures_threatened`, `evacuation_total`,
+`wui_type`, `density_people_sq_km_wildfire_buffer`) are wildfire-level
+and repeat identically across a multi-county wildfire's rows;
+de-duplicate on `wildfire_id` before summing these columns or unioning
+geometries (e.g. `sum(area_sq_km[!duplicated(wildfire_id)])`) to avoid
+over-counting. Columns include:
 
 - wildfire_id:
 
@@ -44,19 +51,24 @@ burn zones. Columns include:
 
   Name of the wildfire or fire complex.
 
+- state_fips:
+
+  Two-digit state FIPS code, derived from `county_fips`.
+
 - county_fips:
 
-  Pipe-delimited string of five-digit county FIPS codes for all counties
-  affected by the wildfire.
+  Five-digit county FIPS code for a single county affected by the
+  wildfire.
 
 - county_name:
 
-  Pipe-delimited string of county names for all counties affected by the
-  wildfire.
+  Name of a single county affected by the wildfire, sourced from
+  Census's own canonical county names (joined on `county_fips`) rather
+  than the raw source data, to avoid mangling Mc-prefixed county names.
 
 - area_sq_km:
 
-  Burned area in square kilometers.
+  Burned area in square kilometers (wildfire-level; see above).
 
 - wildfire_complex_binary:
 
@@ -72,35 +84,36 @@ burn zones. Columns include:
 
 - fatalities_total:
 
-  Total fatalities.
+  Total fatalities (wildfire-level; see above).
 
 - injuries_total:
 
-  Total injuries.
+  Total injuries (wildfire-level; see above).
 
 - structures_destroyed:
 
-  Number of structures destroyed.
+  Number of structures destroyed (wildfire-level; see above).
 
 - structures_threatened:
 
-  Number of structures threatened.
+  Number of structures threatened (wildfire-level; see above).
 
 - evacuation_total:
 
-  Total evacuations.
+  Total evacuations (wildfire-level; see above).
 
 - wui_type:
 
-  Wildland-urban interface type.
+  Wildland-urban interface type (wildfire-level; see above).
 
 - density_people_sq_km_wildfire_buffer:
 
-  Population density in wildfire buffer area.
+  Population density in wildfire buffer area (wildfire-level; see
+  above).
 
 - geometry:
 
-  Burn zone polygon geometry.
+  Burn zone polygon geometry (wildfire-level; see above).
 
 ## Details
 

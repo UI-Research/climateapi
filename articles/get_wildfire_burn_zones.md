@@ -39,6 +39,7 @@ Sci Data 12, 1948 (2025). <https://doi.org/10.1038/s41597-025-06226-8>.
 ## Loading the data
 
 ``` r
+
 library(climateapi)
 library(tidyverse)
 library(sf)
@@ -48,6 +49,7 @@ set_urbn_defaults(style = "print")
 ```
 
 ``` r
+
 burn_zones <- get_wildfire_burn_zones()
 ```
 
@@ -56,6 +58,7 @@ burn_zones <- get_wildfire_burn_zones()
 Each row in the dataset represents a single wildfire burn zone disaster.
 
 ``` r
+
 glimpse(burn_zones)
 #> Rows: 6,911
 #> Columns: 18
@@ -99,6 +102,7 @@ Key variables include:
 ### Annual trends in wildfire disasters
 
 ``` r
+
 # Extract state FIPS from the first county in the pipe-delimited list
 df1 = burn_zones |>
   st_drop_geometry() |>
@@ -138,6 +142,7 @@ plot of chunk annual-trends
 ### Geographic distribution of impacts
 
 ``` r
+
 state_impacts <- burn_zones |>
   st_drop_geometry() |>
   mutate(state_fips = str_sub(county_fips, 1, 2)) |>
@@ -174,6 +179,7 @@ plot of chunk state-impacts
 ### Mapping wildfire burn zones
 
 ``` r
+
 # Get wildfires from a recent year in California
 ca_2020_fires <- burn_zones |>
   filter(str_detect(county_fips, "^06"), year == 2020)
@@ -201,6 +207,7 @@ plot of chunk map-example
 ### Analyzing structure loss severity
 
 ``` r
+
 burn_zones |>
   st_drop_geometry() |>
   distinct(wildfire_id, year, wildfire_name, structures_destroyed) |>

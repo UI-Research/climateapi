@@ -35,7 +35,7 @@ convert_delimited_to_parquet(
 
 - dataset:
 
-  NULL by default. Alternately, one of c("nfip_policies",
+  NULL by default. Alternately, one of c("nfip_policies", "nfip_claims",
   "ihp_registrations"). If not null, this will be used to select the
   columns that are returned.
 

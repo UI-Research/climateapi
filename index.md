@@ -14,6 +14,7 @@ You can install the development version of climateapi from
 [GitHub](https://github.com/) with:
 
 ``` r
+
 # install.packages("renv")
 renv::install("UI-Research/climateapi")
 ```
@@ -21,6 +22,7 @@ renv::install("UI-Research/climateapi")
 ## The `climateapi` package at work:
 
 ``` r
+
 library(climateapi)
 library(urbnindicators)
 library(sf)
@@ -41,6 +43,7 @@ more.
 ### Major Disaster Declarations
 
 ``` r
+
 county_disaster_declarations = get_fema_disaster_declarations_county(api = TRUE)
 
 county_disaster_declarations %>%
@@ -63,6 +66,7 @@ county_disaster_declarations %>%
 ### Wildfire Perimeters and Structures
 
 ``` r
+
 ## take the largest active fire
 wildfire_perimeters = get_current_fire_perimeters() %>%
   dplyr::arrange(desc(incident_size_acres)) %>%
@@ -137,6 +141,7 @@ ggplot2::ggplot() +
 ### SBA Disaster Loans
 
 ``` r
+
 sba_disaster_declarations = get_sba_loans()
 
 sba_disaster_declarations %>%
@@ -182,6 +187,7 @@ sba_disaster_declarations %>%
 ### County Business Patterns
 
 ``` r
+
 business_patterns = get_business_patterns()
 
 business_patterns %>%
@@ -206,6 +212,7 @@ business_patterns %>%
 ### Government Expenses
 
 ``` r
+
 government_finances = get_government_finances()
 
 government_finances %>%
@@ -230,6 +237,7 @@ government_finances %>%
 ### LEHD Origin Destination Employment Statistics (LODES)
 
 ``` r
+
 lodes = get_lodes(
     lodes_type = "od",
     jobs_type = "all",

@@ -22,14 +22,22 @@ get_disaster_dollar_database(
 A dataframe comprising disaster-level observations with financial
 assistance metrics from FEMA's Individual and Households Program (IHP),
 Public Assistance (PA), HUD's Community Development Block Grant Disaster
-Recovery (CDBG-DR), and SBA disaster loans.
+Recovery (CDBG-DR), and SBA disaster loans. `incident_start`,
+`incident_end`, and `declaration_date` are returned as `Date` objects
+(parsed from the raw source's M/D/YY-formatted strings).
 
 ## Details
 
 These data are sourced from:
-https://carnegieendowment.org/features/disaster-dollar-database. The
-data returned from this function are unchanged, though some columns have
-been renamed slightly for clarity and consistency.
+https://carnegieendowment.org/features/disaster-dollar-database. The raw
+source file has 86 columns; this function returns a curated 17-column
+subset (renamed slightly for clarity and consistency). Columns dropped
+include: the Federal Register Notice grantee detail columns
+(`frn{1-4}_date`/`_url`, and each FRN's
+`grantee{1-9}_name`/`_url`/`_amount` columns), `declaration_url`, and
+the SBA home/business loan split columns
+(`sba_home_approved_loan_amount`, `sba_home_loan_count`,
+`sba_business_approved_loan_amount`, `sba_business_loan_count`).
 
 ## Examples
 

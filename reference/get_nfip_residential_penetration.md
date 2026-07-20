@@ -5,10 +5,7 @@ Get the share of residential structures covered by NFIP
 ## Usage
 
 ``` r
-get_nfip_residential_penetration(
-  states = NULL,
-  file_name = "nfip_residential_penetration_rates_12_12_2025.csv"
-)
+get_nfip_residential_penetration(states = NULL, file_name = NULL)
 ```
 
 ## Arguments
@@ -19,7 +16,9 @@ get_nfip_residential_penetration(
 
 - file_name:
 
-  The name (not full path) of the raw dataset.
+  The name (not full path) of the raw dataset. If NULL (default), reads
+  the most recently cached file for this dataset from
+  [`get_openfema_cache_path()`](https://ui-research.github.io/climateapi/reference/get_openfema_cache_path.md).
 
 ## Value
 

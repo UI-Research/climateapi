@@ -7,18 +7,17 @@ damage, crop damage, fatalities, and injuries.
 ## Usage
 
 ``` r
-get_sheldus(
-  file_path = file.path(get_box_path(), "hazards", "sheldus",
-    "SHELDUS_23.0_12312023_AllCounties_CountyAggregate_YearMonthHazard_2023USD",
-    "direct_loss_aggregated_output_24075.csv")
-)
+get_sheldus(file_path = NULL)
 ```
 
 ## Arguments
 
 - file_path:
 
-  The path to the raw SHELDUS data.
+  The path to the raw SHELDUS data. If NULL (default), the most recently
+  modified `direct_loss_aggregated_output_*.csv` file found under Box's
+  `hazards/sheldus` directory is used, and a message discloses which
+  file/vintage was selected.
 
 ## Value
 
@@ -55,11 +54,12 @@ hazard events. Columns include:
 
 - damage_property:
 
-  Property damage in 2023 inflation-adjusted dollars.
+  Property damage in inflation-adjusted dollars (base year varies by
+  SHELDUS vintage; see the function's message for the base year used).
 
 - damage_crop:
 
-  Crop damage in 2023 inflation-adjusted dollars.
+  Crop damage in inflation-adjusted dollars (see `damage_property`).
 
 - fatalities:
 

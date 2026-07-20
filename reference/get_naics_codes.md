@@ -15,8 +15,9 @@ get_naics_codes(year = 2023, digits = 3)
 
 - year:
 
-  The vintage year for NAICS codes. Data are available from 1986
-  through 2023. Default is 2023.
+  The vintage year for NAICS codes. Data are available from 2008
+  through 2023. Years 1986-2007 use SIC or older NAICS classification
+  systems that are not currently supported. Default is 2023.
 
 - digits:
 

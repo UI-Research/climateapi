@@ -23,6 +23,7 @@ for more information.
 ## Loading the data
 
 ``` r
+
 library(climateapi)
 library(tidyverse)
 library(sf)
@@ -36,6 +37,7 @@ area of interest. This must be a spatial polygon object with a defined
 coordinate reference system.
 
 ``` r
+
 # Example: Get structures in Washington, DC
 dc_boundary <- tigris::states(cb = TRUE) |>
   filter(STUSPS == "DC")
@@ -70,6 +72,7 @@ Each row represents a unique combination of geographic unit (tract or
 county) and structure type.
 
 ``` r
+
 glimpse(dc_structures)
 #> Rows: 1,951
 #> Columns: 4
@@ -90,6 +93,7 @@ Key variables include:
 ### Occupancy types
 
 ``` r
+
 dc_structures |>
   distinct(occupancy_class, primary_occupancy) |>
   arrange(occupancy_class, primary_occupancy)
@@ -114,6 +118,7 @@ dc_structures |>
 ### Structure composition by tract
 
 ``` r
+
 dc_summary <- dc_structures |>
   summarize(
     .by = GEOID,
@@ -142,6 +147,7 @@ plot of chunk tract-composition
 ### Mapping structure density
 
 ``` r
+
 dc_tracts <- tigris::tracts(state = "DC", cb = TRUE, year = 2023, progress_bar = FALSE) |>
   st_transform(5070)
 
@@ -177,6 +183,7 @@ area. This example shows how to combine structure data with wildfire
 burn zones.
 
 ``` r
+
 # Get a specific wildfire's burn zone
 burn_zones <- get_wildfire_burn_zones()
 
@@ -204,6 +211,7 @@ Setting `keep_structures = TRUE` returns both the summarized data and
 the raw point-level structure data.
 
 ``` r
+
 dc_full <- get_structures(
   boundaries = dc_boundary,
   geography = "county",
@@ -231,6 +239,7 @@ ggplot() +
 For larger areas, county-level aggregation provides a useful summary.
 
 ``` r
+
 # Get structures for multiple states
 southeast_boundary <- tigris::states(cb = TRUE) |>
   filter(STUSPS %in% c("FL", "GA", "AL", "SC"))

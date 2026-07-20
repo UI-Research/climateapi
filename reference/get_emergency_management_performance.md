@@ -6,24 +6,22 @@ FEMA, which supports state and local emergency management agencies.
 ## Usage
 
 ``` r
-get_emergency_management_performance(
-  file_path = file.path(get_box_path(), "hazards", "FEMA",
-    "emergency-management-performance",
-    "emergency_management_performance_grants_2025_06_29.csv"),
-  api = TRUE
-)
+get_emergency_management_performance(file_path = NULL, api = FALSE)
 ```
 
 ## Arguments
 
 - file_path:
 
-  Path to the downloaded dataset on Box.
+  Path to the raw data. If NULL (default), reads the most recently
+  cached file for this dataset from
+  [`get_openfema_cache_path()`](https://ui-research.github.io/climateapi/reference/get_openfema_cache_path.md).
 
 - api:
 
   Logical indicating whether to use the OpenFEMA API to retrieve the
-  data. Default is TRUE.
+  data. Default is FALSE (read from `file_path`, or the local OpenFEMA
+  cache if NULL).
 
 ## Value
 
@@ -33,6 +31,10 @@ data. Columns include:
 - id:
 
   Unique identifier for the grant record.
+
+- reporting_period:
+
+  The reporting period associated with the record.
 
 - state_name:
 
@@ -46,9 +48,18 @@ data. Columns include:
 
   Two-letter state abbreviation.
 
+- legal_agency_name:
+
+  The name of the legal agency administering the grant.
+
+- project_type:
+
+  The type of project funded.
+
 - year_project_start:
 
-  Year the project started.
+  Year the project started (derived from `project_start_date`, with
+  corrections for a handful of records with typos in the raw data).
 
 - project_start_date:
 
@@ -58,21 +69,13 @@ data. Columns include:
 
   Date the project ended.
 
-- grant_amount:
+- name_of_program:
 
-  Total grant amount in dollars.
+  The name of the EMPG program.
 
-- federal_share:
+- funding_amount:
 
-  Federal portion of the grant in dollars.
-
-- non_federal_share:
-
-  Non-federal cost share in dollars.
-
-- program:
-
-  EMPG program type.
+  Funding amount in dollars.
 
 ## Details
 

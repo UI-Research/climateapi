@@ -48,8 +48,9 @@ get_business_patterns(
 
 ## Value
 
-A tibble with data on county-level employees, employers, and aggregate
-annual payrolls by industry and employer size
+A tibble with data on employees, employers, and aggregate annual
+payrolls by industry and employer size. The geographic columns differ by
+`geo`:
 
 - year:
 
@@ -57,16 +58,22 @@ annual payrolls by industry and employer size
 
 - state:
 
-  A two-digit state identifier.
+  (geo = "county" only) A two-digit state identifier.
 
 - county:
 
-  A three-digit county identifier.
+  (geo = "county" only) A three-digit county identifier.
+
+- zip_code:
+
+  (geo = "zipcode" only) A five-digit ZIP code.
 
 - employees:
 
   number of individual employees employed in that particular industry
-  and establishment size combination
+  and establishment size combination. For geo = "zipcode", this is only
+  published by Census for `naics_code == "00"` (total, all sectors); all
+  other NAICS codes are NA – see `@details`.
 
 - employers:
 
@@ -74,7 +81,10 @@ annual payrolls by industry and employer size
 
 - annual_payroll:
 
-  total annual payroll expenditures measured in \$1,000's of USD
+  total annual payroll expenditures measured in \$1,000's of USD. For
+  geo = "zipcode", this is only published by Census for
+  `naics_code == "00"` (total, all sectors); all other NAICS codes are
+  NA – see `@details`.
 
 - industry:
 
@@ -135,6 +145,13 @@ CBP covers most NAICS industries excluding Crop and Animal Production
 525120, 525190); Trusts, Estates, and Agency Accounts (NAICS 525920);
 Offices of Notaries (NAICS 541120); Private Households (NAICS 814); and
 Public Administration (NAICS 92)
+
+For `geo = "zipcode"`, Census's ZIP Code Business Patterns (ZBP) only
+publishes `employees`/`annual_payroll` for `naics_code == "00"` (total,
+all sectors); the Census API returns a literal `0` for every other NAICS
+code at the zip-code level, which reflects a suppression convention, not
+a true absence of establishments. This function coerces those values to
+`NA` and emits a one-time message explaining this.
 
 ## Examples
 

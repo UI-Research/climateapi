@@ -8,8 +8,8 @@ individuals and households.
 
 ``` r
 get_ihp_registrations(
-  state_fips = NULL,
-  file_name = "IndividualsAndHouseholdsProgramValidRegistrationsV2_2025_09_26.parquet",
+  state_abbreviation = NULL,
+  file_name = NULL,
   api = FALSE,
   outpath = NULL
 )
@@ -17,7 +17,7 @@ get_ihp_registrations(
 
 ## Arguments
 
-- state_fips:
+- state_abbreviation:
 
   A character vector of two-letter state abbreviations. If NULL
   (default), return data for all 51 states. Otherwise return data for
@@ -26,6 +26,9 @@ get_ihp_registrations(
 - file_name:
 
   The name (not the full path) of the Box file containing the raw data.
+  If NULL (default), reads the most recently cached file for this
+  dataset from
+  [`get_openfema_cache_path()`](https://ui-research.github.io/climateapi/reference/get_openfema_cache_path.md).
 
 - api:
 
@@ -125,7 +128,7 @@ Data are from FEMA's OpenFEMA API. See
 ``` r
 if (FALSE) { # \dontrun{
 get_ihp_registrations(
-   state_fips = "NJ",
+   state_abbreviation = "NJ",
    api = TRUE)
 } # }
 ```
