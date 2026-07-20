@@ -1,6 +1,6 @@
 #' Standardize county names for matching, to the extent possible
 #'
-#' @param county
+#' @param county The raw county name
 #'
 #' @return Cleaned county names more suitable for matching on
 #' @noRd
@@ -33,9 +33,13 @@ clean_county = function(county) {
 #' @param file_path_old_grant_system The file path to raw data for HMA applications from
 #'   the older grant-reporting system. These data are typically available from:
 #'   \url{https://www.fema.gov/openfema-data-page/hazard-mitigation-assistance-projects-v4}
+#'   If NULL (default), reads the most recently cached file for this dataset from
+#'   `get_openfema_cache_path()`.
 #' @param file_path_new_grant_system The file path to raw data for HMA applications from
 #'   the newer (FEMA GO) grant-reporting system. These data are typically available from:
 #'   \url{https://www.fema.gov/openfema-data-page/hma-subapplications-v2}
+#'   If NULL (default), reads the most recently cached file for this dataset from
+#'   `get_openfema_cache_path()`.
 #' @param state_abbreviations NULL by default, in which case data are returned for all 51
 #'   states. Provide a vector of two-character USPS state abbreviations to obtain data for
 #'   a sub-selection of states.
@@ -43,6 +47,12 @@ clean_county = function(county) {
 #' @details Data are from FEMA's OpenFEMA API, combining two data sources: the legacy
 #'   Hazard Mitigation Assistance Projects (v4) and the newer HMA Subapplications (v2).
 #'   Multi-county projects are split across counties based on population proportions.
+#'
+#'   Records span the full application lifecycle, not only approved/funded projects --
+#'   this includes Denied, Withdrawn, Void, Not Selected, and other pre-decision statuses
+#'   (the FEMA GO source in particular contains no funded/"Selected" status records at all).
+#'   Users must filter on `project_status` themselves before summing `project_cost_federal_split`
+#'   if only approved or funded projects are of interest.
 #'
 #' @return A dataframe of project-county HMA application data. Only `project_cost_federal_split`
 #'   should be used for county-level aggregations. Columns include:
@@ -55,7 +65,8 @@ clean_county = function(county) {
 #'     \item{state_name}{Full state name.}
 #'     \item{county_geoid}{Five-digit county FIPS code.}
 #'     \item{county_population}{County population used for allocation.}
-#'     \item{project_status}{Current project status (e.g., "Closed", "Active").}
+#'     \item{project_status}{Current project status (e.g., "Closed", "Active") -- spans the
+#'       full application lifecycle; see `@details`.}
 #'     \item{project_cost_federal}{Total federal cost at project level.}
 #'     \item{project_cost_federal_split}{Federal cost allocated to this county.}
 #'   }
@@ -66,18 +77,22 @@ clean_county = function(county) {
 #' get_hazard_mitigation_assistance()
 #' }
 get_hazard_mitigation_assistance = function(
-  file_path_old_grant_system = file.path(
-    get_box_path(), "hazards", "fema", "hazard-mitigation-assistance", "raw",
-    "HazardMitigationAssistanceProjects_2025_09_27.parquet"),
-  file_path_new_grant_system = file.path(
-    get_box_path(), "hazards", "fema", "hazard-mitigation-assistance", "raw",
-    "HmaSubapplications_2025_09_27.parquet"),
+  file_path_old_grant_system = NULL,
+  file_path_new_grant_system = NULL,
   state_abbreviations = NULL) {
 
   if (is.null(state_abbreviations)) { state_abbreviations = c(state.abb, "DC") }
   if (any(!state_abbreviations %in% c(state.abb, "DC"))) { stop("Only the 50 states and DC are supported at this time.") }
-  if (!file.exists(file_path_old_grant_system)) stop("Error: there is no file at the specified `file_path_old_grant_system`.")
-  if (!file.exists(file_path_new_grant_system)) stop("Error: there is no file at the specified `file_path_new_grant_system`.")
+
+  if (is.null(file_path_old_grant_system)) {
+    file_path_old_grant_system = find_openfema_cache_file("HazardMitigationAssistanceProjects")
+  } else if (!file.exists(file_path_old_grant_system)) {
+    stop("Error: there is no file at the specified `file_path_old_grant_system`.") }
+
+  if (is.null(file_path_new_grant_system)) {
+    file_path_new_grant_system = find_openfema_cache_file("HmaSubapplications")
+  } else if (!file.exists(file_path_new_grant_system)) {
+    stop("Error: there is no file at the specified `file_path_new_grant_system`.") }
 
   state_fips = get_geography_metadata("state") %>%
     dplyr::filter(state_abbreviation %in% state_abbreviations) %>%
@@ -109,8 +124,12 @@ get_hazard_mitigation_assistance = function(
       federal_share = cost_share_percentage,
       #project_federal_share_obligated = federal_share_obligated,
       project_number_of_properties_mitigated_final = number_of_final_properties) %>%
+    ## raw `state_number_code` is unpadded for single-digit FIPS states (e.g. "6" for
+    ## California); pad BEFORE filtering, or every record for AL/AK/AZ/AR/CA/CO/CT is
+    ## silently dropped by the state_fips filter below
+    dplyr::mutate(
+      state_code = as.character(stringr::str_pad(state_code, side = "left", pad = "0", width = 2))) %>%
     ## only the specified states
-    ## only approved projects
     dplyr::filter(state_code %in% !!state_fips) %>%
     dplyr::mutate(
       ## for some records, the project_application_cost is zero but there is an
@@ -121,7 +140,6 @@ get_hazard_mitigation_assistance = function(
         project_application_cost > 0,
         project_application_cost * federal_share,
         initial_obligation_amount),
-      state_code = as.character(stringr::str_pad(state_code, side = "left", pad = "0", width = 2)),
       ## standardizing county names
       project_counties = project_counties %>%
         stringr::str_replace_all(c(";" =  ",")) %>%
@@ -145,6 +163,15 @@ get_hazard_mitigation_assistance = function(
       project_counties_multiple_flag = dplyr::if_else(
         stringr::str_detect(project_counties, ","), 1, 0),
       row_id = dplyr::row_number())
+
+  ## regression guard for the FIPS-padding bug above: every requested state should have
+  ## at least one legacy HMA record
+  missing_states = setdiff(state_fips, unique(hma_projects0$state_code))
+  if (length(missing_states) > 0) {
+    stop(stringr::str_c(
+      "The following requested state FIPS codes are not represented in the legacy HMA data: ",
+      stringr::str_c(missing_states, collapse = ", "),
+      ". This may indicate a state_code padding/filtering regression.")) }
 
   ## we lengthen records for projects with multiple counties
   hma_projects0a = hma_projects0 %>%
@@ -270,10 +297,7 @@ get_hazard_mitigation_assistance = function(
 
   ## same number of distinct projects
   stopifnot(
-    hma_projects1b %>%
-      dplyr::summarize(dplyr::n_distinct(project_id)) %>% nrow() ==
-      hma_projects2 %>%
-      dplyr::summarize(dplyr::n_distinct(project_id)) %>% nrow())
+    dplyr::n_distinct(hma_projects1b$project_id) == dplyr::n_distinct(hma_projects2$project_id))
 
   ####FEMA GO APPLICATIONS####
   ## FEMA GO Applications
@@ -309,73 +333,79 @@ get_hazard_mitigation_assistance = function(
   interpolate_columns = c("selection_federal_share_amount")
 
   ## Connecticut counties are dated -- we need to crosswalk them to current county-
-  ## equivalents (planning regions)
+  ## equivalents (planning regions). Each subapplication's `selection_federal_share_amount`
+  ## is repeated on every one of its benefiting-county rows (from separate_longer_delim
+  ## above), so we first weight by each legacy county's *own* population share among the
+  ## project's listed counties (mirroring the general multi-county split every other state
+  ## already gets in femago_df5, below) before applying the legacy-county -> planning-region
+  ## allocation. Without this, a project's amount is multiplied by its benefiting-county count.
   if ("CT" %in% state_abbreviations) {
-    ct_county_crosswalk1 = readr::read_csv(
-      file.path(get_box_path(), "crosswalks", "ctdata_2022_tractcrosswalk_connecticut.csv")) %>%
-      janitor::clean_names() %>%
-      dplyr::select(
-        ## each tract has a single observation
-        tract_fips_2020,
-        ## each tract has a single observation
-        tract_fips_2022,
-        county_name,
-        county_fips_2020,
-        county_fips_2022 = ce_fips_2022)
-
     suppressMessages({
-      ct_tract_populations = tidycensus::get_acs(
-        year = 2021,
-        geography = "tract",
-        state = "CT",
-        variable = "B01003_001",
-        output = "wide") %>%
-        dplyr::select(
-          tract_fips_2020 = GEOID,
-          population_2020 = B01003_001E) })
+      ct_legacy_populations = tidycensus::get_acs(
+          year = 2020,
+          geography = "county",
+          state = "CT",
+          variable = "B01003_001",
+          output = "wide") %>%
+        dplyr::transmute(
+          counties = NAME %>% stringr::str_remove(",.*$") %>% clean_county(),
+          county_population_legacy = B01003_001E) })
 
-    ct_county_crosswalk = ct_county_crosswalk1 %>%
-      dplyr::left_join(ct_tract_populations, by = "tract_fips_2020") %>%
-      tidytable::summarize(
-        .by = c("county_fips_2020", "county_name", "county_fips_2022"),
-        population_2020 = sum(population_2020)) %>%
-      tidytable::mutate(
-        .by = "county_fips_2020",
-        population_2020_total = sum(population_2020, na.rm = TRUE)) %>%
-      tidytable::mutate(
-        allocation_factor = population_2020 / population_2020_total,
-        county_name = county_name %>% stringr::str_to_lower()) %>%
-      tidytable::select(-dplyr::matches("population"))
-
-    crosswalked_ct_counties = femago_df2 %>%
-      dplyr::filter(state_abbreviation == "CT") %>%
-      dplyr::left_join(
-        ct_county_crosswalk,
-        by = c("counties" = "county_name"),
-        relationship = "many-to-many") %>%
-      tidytable::summarize(
-        .by = c("project_id"),
-        dplyr::across(
-          .cols = dplyr::all_of(interpolate_columns),
-          .fns = ~ sum(.x * allocation_factor, na.rm = TRUE)),
-        dplyr::across(
-          .cols = -dplyr::all_of(interpolate_columns),
-          .fns = ~ dplyr::first(.x))) %>%
-      dplyr::select(-county_fips_2020, -counties) %>%
-      dplyr::rename(county_code_ct = county_fips_2022) %>%
+    ct_crosswalk_table = crosswalk::get_crosswalk(
+        source_geography = "county",
+        target_geography = "county",
+        source_year = 2020,
+        target_year = 2022,
+        silent = TRUE)$crosswalks$step_1 %>%
+      dplyr::filter(state_fips == "09") %>%
       dplyr::left_join(
         tidycensus::fips_codes %>%
           dplyr::transmute(
-            county_code_ct = stringr::str_c(state_code, county_code),
+            source_geoid = stringr::str_c(state_code, county_code),
+            counties = clean_county(county)),
+        by = "source_geoid") %>%
+      dplyr::select(counties, target_geoid, allocation_factor_source_to_target)
+
+    crosswalked_ct_counties = femago_df2 %>%
+      dplyr::filter(state_abbreviation == "CT") %>%
+      dplyr::left_join(ct_legacy_populations, by = "counties") %>%
+      tidytable::mutate(
+        .by = "project_id",
+        project_population_legacy_total = sum(county_population_legacy, na.rm = TRUE)) %>%
+      dplyr::mutate(
+        county_weight = dplyr::if_else(
+          project_population_legacy_total == 0,
+          NA_real_,
+          county_population_legacy / project_population_legacy_total)) %>%
+      dplyr::left_join(
+        ct_crosswalk_table,
+        by = "counties",
+        relationship = "many-to-many") %>%
+      tidytable::summarize(
+        .by = c("project_id", "target_geoid"),
+        dplyr::across(
+          .cols = dplyr::all_of(interpolate_columns),
+          .fns = ~ dplyr::if_else(
+            all(is.na(.x)),
+            NA_real_,
+            sum(.x * county_weight * allocation_factor_source_to_target, na.rm = TRUE))),
+        dplyr::across(
+          .cols = -dplyr::all_of(c(
+            interpolate_columns, "counties", "county_population_legacy",
+            "project_population_legacy_total", "county_weight", "allocation_factor_source_to_target")),
+          .fns = ~ dplyr::first(.x))) %>%
+      dplyr::left_join(
+        tidycensus::fips_codes %>%
+          dplyr::transmute(
+            target_geoid = stringr::str_c(state_code, county_code),
             counties = county %>% stringr::str_to_lower() %>% stringr::str_c(" planning region")),
-        by = "county_code_ct") %>%
-      dplyr::select(-county_code_ct)
+        by = "target_geoid") %>%
+      dplyr::select(-target_geoid)
 
     #joining the non CT states with the CT crosswalk to create the updated dataset
     femago_df3 = femago_df2 %>%
       dplyr::filter(state_abbreviation != "CT") %>%
-      dplyr::bind_rows(crosswalked_ct_counties) %>%
-      dplyr::select(-allocation_factor) } else {
+      dplyr::bind_rows(crosswalked_ct_counties) } else {
 
     femago_df3 = femago_df2 }
 
@@ -385,14 +415,53 @@ get_hazard_mitigation_assistance = function(
       state_county_xwalk %>% dplyr::select(state_name, county_code, county_population, county_clean),
       by = c("state_name", "counties" = "county_clean"))
 
-  projects_with_missing_county_identifiers = femago_df4 %>%
-    dplyr::filter(is.na(county_code)) %>%
-    dplyr::pull(project_id) %>% unique()
+  unmatched_rows = femago_df4 %>% dplyr::filter(is.na(county_code))
+  unmatched_project_ids = unmatched_rows %>% dplyr::pull(project_id) %>% unique()
+  unmatched_dollar_total = femago_df1 %>%
+    dplyr::filter(project_id %in% unmatched_project_ids) %>%
+    dplyr::pull(selection_federal_share_amount) %>%
+    sum(na.rm = TRUE)
 
-  warning(stringr::str_c(length(projects_with_missing_county_identifiers), " projects have been omitted due to missing county-level identifiers."))
+  if (nrow(unmatched_rows) > 0) {
+    example_rows = unmatched_rows %>%
+      dplyr::distinct(project_id, counties) %>%
+      dplyr::slice_head(n = 5)
 
-  femago_df5 = femago_df4 %>%
-    dplyr::filter(! project_id %in% projects_with_missing_county_identifiers) %>%
+    warning(stringr::str_c(
+      nrow(unmatched_rows), " county mentions across ", length(unmatched_project_ids),
+      " projects (totaling $", format(round(unmatched_dollar_total), big.mark = ","),
+      " in federal funding) did not match a known county and have been spread statewide ",
+      "instead, consistent with the legacy HMA branch's treatment of unmatched counties. ",
+      "Example project/county pairs: ",
+      stringr::str_c(stringr::str_c(example_rows$project_id, "/", example_rows$counties), collapse = "; "), ".")) }
+
+  femago_df4b = femago_df4 %>%
+    dplyr::mutate(counties = dplyr::if_else(is.na(county_code), "statewide", counties)) %>%
+    dplyr::select(-county_code, -county_population)
+
+  femago_df4c = dplyr::bind_rows(
+    femago_df4b %>%
+      dplyr::filter(counties != "statewide") %>%
+      dplyr::left_join(
+        state_county_xwalk %>% dplyr::select(state_name, county_code, county_population, county_clean),
+        by = c("state_name", "counties" = "county_clean")),
+    femago_df4b %>%
+      dplyr::filter(counties == "statewide") %>%
+      dplyr::left_join(
+        state_county_xwalk %>%
+          dplyr::transmute(state_name, county_code, county_population, statewide = "statewide"),
+        by = c("state_name", "counties" = "statewide"),
+        relationship = "many-to-many"))
+
+  ## CT projects were already fully attributed to target planning regions by the crosswalk
+  ## step above; they should not be re-split by population here
+  femago_df5_ct = femago_df4c %>%
+    dplyr::filter(state_abbreviation == "CT") %>%
+    dplyr::mutate(selection_federal_share_amount_split = selection_federal_share_amount) %>%
+    dplyr::rename(county_geoid = county_code)
+
+  femago_df5_general = femago_df4c %>%
+    dplyr::filter(state_abbreviation != "CT") %>%
     ## obtain a count of counties per project and then create a denominator for summed
     ## county populations across all the counties per project
     tidytable::mutate(
@@ -410,6 +479,8 @@ get_hazard_mitigation_assistance = function(
       .by = c("project_id", "county_code"),
       selection_federal_share_amount_split = selection_federal_share_amount * allocation_factor) %>%
     dplyr::rename(county_geoid = county_code)
+
+  femago_df5 = dplyr::bind_rows(femago_df5_general, femago_df5_ct)
 
   ## ensure the same number of projects
   stopifnot(
@@ -459,4 +530,7 @@ utils::globalVariables(c(
   "project_counties", "hma_project00", "initial_obligation_amount", "project_counties_multiple_flag",
   "project_fiscal_year", "project_id", "project_identifier", "project_program_area",
   "selection_federal_share_amount", "selection_federal_share_amount_split", "status",
-  "subapplicant_state", "subapplicant_state_abbreviation", "selection_status"))
+  "subapplicant_state", "subapplicant_state_abbreviation", "selection_status",
+  "county_population_legacy", "county_weight", "source_geoid", "target_geoid",
+  "allocation_factor_source_to_target", "state_fips", "NAME", "B01003_001E",
+  "project_population_legacy_total"))

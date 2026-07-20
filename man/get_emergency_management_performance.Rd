@@ -4,34 +4,32 @@
 \alias{get_emergency_management_performance}
 \title{Get Emergency Management Performance Grant (EMPG) data}
 \usage{
-get_emergency_management_performance(
-  file_path = file.path(get_box_path(), "hazards", "FEMA",
-    "emergency-management-performance",
-    "emergency_management_performance_grants_2025_06_29.csv"),
-  api = TRUE
-)
+get_emergency_management_performance(file_path = NULL, api = FALSE)
 }
 \arguments{
-\item{file_path}{Path to the downloaded dataset on Box.}
+\item{file_path}{Path to the raw data. If NULL (default), reads the most recently
+cached file for this dataset from \code{get_openfema_cache_path()}.}
 
 \item{api}{Logical indicating whether to use the OpenFEMA API to retrieve the data.
-Default is TRUE.}
+Default is FALSE (read from \code{file_path}, or the local OpenFEMA cache if NULL).}
 }
 \value{
 A data frame containing emergency management performance grant (EMPG) data.
 Columns include:
 \describe{
 \item{id}{Unique identifier for the grant record.}
+\item{reporting_period}{The reporting period associated with the record.}
 \item{state_name}{Full state name.}
 \item{state_code}{Two-digit state FIPS code.}
 \item{state_abbreviation}{Two-letter state abbreviation.}
-\item{year_project_start}{Year the project started.}
+\item{legal_agency_name}{The name of the legal agency administering the grant.}
+\item{project_type}{The type of project funded.}
+\item{year_project_start}{Year the project started (derived from \code{project_start_date},
+with corrections for a handful of records with typos in the raw data).}
 \item{project_start_date}{Date the project started.}
 \item{project_end_date}{Date the project ended.}
-\item{grant_amount}{Total grant amount in dollars.}
-\item{federal_share}{Federal portion of the grant in dollars.}
-\item{non_federal_share}{Non-federal cost share in dollars.}
-\item{program}{EMPG program type.}
+\item{name_of_program}{The name of the EMPG program.}
+\item{funding_amount}{Funding amount in dollars.}
 }
 }
 \description{

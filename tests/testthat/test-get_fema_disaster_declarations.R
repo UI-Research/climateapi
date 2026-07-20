@@ -16,7 +16,7 @@ test_that("get_fema_disaster_declarations function exists and has correct signat
 
   # Check default parameters
   f <- get_fema_disaster_declarations
-  expect_true(formals(f)$api)
+  expect_false(formals(f)$api)
 })
 
 test_that("get_fema_disaster_declarations returns expected structure (mocked)", {

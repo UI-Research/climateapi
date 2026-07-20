@@ -4,14 +4,12 @@
 \alias{get_public_assistance}
 \title{Get FEMA Public Assistance (PA) funding}
 \usage{
-get_public_assistance(
-  file_path = file.path(get_box_path(), "hazards", "fema", "public-assistance", "raw",
-    "PublicAssistanceFundedProjectsDetailsV2_2025_09_26.parquet"),
-  state_abbreviations = NULL
-)
+get_public_assistance(file_path = NULL, state_abbreviations = NULL)
 }
 \arguments{
-\item{file_path}{The file path to the raw data contained in a .parquet file.}
+\item{file_path}{The file path to the raw data contained in a .parquet file. If NULL
+(default), reads the most recently cached file for this dataset from
+\code{get_openfema_cache_path()}.}
 
 \item{state_abbreviations}{A character vector of state abbreviations. NULL by default,
 which returns records for all 51 states. Only the 51 states are supported at this time.}

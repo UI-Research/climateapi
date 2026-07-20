@@ -5,17 +5,19 @@
 \title{Get Individuals and Households Program (IHP) registrations}
 \usage{
 get_ihp_registrations(
-  state_fips = NULL,
-  file_name = "IndividualsAndHouseholdsProgramValidRegistrationsV2_2025_09_26.parquet",
+  state_abbreviation = NULL,
+  file_name = NULL,
   api = FALSE,
   outpath = NULL
 )
 }
 \arguments{
-\item{state_fips}{A character vector of two-letter state abbreviations. If NULL (default),
-return data for all 51 states. Otherwise return data for the specified states.}
+\item{state_abbreviation}{A character vector of two-letter state abbreviations. If NULL
+(default), return data for all 51 states. Otherwise return data for the specified states.}
 
-\item{file_name}{The name (not the full path) of the Box file containing the raw data.}
+\item{file_name}{The name (not the full path) of the Box file containing the raw data.
+If NULL (default), reads the most recently cached file for this dataset from
+\code{get_openfema_cache_path()}.}
 
 \item{api}{If TRUE, query the API. If FALSE (default), read from disk.}
 
@@ -57,7 +59,7 @@ Data are from FEMA's OpenFEMA API. See
 \examples{
 \dontrun{
 get_ihp_registrations(
-   state_fips = "NJ",
+   state_abbreviation = "NJ",
    api = TRUE)
 }
 }

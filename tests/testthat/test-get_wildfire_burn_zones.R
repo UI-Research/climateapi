@@ -57,6 +57,50 @@ test_that("get_wildfire_burn_zones has one county per row", {
   expect_false(any(stringr::str_detect(result$county_name, "\\|"), na.rm = TRUE))
 })
 
+test_that("get_wildfire_burn_zones wildfire-level columns repeat identically across a multi-county wildfire's rows", {
+  skip_if_not(
+    file.exists(file.path(
+      get_box_path(), "hazards", "other-sources", "wildfire-burn-zones",
+      "wfbz_disasters_2000-2025.geojson")),
+    message = "Wildfire burn zones data file not available"
+  )
+
+  result <- suppressMessages(get_wildfire_burn_zones())
+
+  multi_county_ids <- result$wildfire_id[duplicated(result$wildfire_id)] |> unique()
+  # this test is only meaningful if the live data actually contains multi-county wildfires
+  expect_true(length(multi_county_ids) > 0)
+
+  wildfire_level_columns <- c(
+    "area_sq_km", "fatalities_total", "injuries_total", "structures_destroyed",
+    "structures_threatened", "evacuation_total", "wui_type",
+    "density_people_sq_km_wildfire_buffer")
+
+  n_distinct_by_wildfire <- result |>
+    sf::st_drop_geometry() |>
+    dplyr::filter(wildfire_id %in% multi_county_ids) |>
+    dplyr::summarize(
+      dplyr::across(dplyr::all_of(wildfire_level_columns), dplyr::n_distinct),
+      .by = wildfire_id)
+
+  expect_true(all(dplyr::select(n_distinct_by_wildfire, -wildfire_id) == 1))
+
+  n_distinct_geometry_by_wildfire <- result |>
+    dplyr::filter(wildfire_id %in% multi_county_ids) |>
+    dplyr::mutate(geometry_wkt = sf::st_as_text(geometry)) |>
+    sf::st_drop_geometry() |>
+    dplyr::summarize(n_distinct_geometry = dplyr::n_distinct(geometry_wkt), .by = wildfire_id)
+
+  expect_true(all(n_distinct_geometry_by_wildfire$n_distinct_geometry == 1))
+
+  # demonstrates the @returns-documented hazard directly: summing a wildfire-level column
+  # across the county-expanded rows over-counts multi-county wildfires; de-duplicating on
+  # wildfire_id first (as the docs instruct) avoids it
+  naive_sum <- sum(result$area_sq_km, na.rm = TRUE)
+  deduped_sum <- sum(result$area_sq_km[!duplicated(result$wildfire_id)], na.rm = TRUE)
+  expect_gt(naive_sum, deduped_sum)
+})
+
 test_that("get_wildfire_burn_zones has valid FIPS codes", {
   skip_if_not(
     file.exists(file.path(
@@ -75,7 +119,7 @@ test_that("get_wildfire_burn_zones has valid FIPS codes", {
   expect_true(all(result$state_fips == stringr::str_sub(result$county_fips, 1, 2), na.rm = TRUE))
 })
 
-test_that("get_wildfire_burn_zones county names are title case", {
+test_that("get_wildfire_burn_zones county names use Census's canonical casing", {
   skip_if_not(
     file.exists(file.path(
       get_box_path(), "hazards", "other-sources", "wildfire-burn-zones",
@@ -86,7 +130,12 @@ test_that("get_wildfire_burn_zones county names are title case", {
   result <- suppressMessages(get_wildfire_burn_zones())
 
   non_na_names <- result$county_name[!is.na(result$county_name)]
-  expect_equal(non_na_names, stringr::str_to_title(non_na_names))
+  # county_name is joined from tidycensus::fips_codes (Census's own canonical casing) by
+  # county_fips, rather than title-cased from the raw source string -- a naive
+  # stringr::str_to_title() would mangle Mc-prefixed county names (e.g. "McKenzie" ->
+  # "Mckenzie"), so we check against the real reference list instead of str_to_title()
+  expect_true(all(non_na_names %in% tidycensus::fips_codes$county))
+  expect_false(any(stringr::str_detect(non_na_names, "^Mc[a-z]")))
 })
 
 test_that("get_wildfire_burn_zones emits expected message", {

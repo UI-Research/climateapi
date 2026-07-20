@@ -5,9 +5,11 @@
 #' @description Retrieves FEMA Individual and Households Program (IHP) registration data,
 #'   which captures applications for disaster assistance from individuals and households.
 #'
-#' @param state_fips A character vector of two-letter state abbreviations. If NULL (default),
-#'   return data for all 51 states. Otherwise return data for the specified states.
+#' @param state_abbreviation A character vector of two-letter state abbreviations. If NULL
+#'   (default), return data for all 51 states. Otherwise return data for the specified states.
 #' @param file_name The name (not the full path) of the Box file containing the raw data.
+#'   If NULL (default), reads the most recently cached file for this dataset from
+#'   `get_openfema_cache_path()`.
 #' @param api If TRUE, query the API. If FALSE (default), read from disk.
 #' @param outpath The path to save the parquet-formatted datafile. Applicable only when `api = FALSE`.
 #'
@@ -42,76 +44,88 @@
 #' @examples
 #' \dontrun{
 #' get_ihp_registrations(
-#'    state_fips = "NJ",
+#'    state_abbreviation = "NJ",
 #'    api = TRUE)
 #' }
 
 get_ihp_registrations = function(
-    state_fips = NULL,
-    file_name = "IndividualsAndHouseholdsProgramValidRegistrationsV2_2025_09_26.parquet",
+    state_abbreviation = NULL,
+    file_name = NULL,
     api = FALSE,
     outpath = NULL) {
 
+    ihp_vars_all = get_dataset_columns("ihp_registrations")
+    ihp_vars = ihp_vars_all[!stringr::str_detect(ihp_vars_all, "Need|Max|fvl|Refresh|^id")]
+
     if (isFALSE(api)) {
-      inpath = file.path(
-        get_box_path(), "hazards", "fema", "individual-households-program", "raw", file_name)
 
-      if (! file.exists(inpath)) {
-        stop("The provided `file_name` is invalid.") }
+      if (is.null(state_abbreviation)) {
+        state_abbreviation = c(datasets::state.abb, "DC") }
 
-      if (! (stringr::str_detect(inpath, "parquet")) &
-          !file.exists(inpath %>% stringr::str_replace("csv", "parquet"))) {
+      if (is.null(file_name)) {
 
-        convert_delimited_to_parquet(
-          inpath = inpath,
-          delimit_character = ",",
-          dataset = "ihp_registrations") }
+        ## this dataset is ~500MB; filter/select at the arrow scan level (before collect)
+        ## rather than loading the full file into memory
+        df1 = arrow::open_dataset(
+            find_openfema_cache_file("IndividualsAndHouseholdsProgramValidRegistrations")) %>%
+          dplyr::select(dplyr::any_of(ihp_vars)) %>%
+          dplyr::filter(damagedStateAbbreviation %in% state_abbreviation) %>%
+          dplyr::collect() %>%
+          janitor::clean_names() %>%
+          clean_ihp()
 
-      if (is.null(state_fips)) {
-        state_fips = c(datasets::state.abb, "DC") }
+      } else {
 
-      if (!stringr::str_detect(inpath, "parquet")) {
-        inpath = inpath %>% stringr::str_replace("csv", "parquet") }
+        inpath = file.path(
+          get_box_path(), "hazards", "fema", "individual-households-program", "raw", file_name)
 
-      ihp_vars_all = get_dataset_columns("ihp_registrations")
-      ihp_vars = ihp_vars_all[!stringr::str_detect(ihp_vars_all, "Need|Max|fvl|Refresh|^id")]
+        if (! file.exists(inpath)) {
+          stop("The provided `file_name` is invalid.") }
 
-      df1 = arrow::read_parquet(
-          file = inpath,
-          col_select = dplyr::any_of(ihp_vars)) %>%
-        janitor::clean_names() %>%
-        dplyr::filter(damaged_state_abbreviation %in% state_fips) %>%
-        clean_ihp()
+        if (! (stringr::str_detect(inpath, "parquet")) &
+            !file.exists(inpath %>% stringr::str_replace("csv", "parquet"))) {
+
+          convert_delimited_to_parquet(
+            inpath = inpath,
+            delimit_character = ",",
+            dataset = "ihp_registrations") }
+
+        if (!stringr::str_detect(inpath, "parquet")) {
+          inpath = inpath %>% stringr::str_replace("csv", "parquet") }
+
+        df1 = arrow::read_parquet(
+            file = inpath,
+            col_select = dplyr::any_of(ihp_vars)) %>%
+          janitor::clean_names() %>%
+          dplyr::filter(damaged_state_abbreviation %in% state_abbreviation) %>%
+          clean_ihp()
+      }
 
     } else {
 
+      if (is.null(state_abbreviation)) {
+        state_abbreviation = c(datasets::state.abb, "DC") }
+
       df1 = purrr::map_dfr(
-          state_fips,
+          state_abbreviation,
           ~ rfema::open_fema(
               data_set = "individualsandhouseholdsprogramvalidregistrations",
               filters = list(damagedStateAbbreviation = .x),
               ask_before_call = FALSE)) %>%
         dplyr::select(dplyr::any_of(ihp_vars)) %>%
         janitor::clean_names() %>%
-        dplyr::filter(damaged_state_abbreviation %in% state_fips) %>%
+        dplyr::filter(damaged_state_abbreviation %in% state_abbreviation) %>%
         clean_ihp()
     }
 
-    zip_county_xwalk = readr::read_csv(
-      file.path(get_box_path(), "crosswalks", "geocorr2022_2020_zip_zcta_to_county.csv")) %>%
-      dplyr::slice(2:nrow(.)) %>%
-      janitor::clean_names() %>%
-      dplyr::mutate(
-        afact = as.numeric(afact),
-        dplyr::across(
-          .cols = c(county_name, zip_name),
-          .fns = ~ stringr::str_remove_all(.x, '\\"'))) %>%
-      dplyr::select(
-        zcta_code = zcta,
-        county_code = county,
-        county_name,
-        allocation_factor_zcta_to_county = afact) %>%
-      dplyr::filter(!is.na(zcta_code))
+    zip_county_xwalk = crosswalk::get_crosswalk(
+        source_geography = "zcta",
+        target_geography = "county",
+        silent = TRUE)$crosswalks$step_1 %>%
+      dplyr::transmute(
+        zcta_code = source_geoid,
+        county_code = target_geoid,
+        allocation_factor_zcta_to_county = allocation_factor_source_to_target)
 
     df2 = df1 %>%
       dplyr::left_join(
@@ -145,11 +159,21 @@ multiple observations, and it is critical to summarize or otherwise de-deuplicat
 What your workflow should look like:
 
 (1) You can obtain the original data by running: `dplyr::distinct(df, unique_id, .keep_all = TRUE)`.
-(2) You can summarize the data to obtain county-level estimates as follows:
+(2) You can summarize the data to obtain county-level estimates of registration counts as follows:
 
     df |>
       dplyr::group_by(geoid_county) |>
-      dplyr::summarize(valid_registrations = sum(afact, na.rm = TRUE))")
+      dplyr::summarize(valid_registrations = sum(allocation_factor_zcta_to_county, na.rm = TRUE))
+
+(3) For dollar-denominated columns (e.g. amount_individual_housing_program), scale by the
+    allocation factor before summing, so each original registration's dollar amount is only
+    counted once in total across all of its county matches:
+
+    df |>
+      dplyr::group_by(geoid_county) |>
+      dplyr::summarize(
+        amount_individual_housing_program = sum(
+          amount_individual_housing_program * allocation_factor_zcta_to_county, na.rm = TRUE))")
 
     message("
 These data are from: https://www.fema.gov/openfema-data-page/individuals-and-households-program-valid-registrations-v2.
@@ -228,11 +252,12 @@ utils::globalVariables(c(
   "fema_determined_value_real_property_damage", "fema_determined_value_personal_property_damage",
   "amount_rental_assistance", "amount_repairs", "amount_replacement", "amount_personal_property",
   "max_individual_households_program_flag", "max_housing_assistance_flag", "max_other_needs_assistance_flag",
-  "date_last_updated", "zip_county_xwalk", "access_functional_needs", "afact",
+  "date_last_updated", "zip_county_xwalk", "access_functional_needs",
   "damaged_city", "damaged_state_abbreviation", "damaged_zip_code", "emergency_needs",
   "fip_amount", "food_need", "gross_income", "ha_amount", "ha_max", "household_composition",
   "ihp_amount", "ihp_max", "last_refresh", "ona_amount", "ona_max", "own_rent", "personal_property_amount",
   "ppfvl", "rpfvl", "repair_amount", "replacement_amount", "rental_assistance_amount", "shelter_need",
   "uuid", "zip_name", "zcta", "pop20", "state.abb", "ihp_registrations", "disaster_number",
   "amount_other_needs_assistance", "census_geoid",  "geoid_block_group", "geoid_county",
-  "geoid_tract", "zcta_code"))
+  "geoid_tract", "zcta_code", "source_geoid", "target_geoid", "allocation_factor_source_to_target",
+  "damagedStateAbbreviation"))

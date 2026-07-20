@@ -14,30 +14,38 @@ get_wildfire_burn_zones(
 path within Box.}
 }
 \value{
-An sf dataframe comprising wildfire burn zone disasters. Each row represents a
-single wildfire event, with polygon geometries representing burn zones.
+An sf dataframe comprising wildfire burn zone disasters, with one row per
+wildfire x affected county (a wildfire spanning multiple counties appears as multiple
+rows). \code{geometry}, \code{area_sq_km}, and the other wildfire-level summary columns
+(\code{fatalities_total}, \code{injuries_total}, \code{structures_destroyed}, \code{structures_threatened},
+\code{evacuation_total}, \code{wui_type}, \code{density_people_sq_km_wildfire_buffer}) are wildfire-level
+and repeat identically across a multi-county wildfire's rows; de-duplicate on
+\code{wildfire_id} before summing these columns or unioning geometries (e.g.
+\code{sum(area_sq_km[!duplicated(wildfire_id)])}) to avoid over-counting.
 Columns include:
 \describe{
 \item{wildfire_id}{Unique identifier for the wildfire event.}
 \item{id_fema}{FEMA disaster identifier (if applicable).}
 \item{year}{Year of the wildfire.}
 \item{wildfire_name}{Name of the wildfire or fire complex.}
-\item{county_fips}{Pipe-delimited string of five-digit county FIPS codes for all
-counties affected by the wildfire.}
-\item{county_name}{Pipe-delimited string of county names for all counties
-affected by the wildfire.}
-\item{area_sq_km}{Burned area in square kilometers.}
+\item{state_fips}{Two-digit state FIPS code, derived from \code{county_fips}.}
+\item{county_fips}{Five-digit county FIPS code for a single county affected by the wildfire.}
+\item{county_name}{Name of a single county affected by the wildfire, sourced from
+Census's own canonical county names (joined on \code{county_fips}) rather than the raw
+source data, to avoid mangling Mc-prefixed county names.}
+\item{area_sq_km}{Burned area in square kilometers (wildfire-level; see above).}
 \item{wildfire_complex_binary}{Whether the fire is a complex (multiple fires).}
 \item{date_start}{Ignition date.}
 \item{date_containment}{Containment date.}
-\item{fatalities_total}{Total fatalities.}
-\item{injuries_total}{Total injuries.}
-\item{structures_destroyed}{Number of structures destroyed.}
-\item{structures_threatened}{Number of structures threatened.}
-\item{evacuation_total}{Total evacuations.}
-\item{wui_type}{Wildland-urban interface type.}
-\item{density_people_sq_km_wildfire_buffer}{Population density in wildfire buffer area.}
-\item{geometry}{Burn zone polygon geometry.}
+\item{fatalities_total}{Total fatalities (wildfire-level; see above).}
+\item{injuries_total}{Total injuries (wildfire-level; see above).}
+\item{structures_destroyed}{Number of structures destroyed (wildfire-level; see above).}
+\item{structures_threatened}{Number of structures threatened (wildfire-level; see above).}
+\item{evacuation_total}{Total evacuations (wildfire-level; see above).}
+\item{wui_type}{Wildland-urban interface type (wildfire-level; see above).}
+\item{density_people_sq_km_wildfire_buffer}{Population density in wildfire buffer
+area (wildfire-level; see above).}
+\item{geometry}{Burn zone polygon geometry (wildfire-level; see above).}
 }
 }
 \description{

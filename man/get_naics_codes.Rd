@@ -7,8 +7,9 @@
 get_naics_codes(year = 2023, digits = 3)
 }
 \arguments{
-\item{year}{The vintage year for NAICS codes. Data are available from 1986 through 2023.
-Default is 2023.}
+\item{year}{The vintage year for NAICS codes. Data are available from 2008 through 2023.
+Years 1986-2007 use SIC or older NAICS classification systems that are not currently
+supported. Default is 2023.}
 
 \item{digits}{The number of digits for desired NAICS codes. Must be between 2 and 6.
 Default is 3. Two-digit codes represent broad industry sectors (20 codes),

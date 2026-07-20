@@ -6,6 +6,8 @@
 #' @param county_geoids A character vector of five-digit county codes. NULL by default;
 #'   must be non-NULL if `api = TRUE`.
 #' @param file_name The name (not the full path) of the Box file containing the raw data.
+#'   If NULL (default), reads the most recently cached file for this dataset from
+#'   `get_openfema_cache_path()`.
 #' @param api If TRUE, query the API. FALSE by default.
 #'
 #' @details Data are from FEMA's OpenFEMA API. See
@@ -28,7 +30,6 @@
 #' @returns A data frame comprising county-level data on current NFIP policies
 #'  \describe{
 #'    \item{state_fips}{A two-digit state identifier.}
-#'    \item{state_abbreviation}{The name of the state.}
 #'    \item{county_geoid}{A five-digit county identifier.}
 #'    \item{county_name}{The name of the county.}
 #'    \item{year_construction}{The original year of the construction of the building.}
@@ -47,7 +48,7 @@
 #'    \item{damage_contents}{The value of damage to contents.}
 #'    \item{net_payment_building}{Net building payment amount.}
 #'    \item{net_payment_contents}{Net contents payment amount.}
-#'    \item{net_payment_increased_compliance}{Net Increased Cost of Compliance (ICC) payment amount.}
+#'    \item{net_payment_icc}{Net Increased Cost of Compliance (ICC) payment amount.}
 #'  }
 #' @export
 #'
@@ -56,41 +57,50 @@
 #'
 #' test <- get_nfip_claims(county_geoids = c("01001", "48201")) |>
 #'   dplyr::filter(
-#'     year_of_loss >= 2015,  ### in the past 10 years
+#'     year_loss >= 2015,  ### in the past 10 years
 #'     !occupancy_type %in% c("non-residential")) |> ### only residential claims
 #'   dplyr::summarize(
 #'     .by = county_geoid,
 #'     dplyr::across(dplyr::matches("payment"), sum, na.rm = TRUE),
-#'     residential_claims = dplyr::n_distinct(nfip_claim_id))
+#'     residential_claims = dplyr::n())
 #'}
 
 get_nfip_claims = function(
   county_geoids = NULL,
-  file_name = "fima_nfip_claims_2025_09_09.parquet",
+  file_name = NULL,
   api = FALSE) {
 
   ## if reading from disk
   if (isFALSE(api)) {
-    if (is.na(file_name)) stop("If `api = FALSE`, you must provide a `file_name` argument.")
 
-    inpath = file.path(
-      get_box_path(), "hazards", "fema", "national-flood-insurance-program", "raw", file_name)
+    if (is.null(file_name)) {
 
-    ## check that the cached file exists
-    if (! file.exists(inpath)) {
-      stop("The provided `file_name` is invalid.") }
+      df1a = arrow::read_parquet(find_openfema_cache_file("FimaNfipClaims")) |>
+        janitor::clean_names()
 
-    ## if the cached file isn't a parquet file, convert it to one
-    if (! (stringr::str_detect(inpath, "parquet"))) {
+    } else {
 
-      convert_delimited_to_parquet(
-        inpath = inpath,
-        delimit_character = ",",
-        dataset = "nfip_claims") }
+      if (is.na(file_name)) stop("If `api = FALSE`, you must provide a `file_name` argument.")
 
-    ## read the parquet file
-    df1a = arrow::read_parquet(file = inpath) |>
-      janitor::clean_names()
+      inpath = file.path(
+        get_box_path(), "hazards", "fema", "national-flood-insurance-program", "raw", file_name)
+
+      ## check that the cached file exists
+      if (! file.exists(inpath)) {
+        stop("The provided `file_name` is invalid.") }
+
+      ## if the cached file isn't a parquet file, convert it to one
+      if (! (stringr::str_detect(inpath, "parquet"))) {
+
+        convert_delimited_to_parquet(
+          inpath = inpath,
+          delimit_character = ",",
+          dataset = "nfip_claims") }
+
+      ## read the parquet file
+      df1a = arrow::read_parquet(file = inpath) |>
+        janitor::clean_names()
+    }
 
   } else {
 
@@ -106,12 +116,15 @@ get_nfip_claims = function(
 "a slow query. An alternate approach is to download the full dataset and then supply that ",
 "filepath to the parameter `file_name`.")) }
 
+    ## rfema::open_fema()'s filter builder (rfema:::gen_api_query()) incorrectly coerces
+    ## the all-digit countyCode value to an unquoted number, stripping leading zeros and
+    ## producing a 400 Bad Request; query the API directly instead, always quoting countyCode
     df1a = purrr::map_dfr(
       county_geoids,
-      ~ rfema::open_fema(
-        data_set = "fimaNfipClaims",
-        filters = list(countyCode = .x),
-        ask_before_call = FALSE) |>
+      ~ query_openfema_quoted_filter(
+        data_set_endpoint = "https://www.fema.gov/api/open/v2/FimaNfipClaims",
+        field_name = "countyCode",
+        field_value = .x) |>
         janitor::clean_names())
   }
 
@@ -149,7 +162,7 @@ get_nfip_claims = function(
         occupancy_type %in% c(2, 3, 12, 13, 16, 15) ~ "multi-family",
         occupancy_type %in% c(14) ~ "mobile/manufactured home",
         occupancy_type %in% c(4, 6, 17, 18, 19) ~ "non-residential"),
-      year_loss = year_of_loss,
+      year_loss = as.double(year_of_loss),
       year_construction = lubridate::year(original_construction_date),
       count_units_insured = policy_count, ## number of insured units associated with the claim
       #cause_of_damage,
@@ -169,7 +182,7 @@ get_nfip_claims = function(
         building_deductible_code == "D" ~ 25000,
         building_deductible_code == "E" ~ 50000,
         building_deductible_code == "F" ~ 1250,
-        building_deductible_code == "G" ~ 500,
+        building_deductible_code == "G" ~ 1500,
         building_deductible_code == "H" ~ 200),
       deductible_contents = dplyr::case_when(
         contents_deductible_code == "0" ~ 500,
@@ -185,7 +198,7 @@ get_nfip_claims = function(
         contents_deductible_code == "D" ~ 25000,
         contents_deductible_code == "E" ~ 50000,
         contents_deductible_code == "F" ~ 1250,
-        contents_deductible_code == "G" ~ 500,
+        contents_deductible_code == "G" ~ 1500,
         contents_deductible_code == "H" ~ 200),
       value_building = building_property_value,
       value_contents = contents_property_value,

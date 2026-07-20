@@ -21,7 +21,7 @@ convert_delimited_to_parquet(
 
 \item{subsetted_columns}{The columns to include in the outputted parquet data.}
 
-\item{dataset}{NULL by default. Alternately, one of c("nfip_policies", "ihp_registrations"). If not null, this will be used to select the columns that are returned.}
+\item{dataset}{NULL by default. Alternately, one of c("nfip_policies", "nfip_claims", "ihp_registrations"). If not null, this will be used to select the columns that are returned.}
 }
 \value{
 NULL (invisibly). This function is called for its side effect of writing a parquet file to disk at the specified \code{outpath} (or a path derived from \code{inpath} with a .parquet extension). The function reads the input file in chunks to handle large files efficiently, optionally subsets to specified columns, and writes the result in Apache Parquet format using \code{arrow::write_parquet()}.

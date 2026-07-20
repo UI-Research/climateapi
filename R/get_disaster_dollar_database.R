@@ -1,9 +1,19 @@
-#' @title Get Disaster Dollar Database Data 
-#' @details These data are sourced from: https://carnegieendowment.org/features/disaster-dollar-database. The data returned from this function are unchanged, though some columns have been renamed slightly for clarity and consistency.
+#' @title Get Disaster Dollar Database Data
+#' @details These data are sourced from: https://carnegieendowment.org/features/disaster-dollar-database.
+#'   The raw source file has 86 columns; this function returns a curated 17-column subset
+#'   (renamed slightly for clarity and consistency). Columns dropped include: the Federal
+#'   Register Notice grantee detail columns (`frn{1-4}_date`/`_url`, and each FRN's
+#'   `grantee{1-9}_name`/`_url`/`_amount` columns), `declaration_url`, and the SBA home/business
+#'   loan split columns (`sba_home_approved_loan_amount`, `sba_home_loan_count`,
+#'   `sba_business_approved_loan_amount`, `sba_business_loan_count`).
 #'
 #' @param file_path The path (on Box) to the file containing the raw data.
 #'
-#' @returns A dataframe comprising disaster-level observations with financial assistance metrics from FEMA's Individual and Households Program (IHP), Public Assistance (PA), HUD's Community Development Block Grant Disaster Recovery (CDBG-DR), and SBA disaster loans.
+#' @returns A dataframe comprising disaster-level observations with financial assistance metrics
+#'   from FEMA's Individual and Households Program (IHP), Public Assistance (PA), HUD's Community
+#'   Development Block Grant Disaster Recovery (CDBG-DR), and SBA disaster loans.
+#'   `incident_start`, `incident_end`, and `declaration_date` are returned as `Date` objects
+#'   (parsed from the raw source's M/D/YY-formatted strings).
 #' @export
 #'
 #' @examples
@@ -38,7 +48,15 @@ get_disaster_dollar_database = function(
       pa_allocated_amount_total = pa_total,
       pa_projects_count,
       cdbg_df_allocated_amount_total = cdbg_dr_allocation,
-      sba_loan_amount_approved_total = sba_total_approved_loan_amount)
+      sba_loan_amount_approved_total = sba_total_approved_loan_amount) |>
+    dplyr::mutate(dplyr::across(c(incident_start, incident_end, declaration_date), lubridate::mdy))
+
+  duplicated_incident_numbers = df_raw$incident_number[duplicated(df_raw$incident_number)] |> unique()
+  if (length(duplicated_incident_numbers) > 0) {
+    warning(stringr::str_c(
+      "The one-row-per-disaster-event assumption is violated in the current source file: ",
+      "incident_number(s) ", stringr::str_c(duplicated_incident_numbers, collapse = ", "),
+      " appear in more than one row.")) }
 
   message(stringr::str_c(
     "The unit of observation is: disaster event. ",

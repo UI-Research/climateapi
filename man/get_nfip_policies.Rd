@@ -7,7 +7,7 @@
 get_nfip_policies(
   state_abbreviation,
   county_geoids = NULL,
-  file_name = "fima_nfip_policies_2025_10_14.parquet",
+  file_name = NULL,
   api = FALSE
 )
 }
@@ -16,13 +16,19 @@ get_nfip_policies(
 
 \item{county_geoids}{A character vector of five-digit county codes.}
 
-\item{file_name}{The name (not the full path) of the Box file containing the raw data.}
+\item{file_name}{The name (not the full path) of a per-state Box file containing the raw
+data (see \verb{@details}). If NULL (default), reads \code{state_abbreviation}'s records directly
+from the most recently cached nationwide file for this dataset (see
+\code{get_openfema_cache_path()}), which avoids the cross-border duplication issue described
+below entirely.}
 
 \item{api}{If TRUE, query the API. If FALSE (default), read from \code{file_name}.}
 }
 \value{
 A dataframe of project-level funding requests and awards, along with variables that can be aggregated to the county level.
 \describe{
+\item{id}{Unique identifier for the policy record; use this to de-duplicate
+cross-border policies after combining results from multiple states -- see \verb{@details}.}
 \item{state_fips}{A two-digit state identifier.}
 \item{state_abbreviation}{The two-character abbreviation of the state.}
 \item{county_code}{The five-digit county identifier.}
@@ -54,6 +60,14 @@ policy_date_termination and policy_date_effective columns.
 
 The dataset also contains both residential and commercial policies. In order to filter
 to residential policies, the analyst can filter out the "non-residential" occupancy type.
+
+When \code{file_name} is supplied explicitly, per-state files (in the \verb{intermediate/} Box
+folder) are not mutually exclusive: a policy whose county sits near a state border can
+appear in more than one state's file. When looping this function over multiple states
+this way and combining results, run \code{dplyr::distinct(id, .keep_all = TRUE)} on the
+combined data to remove these duplicates (verified: 72 Delaware-file rows keyed to
+Maryland counties, all also present in Maryland's own file). This does not apply to the
+default (cache-backed) mode, which reads directly from the single nationwide file.
 }
 \examples{
 \dontrun{
@@ -63,7 +77,7 @@ to residential policies, the analyst can filter out the "non-residential" occupa
       file_name = "fima_nfip_policies_2025_10_14.parquet",
       api = FALSE) |>
     dplyr::filter(
-      !occupancy_type \%in\% c("non-residential"), ### only residential claims,
+      !building_occupancy_type \%in\% c("non-residential"), ### only residential claims,
       policy_date_termination >= as.Date("2025-10-15"),
       policy_date_effective <= as.Date("2025-10-15")) |>
     dplyr::group_by(county_geoid)|>

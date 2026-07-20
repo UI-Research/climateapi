@@ -38,7 +38,7 @@ testthat::test_that("get_naics_codes exists and is a function", {
 })
 
 testthat::test_that("get_naics_codes validates year parameter", {
-  testthat::expect_error(get_naics_codes(year = 1985), "1986 or later")
+  testthat::expect_error(get_naics_codes(year = 1985), "2008 or later")
   testthat::expect_error(get_naics_codes(year = 2030), "2023")
 })
 

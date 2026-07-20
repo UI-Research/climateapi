@@ -66,7 +66,7 @@ estimate_zoning_envelope = function(
          accordingly and/or create such columns using reasonable assumed values.")) }
 
   parcel_dimensions = c("parcel_depth", "parcel_width")
-  if (all(parcel_dimensions %in% names(parcels)) & (any(parcel_dimensions %in% names(parcels)))) {
+  if (any(parcel_dimensions %in% names(parcels)) && !all(parcel_dimensions %in% names(parcels))) {
     stop("Include either both or neither of `parcel_depth` and `parcel_width`.") }
 
   if (nrow(parcels %>% dplyr::filter(is.na(height_stories_maximum) & is.na(height_feet_maximum))) > 1) {

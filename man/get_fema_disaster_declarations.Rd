@@ -4,16 +4,14 @@
 \alias{get_fema_disaster_declarations}
 \title{Get major disaster declarations by county}
 \usage{
-get_fema_disaster_declarations(
-  file_path = file.path(get_box_path(), "hazards", "fema", "disaster-declarations",
-    "raw", "fema_disaster_declarations_county_2024_10_25.csv"),
-  api = TRUE
-)
+get_fema_disaster_declarations(file_path = NULL, api = FALSE)
 }
 \arguments{
-\item{file_path}{The path (on Box) to the file containing the raw data.}
+\item{file_path}{The path to the raw data. If NULL (default), reads the most recently
+cached file for this dataset from \code{get_openfema_cache_path()}.}
 
-\item{api}{If TRUE (default), access data from the API. Else, read locally from \code{file_path}.}
+\item{api}{If TRUE, access data from the API. Else (default), read from \code{file_path}
+(or the local OpenFEMA cache, if \code{file_path} is NULL).}
 }
 \value{
 A dataframe comprising Major Disaster Declarations by month by year by county.
@@ -38,6 +36,13 @@ an attribute.
 Data are from FEMA's OpenFEMA API. See
 \url{https://www.fema.gov/openfema-data-page/disaster-declarations-summaries-v2}.
 Statewide declarations are expanded to all counties in the state.
+
+Connecticut's pre-2022 counties (FIPS 09001-09015) are crosswalked onto the 2022-vintage
+planning regions (09110-09190) using a binary any-overlap assumption: a planning region
+is treated as having received a declaration if ANY overlapping pre-2022 county received
+it, even if only part of that county's area falls within the region. This is not a
+proportional/population-weighted allocation (unlike the crosswalks this package uses for
+dollar-valued FEMA datasets), since a declaration is a binary event, not a divisible amount.
 }
 \examples{
 \dontrun{

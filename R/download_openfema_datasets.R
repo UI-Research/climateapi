@@ -162,11 +162,25 @@ download_openfema_datasets <- function(
       }
 
       message("[", name, "] Downloading ", chosen_format, " from: ", chosen_url)
-      old_timeout <- getOption("timeout")
-      on.exit(options(timeout = old_timeout), add = TRUE)
-      options(timeout = 1200)
+      ## download to a temporary path and rename only on success: a truncated file
+      ## would otherwise be served by find_openfema_cache_file() and fail to parse.
+      ## curl::multi_download() resumes interrupted transfers, which multi-GB
+      ## datasets (e.g. FimaNfipPolicies, ~5 GB) need on connections that drop
+      ## mid-transfer; the .partial file is kept on failure so a later attempt or
+      ## re-run picks up where it left off rather than restarting from zero
+      temp_path <- paste0(file_path, ".partial")
       dl_result <- tryCatch({
-        utils::download.file(chosen_url, destfile = file_path, mode = "wb", quiet = FALSE)
+        attempts <- 0
+        repeat {
+          attempts <- attempts + 1
+          download_result <- curl::multi_download(chosen_url, destfiles = temp_path, resume = TRUE)
+          if (isTRUE(download_result$success) && download_result$status_code %in% c(200, 206)) break
+          if (attempts >= 5) {
+            stop(
+              "download failed after ", attempts, " attempts (last status: ",
+              download_result$status_code, "): ", download_result$error) }
+        }
+        file.rename(temp_path, file_path)
         "downloaded"
       }, error = function(e) {
         warning("[", name, "] Download failed: ", conditionMessage(e))

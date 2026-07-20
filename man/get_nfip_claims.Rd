@@ -4,17 +4,15 @@
 \alias{get_nfip_claims}
 \title{Access county-level data on NFIP claims}
 \usage{
-get_nfip_claims(
-  county_geoids = NULL,
-  file_name = "fima_nfip_claims_2025_09_09.parquet",
-  api = FALSE
-)
+get_nfip_claims(county_geoids = NULL, file_name = NULL, api = FALSE)
 }
 \arguments{
 \item{county_geoids}{A character vector of five-digit county codes. NULL by default;
 must be non-NULL if \code{api = TRUE}.}
 
-\item{file_name}{The name (not the full path) of the Box file containing the raw data.}
+\item{file_name}{The name (not the full path) of the Box file containing the raw data.
+If NULL (default), reads the most recently cached file for this dataset from
+\code{get_openfema_cache_path()}.}
 
 \item{api}{If TRUE, query the API. FALSE by default.}
 }
@@ -22,7 +20,6 @@ must be non-NULL if \code{api = TRUE}.}
 A data frame comprising county-level data on current NFIP policies
 \describe{
 \item{state_fips}{A two-digit state identifier.}
-\item{state_abbreviation}{The name of the state.}
 \item{county_geoid}{A five-digit county identifier.}
 \item{county_name}{The name of the county.}
 \item{year_construction}{The original year of the construction of the building.}
@@ -41,7 +38,7 @@ A data frame comprising county-level data on current NFIP policies
 \item{damage_contents}{The value of damage to contents.}
 \item{net_payment_building}{Net building payment amount.}
 \item{net_payment_contents}{Net contents payment amount.}
-\item{net_payment_increased_compliance}{Net Increased Cost of Compliance (ICC) payment amount.}
+\item{net_payment_icc}{Net Increased Cost of Compliance (ICC) payment amount.}
 }
 }
 \description{
@@ -71,11 +68,11 @@ and payments in the same time period.
 
 test <- get_nfip_claims(county_geoids = c("01001", "48201")) |>
   dplyr::filter(
-    year_of_loss >= 2015,  ### in the past 10 years
+    year_loss >= 2015,  ### in the past 10 years
     !occupancy_type \%in\% c("non-residential")) |> ### only residential claims
   dplyr::summarize(
     .by = county_geoid,
     dplyr::across(dplyr::matches("payment"), sum, na.rm = TRUE),
-    residential_claims = dplyr::n_distinct(nfip_claim_id))
+    residential_claims = dplyr::n())
 }
 }

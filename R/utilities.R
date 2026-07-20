@@ -17,24 +17,77 @@ get_system_username = function() {
   username
 }
 
-#' @title Get the path to the C&C Box folder
+#' Query an OpenFEMA v2 dataset filtered to a single quoted field value
 #'
-#' @return A character string containing the full file path to the Climate and Communities (C&C) Box folder.
-#'   On Windows, returns "C:/Users/{username}/Box/METRO Climate and Communities Practice Area/github-repository".
-#'   On Mac, checks for Box at "/Users/{username}/Box" or "/Users/{username}/Library/CloudStorage/Box-Box",
-#'   using whichever exists. Throws an error if the Box folder cannot be found.
-#' @export
+#' Bypasses a bug in `rfema:::gen_api_query()`, which coerces all-digit filter values
+#' (e.g. `countyCode`) to unquoted numbers -- stripping leading zeros and producing a
+#' 400 Bad Request, since FEMA's API schema requires fields like `countyCode` as a
+#' quoted string. Constructs the OData query directly instead, and paginates by
+#' incrementing `$skip` until a page returns fewer than the page size, rather than via
+#' `$inlinecount=allpages` (which `rfema::open_fema()` uses internally to pre-compute an
+#' exact total record count) -- that exact count times out on FEMA's largest datasets
+#' (verified: reliably produces a 503 on FimaNfipPolicies, an ~80M-row table).
 #'
-#' @examples
-#' \dontrun{
-#' get_box_path()
-#' }
-get_box_path = function() {
+#' @param data_set_endpoint The full OpenFEMA v2 API base URL for the dataset (e.g.
+#'   "https://www.fema.gov/api/open/v2/FimaNfipClaims").
+#' @param field_name The OData field name to filter on (e.g. "countyCode").
+#' @param field_value The (string-typed) value to filter to; always quoted in the request.
+#'
+#' @return A tibble of all matching records, paginated as needed. Zero-row tibble if
+#'   no records match.
+#' @noRd
+query_openfema_quoted_filter = function(data_set_endpoint, field_name, field_value) {
+
+  page_size = 1000
+
+  base_query = stringr::str_c(
+      data_set_endpoint, "?$top=", page_size, "&$filter=(",
+      field_name, " eq '", field_value, "')") |>
+    stringr::str_replace_all(" ", "%20")
+
+  fetch_page = function(skip) {
+    response = httr::GET(stringr::str_c(base_query, "&$skip=", format(skip, scientific = FALSE)))
+    if (response$status_code != 200) {
+      stop(httr::http_status(response)$message) }
+
+    json_data = httr::content(response)[[2]]
+    if (length(json_data) == 0) { return(NULL) }
+
+    max_list_length = max(sapply(json_data, length))
+    json_data = lapply(json_data, function(x) c(x, rep(NA, max_list_length - length(x))))
+    page_df = data.frame(do.call(rbind, json_data))
+    ## each column is still list-typed at this point (one scalar per cell, wrapped in a
+    ## length-1 list); as.character() (called implicitly by gsub()) unwraps these to plain
+    ## atomic character vectors, matching what rfema::open_fema() does internally
+    page_df = as.data.frame(lapply(page_df, function(x) gsub("\n", "", x)))
+    tibble::as_tibble(page_df) }
+
+  pages = list()
+  skip = 0
+  repeat {
+    page = fetch_page(skip)
+    if (is.null(page)) { break }
+    pages[[length(pages) + 1]] = page
+    if (nrow(page) < page_size) { break }
+    skip = skip + page_size }
+
+  if (length(pages) == 0) { return(tibble::tibble()) }
+  dplyr::bind_rows(pages)
+}
+
+#' Locate the root of the user's Box folder
+#'
+#' Shared OS-detection logic used by both `get_box_path()` (the C&C practice
+#' area subfolder) and `get_openfema_cache_path()` (the `data-cache` subfolder
+#' at the Box root).
+#'
+#' @return A character string containing the full path to the root of the user's Box folder.
+#' @noRd
+locate_box_root = function() {
   username <- get_system_username()
   os <- Sys.info()[["sysname"]]
-  box_subfolder <- file.path("METRO Climate and Communities Practice Area", "github-repository")
 
- if (os == "Windows") {
+  if (os == "Windows") {
     box_root <- file.path("C:", "Users", username, "Box")
   } else if (os == "Darwin") {
     # Mac: Check common Box locations
@@ -59,7 +112,24 @@ get_box_path = function() {
     stop("Unsupported operating system: ", os, ". Only Windows and Mac are supported.")
   }
 
-  box_path <- file.path(box_root, box_subfolder)
+  box_root
+}
+
+#' @title Get the path to the C&C Box folder
+#'
+#' @return A character string containing the full file path to the Climate and Communities (C&C) Box folder.
+#'   On Windows, returns "C:/Users/\{username\}/Box/METRO Climate and Communities Practice Area/github-repository".
+#'   On Mac, checks for Box at "/Users/\{username\}/Box" or "/Users/\{username\}/Library/CloudStorage/Box-Box",
+#'   using whichever exists. Throws an error if the Box folder cannot be found.
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' get_box_path()
+#' }
+get_box_path = function() {
+  box_path <- file.path(
+    locate_box_root(), "METRO Climate and Communities Practice Area", "github-repository")
 
   if (!dir.exists(box_path)) {
     warning("Box path does not exist: ", box_path)
@@ -68,42 +138,109 @@ get_box_path = function() {
   box_path
 }
 
+#' @title Get the path to the local OpenFEMA dataset cache
+#'
+#' @return A character string containing the full path to the local cache of
+#'   OpenFEMA datasets, populated via `download_openfema_datasets()`. This
+#'   cache lives at the root of the user's Box folder (`data-cache/openfema`),
+#'   not under the C&C practice area subfolder returned by `get_box_path()`.
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' get_openfema_cache_path()
+#' }
+get_openfema_cache_path = function() {
+  file.path(locate_box_root(), "data-cache", "openfema")
+}
+
+#' Locate the most recently cached OpenFEMA dataset file
+#'
+#' Package `get_*` functions use this to default to the freshest local mirror
+#' of a given OpenFEMA dataset instead of a hardcoded, inevitably stale filename.
+#'
+#' @param dataset_name The OpenFEMA API endpoint name (e.g. "DisasterDeclarationsSummaries"),
+#'   matching the file-naming convention produced by `download_openfema_datasets()`
+#'   (`<dataset_name>_YYYY_MM_DD.parquet`).
+#' @param cache_path Directory to search. Defaults to `get_openfema_cache_path()`.
+#'
+#' @return The full path to the most recently dated cached file for `dataset_name`.
+#' @noRd
+find_openfema_cache_file = function(dataset_name, cache_path = get_openfema_cache_path()) {
+
+  if (!dir.exists(cache_path)) {
+    stop(stringr::str_c(
+      "No local OpenFEMA cache found at: ", cache_path, ". Use `download_openfema_datasets()` ",
+      "to populate it, or supply an explicit file path.")) }
+
+  pattern = stringr::str_c("^", dataset_name, "_\\d{4}_\\d{2}_\\d{2}\\.parquet$")
+  cached_files = list.files(cache_path, pattern = pattern, full.names = TRUE)
+
+  if (length(cached_files) == 0) {
+    stop(stringr::str_c(
+      "No cached file found for '", dataset_name, "' in: ", cache_path, ". Use ",
+      "`download_openfema_datasets()` to populate it, or supply an explicit file path.")) }
+
+  file_dates = cached_files |>
+    basename() |>
+    stringr::str_extract("\\d{4}_\\d{2}_\\d{2}") |>
+    stringr::str_replace_all("_", "-") |>
+    as.Date()
+
+  most_recent_file = cached_files[which.max(file_dates)]
+  message("Reading cached OpenFEMA file: ", basename(most_recent_file))
+  most_recent_file
+}
+
 
 #' Get the raw column names for a specified dataset
 #'
-#' @param dataset The name of the dataset. One of c('nfip_policies', 'ihp_registrations').
+#' @param dataset The name of the dataset. One of c('nfip_policies', 'nfip_claims', 'ihp_registrations').
 #'
-#' @return A character vector containing the raw column names (in camelCase format as they appear in the source data) to be selected when reading the specified dataset. The columns returned are curated subsets of the full dataset columns, excluding administrative/metadata fields. For "nfip_policies": 20 columns including location, policy details, and building characteristics. For "ihp_registrations": ~20 columns including disaster info, geographic identifiers, and assistance amounts.
+#' @return A character vector containing the raw column names (in camelCase format as they appear in the source data) to be selected when reading the specified dataset. The columns returned are curated subsets of the full dataset columns, excluding administrative/metadata fields. For "nfip_policies": 11 columns matching the current per-state parquet schema. For "nfip_claims": 19 columns needed by `get_nfip_claims()`'s downstream `transmute()`. For "ihp_registrations": ~20 columns including disaster info, geographic identifiers, and assistance amounts.
 get_dataset_columns = function(dataset) {
 
   if (length(dataset) > 1 | !is.character(dataset)) {
     stop("The `dataset` argument must be a character of length one.") }
 
-  if (! dataset %in% c('nfip_policies', 'ihp_registrations')) {
-    stop("The `dataset` argument must be one of c('nfip_policies', 'ihp_registrations').") }
+  if (! dataset %in% c('nfip_policies', 'nfip_claims', 'ihp_registrations')) {
+    stop("The `dataset` argument must be one of c('nfip_policies', 'nfip_claims', 'ihp_registrations').") }
 
   if (dataset == "nfip_policies") {
     columns = c(
       "id",
-      "longitude",
-      "latitude",
+      "countyCode",
       "censusTract",
-      "crsClassCode",
-      "ratedFloodZone",
-      "occupancyType",
-      "originalConstructionDate",
       "policyCost",
       "policyCount",
-      "policyEffectiveDate",
-      "policyTerminationDate",
-      "primaryResidenceIndicator",
-      "regularEmergencyProgramIndicator",
-      "smallBusinessIndicatorBuilding",
+      "ratedFloodZone",
       "totalInsurancePremiumOfThePolicy",
+      "policyTerminationDate",
+      "policyEffectiveDate",
+      "occupancyType",
+      "buildingReplacementCost") }
+
+  if (dataset == "nfip_claims") {
+    columns = c(
+      "countyCode",
+      "censusTract",
+      "occupancyType",
+      "yearOfLoss",
+      "originalConstructionDate",
+      "policyCount",
+      "buildingDeductibleCode",
+      "contentsDeductibleCode",
+      "buildingPropertyValue",
+      "contentsPropertyValue",
       "buildingReplacementCost",
-      "floodproofedIndicator",
-      "rentalPropertyIndicator",
-      "tenantIndicator") }
+      "contentsReplacementCost",
+      "totalBuildingInsuranceCoverage",
+      "totalContentsInsuranceCoverage",
+      "buildingDamageAmount",
+      "contentsDamageAmount",
+      "netBuildingPaymentAmount",
+      "netContentsPaymentAmount",
+      "netIccPaymentAmount") }
 
   if (dataset == "ihp_registrations") {
     columns = c(
@@ -155,7 +292,7 @@ get_dataset_columns = function(dataset) {
 #' @param outpath The local path to write parquet data to.
 #' @param delimit_character The delimiting character of the raw data.
 #' @param subsetted_columns The columns to include in the outputted parquet data.
-#' @param dataset NULL by default. Alternately, one of c("nfip_policies", "ihp_registrations"). If not null, this will be used to select the columns that are returned.
+#' @param dataset NULL by default. Alternately, one of c("nfip_policies", "nfip_claims", "ihp_registrations"). If not null, this will be used to select the columns that are returned.
 #'
 #' @return NULL (invisibly). This function is called for its side effect of writing a parquet file to disk at the specified `outpath` (or a path derived from `inpath` with a .parquet extension). The function reads the input file in chunks to handle large files efficiently, optionally subsets to specified columns, and writes the result in Apache Parquet format using `arrow::write_parquet()`.
 convert_delimited_to_parquet = function(
@@ -182,10 +319,12 @@ convert_delimited_to_parquet = function(
     subsetted_columns = get_dataset_columns("ihp_registrations") }
   if (dataset == "nfip_policies") {
     subsetted_columns = get_dataset_columns("nfip_policies") }
+  if (dataset == "nfip_claims") {
+    subsetted_columns = get_dataset_columns("nfip_claims") }
   if (is.null(dataset)) {
     subsetted_columns = colnames(raw_txt_test_delimit_character) }
-  if (!(dataset %in% c("ihp_registrations", "nfip_policies"))) {
-    stop("The `dataset` argument must be one of c('ihp_registrations', 'nfip_policies').") }
+  if (!(dataset %in% c("ihp_registrations", "nfip_policies", "nfip_claims"))) {
+    stop("The `dataset` argument must be one of c('ihp_registrations', 'nfip_policies', 'nfip_claims').") }
 
   ## a quick test prior to reading in full file
   raw_txt_test_subsetted_columns = tryCatch(
@@ -217,32 +356,53 @@ convert_delimited_to_parquet = function(
 #' If `return_geometry = TRUE`, the geometry column is retained; otherwise it is dropped.
 #' @export
 get_spatial_extent_census = function(data, return_geometry = FALSE, projection = 5070) {
-  warning("This leverages `sf::st_overlaps()` and does not provide the desired results consistently.")
 
-  data = tigris::counties()
-  data = data |>
+  data1 = data |> sf::st_transform(projection)
+  data_union = data1 |> sf::st_union()
+
+  ## computes the % of each candidate geography's own area that overlaps `data_union`,
+  ## retaining only geographies exceeding a 5% overlap threshold--this avoids keeping
+  ## geographies that only barely touch/border the input boundary
+  filter_by_overlap = function(candidates, threshold = 0.05) {
+    candidates |>
+      dplyr::mutate(geography_area = sf::st_area(geometry)) |>
+      sf::st_intersection(data_union) |>
+      dplyr::mutate(overlap_pct = as.numeric(sf::st_area(geometry) / geography_area)) |>
+      sf::st_drop_geometry() |>
+      dplyr::filter(overlap_pct > threshold) |>
+      dplyr::pull(GEOID) }
+
+  all_counties = tigris::counties(cb = TRUE, year = 2023, progress_bar = FALSE) |>
     sf::st_transform(projection)
 
-  states_sf = tigris::states(
-      cb = TRUE,
-      resolution = "20m",
-      year = 2023,
-      progress_bar = FALSE,
-      refresh = TRUE) |>
-    sf::st_transform(projection)
+  overlapping_county_geoids = all_counties |> filter_by_overlap()
 
-  state_geoids = states_sf |>
-    sf::st_filter(data, .predicate = sf::st_overlaps) |>
-    _[["GEOID"]]
+  if (length(overlapping_county_geoids) == 0) {
+    stop("No county overlaps `data` by more than 5% of the county's area.") }
+
+  state_geoids = all_counties |>
+    sf::st_drop_geometry() |>
+    dplyr::filter(GEOID %in% overlapping_county_geoids) |>
+    dplyr::pull(STATEFP) |>
+    unique()
 
   if (length(state_geoids) > 1) {
+
+    states_sf = tigris::states(
+        cb = TRUE,
+        resolution = "20m",
+        year = 2023,
+        progress_bar = FALSE,
+        refresh = TRUE) |>
+      sf::st_transform(projection)
+
     result = states_sf |>
       dplyr::filter(GEOID %in% state_geoids) |>
       dplyr::transmute(
         state_geoid = GEOID,
         geography = "state") } else {
 
-    result = state_geoids |>
+    all_tracts = state_geoids |>
       purrr::map_dfr(
         ~ tigris::tracts(
           state = .x,
@@ -251,8 +411,12 @@ get_spatial_extent_census = function(data, return_geometry = FALSE, projection =
           year = 2023,
           progress_bar = FALSE,
           refresh = TRUE)) |>
-      sf::st_transform(projection) |>
-      sf::st_filter(data) |>
+      sf::st_transform(projection)
+
+    overlapping_tract_geoids = all_tracts |> filter_by_overlap()
+
+    result = all_tracts |>
+      dplyr::filter(GEOID %in% overlapping_tract_geoids) |>
       dplyr::transmute(
         state_geoid = stringr::str_sub(GEOID, 1, 2),
         county_geoid = stringr::str_sub(GEOID, 1, 5),
@@ -322,8 +486,14 @@ get_geography_metadata = function(
 
   geography_type = match.arg(geography_type)
 
+  ## tidycensus::get_acs() only covers the 50 states, DC, and Puerto Rico; American Samoa,
+  ## Guam, the Northern Mariana Islands, and the US Virgin Islands are not part of the ACS,
+  ## so their geography metadata is sourced from tidycensus::fips_codes instead. Population
+  ## is unavailable for these territories from this source and is left NA.
+  territory_codes = c("60", "66", "69", "78")
+
   suppressMessages({
-    df = tidycensus::get_acs(
+    df1 = tidycensus::get_acs(
         year = year,
         output = "wide",
         variables = "B01003_001",
@@ -339,16 +509,31 @@ get_geography_metadata = function(
         tidycensus::fips_codes %>%
           dplyr::select(state_abbreviation = state, state_code) %>%
           dplyr::distinct(),
-        by = "state_code") |>
-      dplyr::mutate(
-        .by = c(state_code),
-        state_population = sum(county_population, na.rm = TRUE)) |>
-    dplyr::select(dplyr::matches("state"), dplyr::matches("county")) })
+        by = "state_code") })
+
+  territory_geographies = tidycensus::fips_codes |>
+    dplyr::filter(state_code %in% territory_codes) |>
+    dplyr::transmute(
+      state_code,
+      state_name,
+      state_abbreviation = state,
+      ## fips_codes' `county_code` is only the 3-digit county part; pair it with
+      ## `state_code` to match df1's 5-digit GEOID-based county_code
+      county_code = stringr::str_c(state_code, county_code),
+      county_name = county,
+      county_population = NA_real_)
+
+  df2 = dplyr::bind_rows(df1, territory_geographies) |>
+    dplyr::mutate(
+      .by = c(state_code),
+      state_population = dplyr::if_else(
+        all(is.na(county_population)), NA_real_, sum(county_population, na.rm = TRUE))) |>
+    dplyr::select(dplyr::matches("state"), dplyr::matches("county"))
 
   if (geography_type == "state") {
-    df = df |> dplyr::distinct(state_abbreviation, state_code, state_name) }
+    df2 = df2 |> dplyr::distinct(state_abbreviation, state_code, state_name) }
 
-  return(df)
+  return(df2)
 }
 
 #' Convert named month-including dates to standardized date-type variables
@@ -388,7 +573,7 @@ date_string_to_date = function(date_string) {
 #' @param base_year The year to use as the base for inflation adjustment. If NULL, defaults to the most recent year in the PCE index data.
 #' @param names_suffix A suffix to add to the names of the inflation-adjusted variables. If NULL, defaults to "_<base_year>". If "", columns are renamed in place.
 #'
-#' @return A tibble identical to the input `df` with additional inflation-adjusted columns. For each column specified in `dollar_variables`, a new column is created with the same name plus `names_suffix` (default: "_{base_year}"). The adjusted values are calculated by multiplying original values by an inflation factor derived from the PCE Price Index ratio between the base year and each observation's year. Original columns are preserved unchanged.
+#' @return A tibble identical to the input `df` with additional inflation-adjusted columns. For each column specified in `dollar_variables`, a new column is created with the same name plus `names_suffix` (default: "_\{base_year\}"). The adjusted values are calculated by multiplying original values by an inflation factor derived from the PCE Price Index ratio between the base year and each observation's year. Original columns are preserved unchanged.
 #' @export
 #'
 #' @examples
@@ -436,4 +621,5 @@ inflation_adjust = function(
 
 utils::globalVariables(c(
   "DPCERG3A086NBEA", "crop_damage_adjusted_2023", "inflation_factor", "inflation_year_",
-  "pce_index", "property_damage_adjusted_2023"))
+  "pce_index", "property_damage_adjusted_2023", "B01003_001E", "geometry", "geography_area",
+  "overlap_pct", "STATEFP"))

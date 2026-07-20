@@ -49,7 +49,7 @@ Quantitative Research in Public Financial Analysis. PLoS ONE doi:
 10.1371/journal.pone.0130119. See \url{https://my.willamette.edu/site/mba/public-datasets}.
 
 This is a survey in most years--i.e., only a subset of the full population of governments
-comprises the sampling frame--but is a true census with relatively high response rates (90\%\%+)
+comprises the sampling frame--but is a true census with relatively high response rates (90\%+)
 in years ending in 2 and 7.
 
 Definitions of key constructs:

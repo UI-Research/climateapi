@@ -35,15 +35,21 @@ get_structures = function(
     geography = "county",
     keep_structures = FALSE) {
 
-  warning("The raw building footprint data files are large; this function can be slow to execute.")
-
-  options(timeout = 240)
-
   if (! geography %in% c("county", "tract")) {
     stop("`geography` must be one of 'county' or 'tract'.") }
 
   if ( boundaries %>% sf::st_crs() %>% is.na(.) ) {
     stop("You must specify a spatial vector object with a defined CRS or a bbox from sf::st_bbox().")}
+
+  warning("The raw building footprint data files are large; this function can be slow to execute.")
+
+  options(timeout = 240)
+
+  ## an sf::st_bbox()-style bbox is documented as valid input but bbox objects aren't
+  ## sf/sfc objects, and previously errored on the st_transform()/mutate() calls below;
+  ## convert internally to an sf polygon
+  if (inherits(boundaries, "bbox")) {
+    boundaries = sf::st_as_sfc(boundaries) %>% sf::st_sf() }
 
   projection = 5070
 
@@ -82,14 +88,30 @@ get_structures = function(
   data_urls = tibble::tibble(
       url = data_urls_html %>%
         rvest::html_attr("href"),
+      ## str_trim() fixes a Kentucky-specific trailing-whitespace mismatch against
+      ## fips_codes$state_name; "Virgin Islands" is special-cased since fips_codes uses
+      ## "U.S. Virgin Islands"
       state_name = data_urls_html %>%
         rvest::html_text() %>%
-        stringr::str_replace_all("D.C.", "District of Columbia")) %>%
+        stringr::str_trim() %>%
+        stringr::str_replace_all(c(
+          "D.C." = "District of Columbia",
+          "^Virgin Islands$" = "U.S. Virgin Islands"))) %>%
     dplyr::left_join(
       tidycensus::fips_codes %>%
         dplyr::select(state_name, state) %>%
         dplyr::distinct(),
       by = "state_name")
+
+  unmatched_state_names = data_urls %>%
+    dplyr::filter(is.na(state)) %>%
+    dplyr::pull(state_name) %>%
+    unique()
+
+  if (length(unmatched_state_names) > 0) {
+    warning(stringr::str_c(
+      "The following scraped state/territory name(s) did not match a known name and will ",
+      "not be available for download: ", stringr::str_c(unmatched_state_names, collapse = ", "), ".")) }
 
   df1 = purrr::map_dfr(
     structure_data_states,
@@ -99,7 +121,10 @@ get_structures = function(
         dplyr::pull(state_name) %>%
         unique()
 
-      existing_file = list.files(box_path, full.names = TRUE, recursive = TRUE) %>%
+      ## scoped to the state's own subfolder (not the full box_path tree), so an
+      ## unrelated stray/duplicate folder for another state can't produce a false match
+      ## and silently bypass this state's own cache
+      existing_file = list.files(file.path(box_path, state_abbreviation), full.names = TRUE, recursive = TRUE) %>%
         purrr::keep(stringr::str_detect(., stringr::str_c(state_abbreviation, "_Structures.gdb/gdb$"))) %>%
         stringr::str_remove("/gdb$")
 
@@ -151,7 +176,7 @@ get_structures = function(
         dplyr::group_by(county_fips, primary_occupancy) %>%
         dplyr::summarize(
           occupancy_class = dplyr::first(occupancy_class),
-          count = n()) %>%
+          count = dplyr::n()) %>%
         dplyr::ungroup() %>%
         dplyr::arrange(county_fips, dplyr::desc(count)) %>%
         dplyr::rename(GEOID = county_fips) }
@@ -173,7 +198,7 @@ get_structures = function(
         dplyr::group_by(GEOID, primary_occupancy) %>%
         dplyr::summarize(
           occupancy_class = dplyr::first(occupancy_class),
-          count = n()) %>%
+          count = dplyr::n()) %>%
         dplyr::ungroup() %>%
         dplyr::arrange(GEOID, dplyr::desc(count)) }
 
@@ -185,5 +210,5 @@ get_structures = function(
 utils::globalVariables(
   c("intersection_area", "state_area", "intersection_share_state_area", "STUSPS",
     "build_id", "occ_cls", "prim_occ", "fips", "primary_occupancy", "occupancy_class",
-    "boundaries_area", "intersection_share_boundary_area"))
+    "boundaries_area", "intersection_share_boundary_area", "state"))
 

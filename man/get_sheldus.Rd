@@ -4,14 +4,12 @@
 \alias{get_sheldus}
 \title{Access temporal county-level SHELDUS hazard damage data}
 \usage{
-get_sheldus(
-  file_path = file.path(get_box_path(), "hazards", "sheldus",
-    "SHELDUS_23.0_12312023_AllCounties_CountyAggregate_YearMonthHazard_2023USD",
-    "direct_loss_aggregated_output_24075.csv")
-)
+get_sheldus(file_path = NULL)
 }
 \arguments{
-\item{file_path}{The path to the raw SHELDUS data.}
+\item{file_path}{The path to the raw SHELDUS data. If NULL (default), the most recently
+modified \code{direct_loss_aggregated_output_*.csv} file found under Box's \code{hazards/sheldus}
+directory is used, and a message discloses which file/vintage was selected.}
 }
 \value{
 A dataframe comprising hazard x month x year x county observations of hazard events.
@@ -24,8 +22,9 @@ Columns include:
 \item{year}{Year of the hazard event(s).}
 \item{month}{Month of the hazard event(s).}
 \item{hazard}{Type of hazard (e.g., "Flooding", "Hurricane/Tropical Storm").}
-\item{damage_property}{Property damage in 2023 inflation-adjusted dollars.}
-\item{damage_crop}{Crop damage in 2023 inflation-adjusted dollars.}
+\item{damage_property}{Property damage in inflation-adjusted dollars (base year varies
+by SHELDUS vintage; see the function's message for the base year used).}
+\item{damage_crop}{Crop damage in inflation-adjusted dollars (see \code{damage_property}).}
 \item{fatalities}{Number of fatalities.}
 \item{injuries}{Number of injuries.}
 \item{records}{Number of individual events aggregated into this observation.}

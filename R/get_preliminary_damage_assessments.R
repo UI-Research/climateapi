@@ -145,9 +145,21 @@ extract_pda_attributes = function(path) {
       stringr::str_replace_all("(\\:[0-9]|\\: [0-9] )", ":") }
 
   text = stringr::str_c(text_event_name, text_pda_preempted, text_primary, sep = " ")
+
+  ## the disaster number is parsed from the PDF text (the FEMA-XXXX-DR pattern) as the
+  ## primary strategy; filename parsing is only a fallback when that pattern is absent,
+  ## since some filenames contain unrelated 4-digit sequences (e.g. embedded dates) that
+  ## collide with real disaster numbers from other files
+  disaster_number_from_text = text0 %>%
+    stringr::str_extract("FEMA-[0-9]{4}-DR") %>%
+    stringr::str_extract("[0-9]{4}")
+
   result = tibble::tibble(
       path = path,
-      disaster_number = path %>% stringr::str_extract("[0-9]{4}"),
+      disaster_number = dplyr::if_else(
+        !is.na(disaster_number_from_text),
+        disaster_number_from_text,
+        path %>% stringr::str_extract("[0-9]{4}")),
       event_type = event_type,
       event_title = text_event_name,
       event_native_flag = dplyr::if_else(
@@ -190,8 +202,12 @@ extract_pda_attributes = function(path) {
         text %>% extract_value(term1 = "Statewide per capita impact indicator", term2 = "$") %>% stringr::str_split(" ") %>% purrr::map_chr(~ .[1]),
         pa_per_capita_impact_indicator_statewide),
       pa_per_capita_impact_indicator_countywide = stringr::str_sub(pa_per_capita_impact_indicator_countywide, 1, 5),
-      dplyr::across(dplyr::everything(), ~ stringr::str_remove_all(.x, "\\%|\\:|\\$|\\,") %>% stringr::str_trim() %>% stringr::str_squish()),
-      dplyr::across(dplyr::everything(), ~ stringr::str_remove_all(.x, "\\%|\\:|\\$|\\,") %>% stringr::str_trim() %>% stringr::str_squish()))
+      ## scoped away from path/disaster_number/event_type/event_title/text (which should
+      ## not have %, :, $, or , stripped -- doing so on `path` corrupted the colon in
+      ## Windows drive letters, e.g. "C:/...")
+      dplyr::across(
+        .cols = -c(path, disaster_number, event_type, event_title, event_native_flag, text),
+        .fns = ~ stringr::str_remove_all(.x, "\\%|\\:|\\$|\\,") %>% stringr::str_trim() %>% stringr::str_squish()))
 
   ## tribes have differently structured PDA report fields
   if (result$event_native_flag == 1) {
@@ -206,22 +222,28 @@ extract_pda_attributes = function(path) {
     "September", "October", "November", "December") %>%
     stringr::str_c(collapse = "|")
   date_match_string = stringr::str_c("Denied (on |)(", months, ") [0-9]{1,2} [0-9]{4}")
+  ## columns that should not have their raw values reformatted/stripped by the
+  ## cleanup steps below (e.g. stripping ":" from `path` corrupted Windows drive
+  ## letters like "C:/...", and 0/1,356 cached rows then failed to match a file on disk)
+  non_extracted_columns = c("path", "disaster_number", "event_type", "event_title", "event_native_flag", "text")
+
   result2 = result %>%
     dplyr::mutate(
-      dplyr::across(dplyr::everything(), ~ stringr::str_squish(.x) %>% stringr::str_trim()),
-      dplyr::across(dplyr::everything(), ~ stringr::str_remove_all(.x, "^- |\\$|\\:|\\,")),
-      dplyr::across(dplyr::everything(), ~ dplyr::if_else(.x == "-", NA_character_, .x)),
-      dplyr::across(dplyr::everything(), ~ dplyr::if_else(stringr::str_detect(.x, "^N.A$"), NA_character_, .x)),
+      dplyr::across(-dplyr::all_of(non_extracted_columns), ~ stringr::str_squish(.x) %>% stringr::str_trim()),
+      dplyr::across(-dplyr::all_of(non_extracted_columns), ~ stringr::str_remove_all(.x, "^- |\\$|\\:|\\,")),
+      dplyr::across(-dplyr::all_of(non_extracted_columns), ~ dplyr::if_else(.x == "-", NA_character_, .x)),
+      dplyr::across(-dplyr::all_of(non_extracted_columns), ~ dplyr::if_else(stringr::str_detect(.x, "^N.A$"), NA_character_, .x)),
       pa_per_capita_impact_countywide_1 = pa_per_capita_impact_countywide %>%
         stringr::str_extract_all("[0-9]{1,4}\\.[0-9]{1,3}"),
-      pa_per_capita_impact_countywide_max = dplyr::if_else(
-        is.na(pa_per_capita_impact_countywide_1), NA,
-        pa_per_capita_impact_countywide_1 %>%
-          purrr::map_dbl(~ .x %>% as.numeric %>% max(na.rm = TRUE))),
-      pa_per_capita_impact_countywide_min = dplyr::if_else(
-        is.na(pa_per_capita_impact_countywide_1), NA,
-        pa_per_capita_impact_countywide_1 %>%
-          purrr::map_dbl(~ .x %>% stringr::str_remove_all("\\(|\\)") %>% as.numeric %>% min(na.rm = TRUE))),
+      ## guard on length==0 or all-NA rather than is.na(.x): pa_per_capita_impact_countywide_1
+      ## is a list-column from str_extract_all(), where a no-match row is character(0) (not
+      ## NA -- is.na() on that list silently returns FALSE) and an NA *input* row is a
+      ## length-1 NA_character_ (not character(0)); either previously slipped through to
+      ## max()/min() on an effectively-empty vector, producing -Inf/Inf instead of NA
+      pa_per_capita_impact_countywide_max = pa_per_capita_impact_countywide_1 %>%
+        purrr::map_dbl(~ if (length(.x) == 0 || all(is.na(.x))) { NA_real_ } else { .x %>% as.numeric() %>% max(na.rm = TRUE) }),
+      pa_per_capita_impact_countywide_min = pa_per_capita_impact_countywide_1 %>%
+        purrr::map_dbl(~ if (length(.x) == 0 || all(is.na(.x))) { NA_real_ } else { .x %>% stringr::str_remove_all("\\(|\\)") %>% as.numeric() %>% min(na.rm = TRUE) }),
       event_date_determined = event_title %>% date_string_to_date,
       event_date_determined = dplyr::if_else(
         is.na(event_date_determined),
@@ -230,20 +252,81 @@ extract_pda_attributes = function(path) {
       dplyr::across(
         .cols = -c(path, disaster_number, event_title, event_type, event_date_determined,
                    event_native_flag, pa_per_capita_impact_countywide, pa_primary_impact, text),
-        .fns = ~ stringr::str_split(.x, " ") %>% purrr::map_chr(~ .[1]) %>% as.numeric),
-      id = dplyr::row_number()) %>%
-    dplyr::add_count(disaster_number, name = "disaster_number_count") %>%
-    dplyr::mutate(
-      ## a very limited number of cases have typos in the event number in their URLs
-      ## we correct by extracting these directly from the text of the PDA
-      disaster_number = dplyr::if_else(
-        disaster_number_count > 1,
-        text %>% extract_value("FEMA-", "-DR"),
-        disaster_number)) %>%
-    dplyr::select(-c(pa_per_capita_impact_countywide_1, id, disaster_number_count)) %>%
+        .fns = ~ stringr::str_split(.x, " ") %>% purrr::map_chr(~ .[1]) %>% as.numeric)) %>%
+    dplyr::select(-pa_per_capita_impact_countywide_1) %>%
     dplyr::select(disaster_number, dplyr::matches("^event"), dplyr::matches("^pa"), dplyr::everything())
 
   return(result2)
+}
+
+#' Correct disaster numbers shared by multiple, genuinely different PDA reports
+#'
+#' A handful of PDAs carry a typo'd (or, for FEMA's newest filename convention,
+#' absent) disaster number, which surfaces as two different reports sharing one
+#' `disaster_number`. The number printed in the report body (`FEMA-XXXX`) is
+#' authoritative, so for any `disaster_number` duplicated across reports we
+#' re-derive it from the text. A lenient `FEMA-XXXX` match is used -- rather than
+#' requiring the `-DR` suffix, as the per-file extraction does -- because the cases
+#' that slip through to become duplicates are exactly those where `-DR` is missing
+#' or mangled in the text. The correction is guarded to non-`NA`, already-duplicated
+#' numbers, so it only ever replaces a wrong number and never fills an `NA` (many
+#' denied requests never receive an official number, and their filename-derived
+#' value is our best guess). Duplication is undetectable per-file, so this must run
+#' on the full combined dataset.
+#'
+#' @param pda_df A dataframe of extracted PDA records (must contain `text` and
+#'   `disaster_number`).
+#' @return `pda_df` with corrected `disaster_number` values (coerced to character).
+#' @noRd
+correct_duplicate_disaster_numbers = function(pda_df) {
+  pda_df %>%
+    ## coerce so the if_else() below is type-stable regardless of how a cached CSV
+    ## parsed the column (readr may guess double; the extracted value is character)
+    dplyr::mutate(disaster_number = as.character(disaster_number)) %>%
+    dplyr::add_count(disaster_number, name = "disaster_number_count") %>%
+    dplyr::mutate(
+      disaster_number_from_text = stringr::str_extract(text, "FEMA-[0-9]{4}") %>%
+        stringr::str_remove("FEMA-"),
+      disaster_number = dplyr::if_else(
+        disaster_number_count > 1 &
+          !is.na(disaster_number) &
+          !is.na(disaster_number_from_text),
+        disaster_number_from_text,
+        disaster_number)) %>%
+    dplyr::select(-disaster_number_count, -disaster_number_from_text)
+}
+
+#' Warn about disaster numbers shared by multiple approved PDA reports
+#'
+#' A disaster should map to exactly one approved PDA. Any `disaster_number` shared
+#' by more than one approved report (after `correct_duplicate_disaster_numbers()`)
+#' is incorrect -- a typo the text-based recovery could not resolve, or a
+#' duplicated source file -- and is surfaced for manual review.
+#'
+#' @param pda_df A dataframe of extracted PDA records (must contain `event_type`
+#'   and `disaster_number`).
+#' @return `pda_df`, invisibly and unchanged; called for the side effect of a
+#'   `warning()` listing any offending disaster numbers.
+#' @noRd
+warn_approved_disaster_number_duplicates = function(pda_df) {
+  approved_duplicates = pda_df %>%
+    dplyr::filter(
+      stringr::str_detect(event_type, "approv"),
+      !is.na(disaster_number)) %>%
+    dplyr::add_count(disaster_number, name = "approved_count") %>%
+    dplyr::filter(approved_count > 1)
+
+  if (nrow(approved_duplicates) > 0) {
+    warning(
+      stringr::str_c(
+        dplyr::n_distinct(approved_duplicates$disaster_number),
+        " disaster number(s) map to more than one approved PDA report and are ",
+        "likely incorrect: ",
+        stringr::str_c(
+          sort(unique(approved_duplicates$disaster_number)), collapse = ", ")),
+      call. = FALSE) }
+
+  invisible(pda_df)
 }
 
 #' Get Data from Preliminary Damage Assessments Submitted to FEMA for Disaster Declarations
@@ -264,23 +347,49 @@ extract_pda_attributes = function(path) {
 #' @param use_cache Boolean. Read the existing dataset stored at `file_path`? If FALSE,
 #'   data will be generated anew. Else, if a file exists at `file_path`, this file will be returned.
 #'
-#' @return A dataframe of preliminary damage assessment reports. Key columns include:
+#' @return A dataframe of preliminary damage assessment reports. Columns include:
 #'   \describe{
+#'     \item{path}{The local file path to the source PDA PDF.}
 #'     \item{disaster_number}{FEMA disaster number.}
 #'     \item{event_type}{Type of decision: "approved", "denial", "appeal_approved", or "appeal_denial".}
 #'     \item{event_title}{Title/description of the disaster event.}
 #'     \item{event_date_determined}{Date the PDA determination was made.}
 #'     \item{event_native_flag}{1 if tribal request, 0 otherwise.}
+#'     \item{pa_requested}{1 if Public Assistance was requested, 0 otherwise.}
+#'     \item{pa_preemptive_declaration}{1 if the joint PDA requirement was waived due to the severity of the event, 0 otherwise.}
+#'     \item{pa_primary_impact}{The primary type of impact described for Public Assistance purposes.}
+#'     \item{pa_cost_estimate_total}{Estimated total Public Assistance cost.}
+#'     \item{pa_per_capita_impact_statewide}{Statewide (or territory/commonwealth) per capita impact amount.}
+#'     \item{pa_per_capita_impact_indicator_statewide}{Numeric ratio of the statewide per capita impact
+#'        to the applicable threshold -- a decimal ratio (e.g. 1.5, 1.89), not a "Met"/"Not Met"
+#'        categorical indicator despite the field's FEMA-assigned name.}
+#'     \item{pa_per_capita_impact_countywide}{Raw text of countywide per capita impact ratios (may list
+#'        multiple values across affected counties for a multi-county event).}
+#'     \item{pa_per_capita_impact_indicator_countywide}{Truncated text of the countywide per capita impact indicator.}
+#'     \item{pa_per_capita_impact_countywide_max}{Maximum countywide per capita impact ratio parsed
+#'        from `pa_per_capita_impact_countywide`.}
+#'     \item{pa_per_capita_impact_countywide_min}{Minimum countywide per capita impact ratio parsed
+#'        from `pa_per_capita_impact_countywide`.}
 #'     \item{ia_requested}{1 if Individual Assistance was requested, 0 otherwise.}
 #'     \item{ia_residences_impacted}{Total residences impacted.}
 #'     \item{ia_residences_destroyed}{Number of residences destroyed.}
 #'     \item{ia_residences_major_damage}{Number of residences with major damage.}
 #'     \item{ia_residences_minor_damage}{Number of residences with minor damage.}
+#'     \item{ia_residences_affected}{Number of residences affected (lowest damage category).}
+#'     \item{ia_residences_insured_total_percent}{Percentage of impacted residences with any insurance coverage.}
+#'     \item{ia_residences_insured_flood_percent}{Percentage of impacted residences with flood insurance coverage.}
+#'     \item{ia_households_poverty_percent}{Percentage of households in poverty (or low income,
+#'        depending on report vintage).}
+#'     \item{ia_households_owner_percent}{Percentage of households that are owner-occupied.}
+#'     \item{ia_population_other_government_assistance_percent}{Percentage of the population receiving
+#'        other government assistance (e.g. SSI, SNAP).}
+#'     \item{ia_pre_disaster_unemployment_percent}{Pre-disaster unemployment rate.}
+#'     \item{ia_65plus_percent}{Percentage of the population age 65 and older.}
+#'     \item{ia_18below_percent}{Percentage of the population age 18 and under.}
+#'     \item{ia_disability_percent}{Percentage of the population with a disability.}
+#'     \item{ia_ihp_cost_to_capacity_ratio}{Individuals and Households Program (IHP) Cost to Capacity (ICC) ratio.}
 #'     \item{ia_cost_estimate_total}{Estimated total Individual Assistance cost.}
-#'     \item{pa_requested}{1 if Public Assistance was requested, 0 otherwise.}
-#'     \item{pa_cost_estimate_total}{Estimated total Public Assistance cost.}
-#'     \item{pa_per_capita_impact_statewide}{Statewide per capita impact amount.}
-#'     \item{pa_per_capita_impact_indicator_statewide}{Met/Not Met indicator for statewide threshold.}
+#'     \item{text}{The cleaned text extracted from the PDA PDF used to derive the fields above.}
 #'   }
 #' @export
 #'
@@ -293,21 +402,52 @@ get_preliminary_damage_assessments = function(
     directory_path = file.path(get_box_path(), "hazards", "urban", "preliminary-damage-assessments"),
     use_cache = TRUE) {
 
-  suppressWarnings({
-    if (!file.exists(file_path) | use_cache == FALSE) {
-      if (!is.null(directory_path)) {
-        pda_df = list.files(directory_path, recursive = TRUE, full.names = TRUE) %>%
-          purrr::keep(~ stringr::str_detect(.x, "pdf$")) %>%
-          purrr::map_dfr(extract_pda_attributes)
+  if (!file.exists(file_path) | use_cache == FALSE) {
+    if (!is.null(directory_path)) {
+      file_paths = list.files(directory_path, recursive = TRUE, full.names = TRUE) %>%
+        purrr::keep(~ stringr::str_detect(.x, "pdf$"))
 
-        readr::write_csv(pda_df, file_path)
+      ## isolate per-file parsing failures (rather than letting one bad PDF abort the
+      ## entire regeneration) and surface a summary of any parsing warnings, rather than
+      ## blanket-suppressing them across the whole batch (which previously hid, among
+      ## other things, the -Inf/Inf sentinel bug fixed in extract_pda_attributes())
+      safe_extract = purrr::possibly(purrr::quietly(extract_pda_attributes), otherwise = NULL)
+      extraction_results = purrr::map(file_paths, safe_extract)
 
-        return(pda_df)
-      } } })
+      failed_files = file_paths[purrr::map_lgl(extraction_results, is.null)]
+      if (length(failed_files) > 0) {
+        message(stringr::str_c(
+          length(failed_files), "/", length(file_paths),
+          " files could not be parsed and were skipped: ",
+          stringr::str_c(basename(failed_files), collapse = ", "))) }
+
+      successful_results = extraction_results %>% purrr::compact()
+      n_with_warnings = successful_results %>% purrr::map_lgl(~ length(.x$warnings) > 0) %>% sum()
+      if (n_with_warnings > 0) {
+        message(stringr::str_c(
+          n_with_warnings, "/", length(file_paths),
+          " files produced a parsing warning (extraction still completed for these files).")) }
+
+      pda_df1 = successful_results %>% purrr::map_dfr(~ .x$result)
+
+      ## Correct disaster numbers duplicated across genuinely different reports (a
+      ## typo'd or missing number colliding two disasters into one), then flag any
+      ## approved-report collisions that could not be resolved from the text.
+      pda_df2 = pda_df1 %>% correct_duplicate_disaster_numbers()
+
+      warn_approved_disaster_number_duplicates(pda_df2)
+
+      readr::write_csv(pda_df2, file_path)
+
+      return(pda_df2)
+    } }
 
   if (use_cache == TRUE) {
     message("Reading cached preliminary damage assessment data from disk.")
-    pda_df = readr::read_csv(file_path)
+    ## self-heal caches written before the duplicate-correction logic existed, and
+    ## surface any approved-report collisions that remain
+    pda_df = readr::read_csv(file_path) %>% correct_duplicate_disaster_numbers()
+    warn_approved_disaster_number_duplicates(pda_df)
     return(pda_df)
   }
 
@@ -323,6 +463,7 @@ utils::globalVariables(c(
   "funding_lost_flag_cost_share", "funding_lost_flag_pci", "funding_lost_flag_pci_snowstorm",
   "funding_lost_flag_snowstorm", "date_match_string", "declaration_date_openfema",
   "disaster_number_count", "event_date_determined", "event_native_flag", "event_title",
+  "disaster_number", "disaster_number_from_text", "approved_count", "event_type", "text",
   "ia_cost_estimate_total", "ia_residences_insured_total_percent",
   "pa_per_capita_impact_countywide", "pa_per_capita_impact_countywide_1",
   "pa_per_capita_impact_indicator_countywide", "pa_per_capita_impact_indicator_statewide",
