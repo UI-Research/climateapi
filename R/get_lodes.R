@@ -107,6 +107,14 @@ rename_lodes_variables = function(.df) {
 #' @param state_part One of c("main", "aux"). Default is "main", which includes
 #'     only workers who reside inside the state where they work. "aux" returns
 #'     only workers who work in the specified state but live outside of that state.
+#' @param cache_directory Optional path to a directory used as a read-through cache
+#'     for the raw (pre-cleaning) LODES pull. If supplied, a cache file is named from
+#'     every parameter that determines its content (`lodes_type`, `jobs_type`,
+#'     `geography`, `state_part`, `states`, and the exact years requested), so a later
+#'     call with different `states`/`years` -- e.g. once a new LODES vintage year
+#'     becomes available -- always misses the cache and re-downloads, rather than
+#'     silently returning stale data. If `NULL` (the default), data are downloaded
+#'     fresh and not written to disk.
 #'
 #' @details
 #' The Longitudinal Employer-Household Dynamics (LEHD) data at the U.S. Census Bureau
@@ -163,7 +171,8 @@ get_lodes = function(
     states,
     years,
     geography = "tract",
-    state_part = "main") {
+    state_part = "main",
+    cache_directory = NULL) {
 
   if (geography == "bg") { geography = "block group"}
 
@@ -278,21 +287,58 @@ Returning for only those states that are available for all specified years.\n") 
     jobs_type_all = "JT01"
     jobs_type_federal = "JT05" }
 
-  ## supress messages/warnings else this is noisy
-  suppressWarnings({suppressMessages({
-    lodes_all_jobs = lehdr::grab_lodes(
+  ## builds a cache filename that fully encodes every parameter influencing the raw
+  ## pull's content (including the exact years requested for *this* segment, since
+  ## the federal-jobs pull below requests a different, narrower years vector than the
+  ## all-jobs pull) -- so a later request for different states/years (e.g. once a new
+  ## LODES vintage year becomes available) always misses the cache rather than
+  ## silently returning stale data
+  lodes_cache_path = function(years_requested, segment_label) {
+    if (is.null(cache_directory)) { return(NULL) }
+    geography_slug = stringr::str_replace_all(geography, " ", "-")
+    file.path(cache_directory, stringr::str_c(
+      stringr::str_c(
+        "lodes_raw", lodes_type, jobs_type, geography_slug, state_part, segment_label,
+        stringr::str_c("states-", stringr::str_c(sort(states), collapse = "-")),
+        stringr::str_c("years-", stringr::str_c(sort(years_requested), collapse = "-")),
+        sep = "_"),
+      ".parquet")) }
+
+  ## caches the raw lehdr::grab_lodes() pull -- before the GEOID renaming/column
+  ## dropping below, let alone the pivot/relabel steps further down -- so that if the
+  ## cleaning logic changes later, previously-cached raw data can still be reprocessed
+  ## with the updated logic instead of needing to be re-downloaded
+  fetch_lodes_raw = function(years_requested, job_type_code, segment_label) {
+    cache_path = lodes_cache_path(years_requested, segment_label)
+
+    if (!is.null(cache_path) && file.exists(cache_path)) {
+      message("Reading cached raw LODES data: ", basename(cache_path))
+      return(arrow::read_parquet(cache_path))
+    }
+
+    raw = suppressWarnings({suppressMessages({
+      lehdr::grab_lodes(
         state = states,
-        year = years,
-        job_type = jobs_type_all, ## all primary jobs, i.e., the highest-paying job per worker
+        year = years_requested,
+        job_type = job_type_code,
         agg_geo = geography,
         segment = "S000", ## total number of jobs for workers
         lodes_type = lodes_type,
         version = "LODES8",
-        state_part = state_part) %>% ## include out-of-state workers who work in the state of interest
-      dplyr::rename_with(
-        .cols = dplyr::everything(),
-        .fn = ~ stringr::str_replace_all(.x, geoid_rename)) %>%
-      dplyr::select(-dplyr::matches("create")) })})
+        state_part = state_part) })}) ## include out-of-state workers who work in the state of interest
+
+    if (!is.null(cache_path)) {
+      if (!dir.exists(cache_directory)) { dir.create(cache_directory, recursive = TRUE) }
+      arrow::write_parquet(raw, cache_path)
+      message("Cached raw LODES data: ", basename(cache_path)) }
+
+    raw }
+
+  lodes_all_jobs = fetch_lodes_raw(years, jobs_type_all, "alljobs") %>%
+    dplyr::rename_with(
+      .cols = dplyr::everything(),
+      .fn = ~ stringr::str_replace_all(.x, geoid_rename)) %>%
+    dplyr::select(-dplyr::matches("create"))
 
   if (years %>% min < 2010 & years %>% max > 2010) {
     warning(
@@ -320,20 +366,11 @@ as NA.\n") }
 
   } else {
 
-  suppressWarnings({suppressMessages({
-    lodes_federal_jobs = lehdr::grab_lodes(
-        state = states,
-        year = years[years > 2009],
-        job_type = jobs_type_federal, ## federal jobs
-        agg_geo = geography,
-        segment = "S000",
-        lodes_type = lodes_type,
-        version = "LODES8",
-      state_part = state_part) %>%
-      dplyr::rename_with(
-        .cols = dplyr::everything(),
-        .fn = ~ stringr::str_replace_all(.x, geoid_rename)) %>%
-      dplyr::select(-dplyr::matches("create")) })})
+  lodes_federal_jobs = fetch_lodes_raw(years[years > 2009], jobs_type_federal, "federaljobs") %>%
+    dplyr::rename_with(
+      .cols = dplyr::everything(),
+      .fn = ~ stringr::str_replace_all(.x, geoid_rename)) %>%
+    dplyr::select(-dplyr::matches("create"))
 
   if (lodes_type == "od")  { join_by = c("year", "w_GEOID", "h_GEOID") } 
   if (lodes_type == "rac") { join_by = c("year", "h_GEOID") } 

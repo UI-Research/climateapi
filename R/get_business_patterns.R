@@ -98,6 +98,13 @@ get_cbp_naics_metadata = function(year) {
 #' @param naics_codes A vector of NAICS codes to query. If NULL, the function will
 #'     query all available codes with the specified number of digits. If not NULL,
 #'     this argument overrides the `naics_code_digits` argument.
+#' @param cache_directory Optional path to a directory used as a read-through cache
+#'     for the raw (pre-cleaning) CBP pull. If supplied, a cache file is named from
+#'     every parameter that determines its content (`geo`, `year`, and whichever of
+#'     `naics_code_digits`/`naics_codes` was used to select codes), so a later call
+#'     for a different year or code selection always misses the cache and re-queries
+#'     the API, rather than silently returning stale data. If `NULL` (the default),
+#'     data are queried fresh and not written to disk.
 #'
 #' @details
 #' County Business Patterns (CBP) is an annual series that provides subnational
@@ -172,7 +179,9 @@ get_cbp_naics_metadata = function(year) {
 #'  naics_codes = c(221111, 221112))
 #' }
 
-get_business_patterns = function(year = 2023, geo = "county", naics_code_digits = 2, naics_codes = NULL) {
+get_business_patterns = function(
+    year = 2023, geo = "county", naics_code_digits = 2, naics_codes = NULL,
+    cache_directory = NULL) {
   if (year < 2008) { stop("Year must be 2008 or later. Earlier years use different data structures not currently supported.") }
   if (year > 2023) { stop("Most recent year for data is 2023.") }
   if (! geo %in% c("county", "zipcode")) { stop("`geo` must be one of 'county' or 'zipcode'.") }
@@ -269,7 +278,31 @@ get_business_patterns = function(year = 2023, geo = "county", naics_code_digits 
                 error = function(e2) tibble::tibble()) })
         } else { tibble::tibble() } }) }
 
-  cbp = purrr::map_dfr(naics_codes_to_query, fetch_cbp_data) %>%
+  ## caches the raw Census API pull -- before the renaming/mutating/recoding below --
+  ## so that if the cleaning logic changes later, previously-cached raw data can still
+  ## be reprocessed with the updated logic instead of needing to be re-queried
+  cbp_cache_path = if (is.null(cache_directory)) {
+    NULL
+  } else {
+    naics_key = if (!is.null(naics_codes)) {
+      stringr::str_c("codes-", stringr::str_c(sort(unique(as.character(naics_codes))), collapse = "-"))
+    } else {
+      stringr::str_c("digits-", naics_code_digits) }
+    file.path(cache_directory, stringr::str_c(
+      "business_patterns_raw_", geo, "_", year, "_", naics_key, ".parquet")) }
+
+  if (!is.null(cbp_cache_path) && file.exists(cbp_cache_path)) {
+    message("Reading cached raw CBP data: ", basename(cbp_cache_path))
+    cbp_raw = arrow::read_parquet(cbp_cache_path)
+  } else {
+    cbp_raw = purrr::map_dfr(naics_codes_to_query, fetch_cbp_data)
+    if (!is.null(cbp_cache_path)) {
+      if (!dir.exists(cache_directory)) { dir.create(cache_directory, recursive = TRUE) }
+      arrow::write_parquet(cbp_raw, cbp_cache_path)
+      message("Cached raw CBP data: ", basename(cbp_cache_path)) }
+  }
+
+  cbp = cbp_raw %>%
     # Rename the NAICS label column to a standard name
     dplyr::rename_with(~ "NAICS_LABEL", dplyr::matches("NAICS[0-9]+_(LABEL|TTL)")) %>%
     dplyr::mutate(

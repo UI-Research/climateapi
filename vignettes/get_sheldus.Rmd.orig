@@ -55,10 +55,6 @@ sheldus <- get_sheldus()
 
 Each row represents a unique combination of county, year, month, and hazard type. Only county-month-hazard combinations with recorded events are included.
 
-```{r structure}
-glimpse(sheldus)
-```
-
 Key variables include:
 
 - `unique_id`: Unique identifier for each observation

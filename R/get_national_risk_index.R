@@ -200,7 +200,7 @@ get_national_risk_index = function(
       value_building = buildvalue,
       value_agriculture = agrivalue,
       area_sq_mi = area) |>
-    dplyr::select(-c(nri_id, stateabbrv, statefips, countytype, countyfips, stcofips, tract, tractfips)) |>
+    dplyr::select(-dplyr::any_of(c("nri_id", "stateabbrv", "statefips", "countytype", "countyfips", "stcofips", "tract", "tractfips"))) |>
     dplyr::rename_with(
       .cols = dplyr::everything(),
       .fn = ~ stringr::str_replace_all(.x, c(

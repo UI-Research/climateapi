@@ -7,13 +7,13 @@ testthat::test_that("states clearly errors when invalid state abbreviation is su
 
 testthat::test_that("warning generated when missing state and year combination is supplied", {
   testthat::expect_warning(
-    {get_lodes(lodes_type = "od", years = 2022, states = c("AK", "MN"))},
+    {get_lodes(lodes_type = "od", years = 2022, states = c("AK", "MN"), cache_directory = get_test_cache_directory())},
     "state-year combinations")
   ## pre-2015 years also trigger the federal-jobs reporting warning; capture both
   ## so neither escapes the expectation
   testthat::expect_warning(
     testthat::expect_warning(
-      {get_lodes(lodes_type = "wac", years = 2009, states = c("DC", "MN"))},
+      {get_lodes(lodes_type = "wac", years = 2009, states = c("DC", "MN"), cache_directory = get_test_cache_directory())},
       "state-year combinations"),
     "federal jobs")
 })
@@ -26,7 +26,9 @@ testthat::test_that("error generated when invalid lodes_type is supplied", {
 testthat::test_that("variables have no negative values", {
   ## states = "all" includes state-years missing from LODES (e.g., AK/MI in 2022),
   ## which triggers an expected availability warning
-  test <- suppressWarnings(get_lodes(lodes_type = "wac", years = 2022, states = "all"))
+  test <- suppressWarnings(get_lodes(
+    lodes_type = "wac", years = 2022, states = "all",
+    cache_directory = get_test_cache_directory()))
 
   # Select numeric columns
   num_df <- dplyr::select(test, where(is.numeric))

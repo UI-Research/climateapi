@@ -10,7 +10,8 @@ get_lodes(
   states,
   years,
   geography = "tract",
-  state_part = "main"
+  state_part = "main",
+  cache_directory = NULL
 )
 }
 \arguments{
@@ -34,6 +35,15 @@ Default is "tract".}
 \item{state_part}{One of c("main", "aux"). Default is "main", which includes
 only workers who reside inside the state where they work. "aux" returns
 only workers who work in the specified state but live outside of that state.}
+
+\item{cache_directory}{Optional path to a directory used as a read-through cache
+for the raw (pre-cleaning) LODES pull. If supplied, a cache file is named from
+every parameter that determines its content (\code{lodes_type}, \code{jobs_type},
+\code{geography}, \code{state_part}, \code{states}, and the exact years requested), so a later
+call with different \code{states}/\code{years} -- e.g. once a new LODES vintage year
+becomes available -- always misses the cache and re-downloads, rather than
+silently returning stale data. If \code{NULL} (the default), data are downloaded
+fresh and not written to disk.}
 }
 \value{
 A tibble with one record per geography per year per job type. Attributes
