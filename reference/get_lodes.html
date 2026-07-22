@@ -52,7 +52,8 @@
 <span>  <span class="va">states</span>,</span>
 <span>  <span class="va">years</span>,</span>
 <span>  geography <span class="op">=</span> <span class="st">"tract"</span>,</span>
-<span>  state_part <span class="op">=</span> <span class="st">"main"</span></span>
+<span>  state_part <span class="op">=</span> <span class="st">"main"</span>,</span>
+<span>  cache_directory <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -91,6 +92,17 @@ Default is "tract".</p></dd>
 <dd><p>One of c("main", "aux"). Default is "main", which includes
 only workers who reside inside the state where they work. "aux" returns
 only workers who work in the specified state but live outside of that state.</p></dd>
+
+
+<dt id="arg-cache-directory">cache_directory<a class="anchor" aria-label="anchor" href="#arg-cache-directory"></a></dt>
+<dd><p>Optional path to a directory used as a read-through cache
+for the raw (pre-cleaning) LODES pull. If supplied, a cache file is named from
+every parameter that determines its content (<code>lodes_type</code>, <code>jobs_type</code>,
+<code>geography</code>, <code>state_part</code>, <code>states</code>, and the exact years requested), so a later
+call with different <code>states</code>/<code>years</code> – e.g. once a new LODES vintage year
+becomes available – always misses the cache and re-downloads, rather than
+silently returning stale data. If <code>NULL</code> (the default), data are downloaded
+fresh and not written to disk.</p></dd>
 
 </dl></div>
     <div class="section level2">

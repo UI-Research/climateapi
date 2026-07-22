@@ -9,7 +9,8 @@ get_business_patterns(
   year = 2023,
   geo = "county",
   naics_code_digits = 2,
-  naics_codes = NULL
+  naics_codes = NULL,
+  cache_directory = NULL
 )
 ```
 
@@ -45,6 +46,17 @@ get_business_patterns(
   A vector of NAICS codes to query. If NULL, the function will query all
   available codes with the specified number of digits. If not NULL, this
   argument overrides the `naics_code_digits` argument.
+
+- cache_directory:
+
+  Optional path to a directory used as a read-through cache for the raw
+  (pre-cleaning) CBP pull. If supplied, a cache file is named from every
+  parameter that determines its content (`geo`, `year`, and whichever of
+  `naics_code_digits`/`naics_codes` was used to select codes), so a
+  later call for a different year or code selection always misses the
+  cache and re-queries the API, rather than silently returning stale
+  data. If `NULL` (the default), data are queried fresh and not written
+  to disk.
 
 ## Value
 

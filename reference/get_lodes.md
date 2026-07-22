@@ -11,7 +11,8 @@ get_lodes(
   states,
   years,
   geography = "tract",
-  state_part = "main"
+  state_part = "main",
+  cache_directory = NULL
 )
 ```
 
@@ -50,6 +51,18 @@ get_lodes(
   workers who reside inside the state where they work. "aux" returns
   only workers who work in the specified state but live outside of that
   state.
+
+- cache_directory:
+
+  Optional path to a directory used as a read-through cache for the raw
+  (pre-cleaning) LODES pull. If supplied, a cache file is named from
+  every parameter that determines its content (`lodes_type`,
+  `jobs_type`, `geography`, `state_part`, `states`, and the exact years
+  requested), so a later call with different `states`/`years` – e.g.
+  once a new LODES vintage year becomes available – always misses the
+  cache and re-downloads, rather than silently returning stale data. If
+  `NULL` (the default), data are downloaded fresh and not written to
+  disk.
 
 ## Value
 

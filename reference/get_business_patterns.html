@@ -50,7 +50,8 @@
 <span>  year <span class="op">=</span> <span class="fl">2023</span>,</span>
 <span>  geo <span class="op">=</span> <span class="st">"county"</span>,</span>
 <span>  naics_code_digits <span class="op">=</span> <span class="fl">2</span>,</span>
-<span>  naics_codes <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  naics_codes <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  cache_directory <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -84,6 +85,16 @@ argument as NULL and supply the desired codes as the argument to <code>naics_cod
 <dd><p>A vector of NAICS codes to query. If NULL, the function will
 query all available codes with the specified number of digits. If not NULL,
 this argument overrides the <code>naics_code_digits</code> argument.</p></dd>
+
+
+<dt id="arg-cache-directory">cache_directory<a class="anchor" aria-label="anchor" href="#arg-cache-directory"></a></dt>
+<dd><p>Optional path to a directory used as a read-through cache
+for the raw (pre-cleaning) CBP pull. If supplied, a cache file is named from
+every parameter that determines its content (<code>geo</code>, <code>year</code>, and whichever of
+<code>naics_code_digits</code>/<code>naics_codes</code> was used to select codes), so a later call
+for a different year or code selection always misses the cache and re-queries
+the API, rather than silently returning stale data. If <code>NULL</code> (the default),
+data are queried fresh and not written to disk.</p></dd>
 
 </dl></div>
     <div class="section level2">
