@@ -1,3 +1,27 @@
+# Tests for get_wildfire_burn_zones.R
+#
+# Data is loaded once at the top of the test file to avoid repeated I/O.
+# The error-path test and the message test call the function directly, since
+# they need to exercise the error/messaging behavior itself.
+
+wfbz_data_path <- file.path(
+  get_box_path(), "hazards", "other-sources", "wildfire-burn-zones",
+  "wfbz_disasters_2000-2025.geojson")
+
+skip_if_no_wfbz_data <- function() {
+  skip_if_not(file.exists(wfbz_data_path), message = "Wildfire burn zones data file not available")
+}
+
+wfbz_test_data <- NULL
+
+local({
+  if (file.exists(wfbz_data_path)) {
+    wfbz_test_data <<- tryCatch(
+      suppressMessages(get_wildfire_burn_zones()),
+      error = function(e) NULL)
+  }
+})
+
 test_that("get_wildfire_burn_zones errors when file path does not exist", {
   expect_error(
     get_wildfire_burn_zones(file_path = "/nonexistent/path/to/file.geojson"),
@@ -6,14 +30,10 @@ test_that("get_wildfire_burn_zones errors when file path does not exist", {
 })
 
 test_that("get_wildfire_burn_zones returns expected structure", {
-  skip_if_not(
-    file.exists(file.path(
-      get_box_path(), "hazards", "other-sources", "wildfire-burn-zones",
-      "wfbz_disasters_2000-2025.geojson")),
-    message = "Wildfire burn zones data file not available"
-  )
+  skip_if_no_wfbz_data()
+  skip_if(is.null(wfbz_test_data), "Wildfire burn zones test data not loaded")
 
-  result <- suppressMessages(get_wildfire_burn_zones())
+  result <- wfbz_test_data
 
   expect_s3_class(result, "sf")
 
@@ -31,41 +51,29 @@ test_that("get_wildfire_burn_zones returns expected structure", {
 })
 
 test_that("get_wildfire_burn_zones has correct CRS", {
-  skip_if_not(
-    file.exists(file.path(
-      get_box_path(), "hazards", "other-sources", "wildfire-burn-zones",
-      "wfbz_disasters_2000-2025.geojson")),
-    message = "Wildfire burn zones data file not available"
-  )
+  skip_if_no_wfbz_data()
+  skip_if(is.null(wfbz_test_data), "Wildfire burn zones test data not loaded")
 
-  result <- suppressMessages(get_wildfire_burn_zones())
+  result <- wfbz_test_data
 
   expect_equal(sf::st_crs(result)$epsg, 5070)
 })
 
 test_that("get_wildfire_burn_zones has one county per row", {
-  skip_if_not(
-    file.exists(file.path(
-      get_box_path(), "hazards", "other-sources", "wildfire-burn-zones",
-      "wfbz_disasters_2000-2025.geojson")),
-    message = "Wildfire burn zones data file not available"
-  )
+  skip_if_no_wfbz_data()
+  skip_if(is.null(wfbz_test_data), "Wildfire burn zones test data not loaded")
 
-  result <- suppressMessages(get_wildfire_burn_zones())
+  result <- wfbz_test_data
 
   expect_false(any(stringr::str_detect(result$county_fips, "\\|"), na.rm = TRUE))
   expect_false(any(stringr::str_detect(result$county_name, "\\|"), na.rm = TRUE))
 })
 
 test_that("get_wildfire_burn_zones wildfire-level columns repeat identically across a multi-county wildfire's rows", {
-  skip_if_not(
-    file.exists(file.path(
-      get_box_path(), "hazards", "other-sources", "wildfire-burn-zones",
-      "wfbz_disasters_2000-2025.geojson")),
-    message = "Wildfire burn zones data file not available"
-  )
+  skip_if_no_wfbz_data()
+  skip_if(is.null(wfbz_test_data), "Wildfire burn zones test data not loaded")
 
-  result <- suppressMessages(get_wildfire_burn_zones())
+  result <- wfbz_test_data
 
   multi_county_ids <- result$wildfire_id[duplicated(result$wildfire_id)] |> unique()
   # this test is only meaningful if the live data actually contains multi-county wildfires
@@ -102,14 +110,10 @@ test_that("get_wildfire_burn_zones wildfire-level columns repeat identically acr
 })
 
 test_that("get_wildfire_burn_zones has valid FIPS codes", {
-  skip_if_not(
-    file.exists(file.path(
-      get_box_path(), "hazards", "other-sources", "wildfire-burn-zones",
-      "wfbz_disasters_2000-2025.geojson")),
-    message = "Wildfire burn zones data file not available"
-  )
+  skip_if_no_wfbz_data()
+  skip_if(is.null(wfbz_test_data), "Wildfire burn zones test data not loaded")
 
-  result <- suppressMessages(get_wildfire_burn_zones())
+  result <- wfbz_test_data
 
   non_na_state_fips <- result$state_fips[!is.na(result$state_fips)]
   non_na_county_fips <- result$county_fips[!is.na(result$county_fips)]
@@ -120,14 +124,10 @@ test_that("get_wildfire_burn_zones has valid FIPS codes", {
 })
 
 test_that("get_wildfire_burn_zones county names use Census's canonical casing", {
-  skip_if_not(
-    file.exists(file.path(
-      get_box_path(), "hazards", "other-sources", "wildfire-burn-zones",
-      "wfbz_disasters_2000-2025.geojson")),
-    message = "Wildfire burn zones data file not available"
-  )
+  skip_if_no_wfbz_data()
+  skip_if(is.null(wfbz_test_data), "Wildfire burn zones test data not loaded")
 
-  result <- suppressMessages(get_wildfire_burn_zones())
+  result <- wfbz_test_data
 
   non_na_names <- result$county_name[!is.na(result$county_name)]
   # county_name is joined from tidycensus::fips_codes (Census's own canonical casing) by
@@ -139,12 +139,7 @@ test_that("get_wildfire_burn_zones county names use Census's canonical casing", 
 })
 
 test_that("get_wildfire_burn_zones emits expected message", {
-  skip_if_not(
-    file.exists(file.path(
-      get_box_path(), "hazards", "other-sources", "wildfire-burn-zones",
-      "wfbz_disasters_2000-2025.geojson")),
-    message = "Wildfire burn zones data file not available"
-  )
+  skip_if_no_wfbz_data()
 
   expect_message(
     get_wildfire_burn_zones(),
@@ -158,28 +153,20 @@ test_that("get_wildfire_burn_zones emits expected message", {
 })
 
 test_that("get_wildfire_burn_zones year column is integer", {
-  skip_if_not(
-    file.exists(file.path(
-      get_box_path(), "hazards", "other-sources", "wildfire-burn-zones",
-      "wfbz_disasters_2000-2025.geojson")),
-    message = "Wildfire burn zones data file not available"
-  )
+  skip_if_no_wfbz_data()
+  skip_if(is.null(wfbz_test_data), "Wildfire burn zones test data not loaded")
 
-  result <- suppressMessages(get_wildfire_burn_zones())
+  result <- wfbz_test_data
 
   expect_type(result$year, "integer")
   expect_true(all(result$year >= 2000 & result$year <= 2025, na.rm = TRUE))
 })
 
 test_that("get_wildfire_burn_zones date columns are Date class", {
-  skip_if_not(
-    file.exists(file.path(
-      get_box_path(), "hazards", "other-sources", "wildfire-burn-zones",
-      "wfbz_disasters_2000-2025.geojson")),
-    message = "Wildfire burn zones data file not available"
-  )
+  skip_if_no_wfbz_data()
+  skip_if(is.null(wfbz_test_data), "Wildfire burn zones test data not loaded")
 
-  result <- suppressMessages(get_wildfire_burn_zones())
+  result <- wfbz_test_data
 
   expect_s3_class(result$date_start, "Date")
   expect_s3_class(result$date_containment, "Date")

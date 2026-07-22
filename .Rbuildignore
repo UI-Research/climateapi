@@ -11,6 +11,7 @@
 ^pkgdown$
 ^\.github$
 ^temporary-scripts$
+^data$
 \.Rmd\.orig$
 ^vignettes/precompile\.R$
 ^reviews$

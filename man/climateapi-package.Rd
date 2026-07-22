@@ -20,7 +20,6 @@ Useful links:
 
 Authors:
 \itemize{
-  \item Will Curran-Groome \email{wcurrangroome@urban.org} (\href{https://orcid.org/0000-0001-6432-7561}{ORCID})
   \item Kameron Lloyd
 }
 

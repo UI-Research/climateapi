@@ -12,11 +12,13 @@ testthat::test_that("year errors clearly when year is outside accceptable range"
 
 testthat::test_that("geo errors clearly when geo is not 'county' or 'zipcode'; does not error when in 'county' or 'zipcode' ", {
   testthat::expect_error({get_business_patterns(geo = "tract", naics_code_digits = 3)})
-  testthat::expect_no_error({get_business_patterns(geo = "county", naics_code_digits = 2)})
+  testthat::expect_no_error({get_business_patterns(
+    geo = "county", naics_code_digits = 2, cache_directory = get_test_cache_directory())})
 })
 
 testthat::test_that("employees has no negative values", {
-  test <- get_business_patterns(geo = "zipcode", naics_code_digits = 2)
+  test <- get_business_patterns(
+    geo = "zipcode", naics_code_digits = 2, cache_directory = get_test_cache_directory())
 
   # Ensure the column exists
   testthat::expect_true(

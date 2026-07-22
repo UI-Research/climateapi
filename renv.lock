@@ -5853,12 +5853,12 @@
       "Author": "Will Curran-Groome [aut, cre]",
       "Maintainer": "Will Curran-Groome <wcurrangroome@gmail.com>",
       "RemoteType": "github",
+      "Remotes": "UI-Research/crosswalk, UrbanInstitute/urbnthemes",
       "RemoteUsername": "UI-Research",
       "RemoteRepo": "urbnindicators",
       "RemoteRef": "main",
       "RemoteSha": "e47d4b2a749b504e27f80997526bdbe3e0c7aef9",
-      "RemoteHost": "api.github.com",
-      "Remotes": "UI-Research/crosswalk, UrbanInstitute/urbnthemes"
+      "RemoteHost": "api.github.com"
     },
     "urbnthemes": {
       "Package": "urbnthemes",
