@@ -17,6 +17,72 @@ get_system_username = function() {
   username
 }
 
+#' @title Register a HUD API key
+#'
+#' @description Stores a HUD API key so that [get_chas_housing_affordability()] can authenticate against
+#'   HUD's CHAS API. By default the key is set for the current R session only; set
+#'   `install = TRUE` to also persist it to your user-level `.Renviron` so that it is
+#'   available in future sessions.
+#'
+#' @param key A HUD API key: a single, non-empty character string. Obtain one by
+#'   registering at <https://www.huduser.gov/portal/dataset/fmr-api.html>.
+#' @param install Logical. If `TRUE`, write the key to your user-level `.Renviron`
+#'   (replacing any existing `HUD_API_KEY` entry) so it persists across sessions.
+#'   Defaults to `FALSE`, which sets the key for the current session only.
+#'
+#' @return Invisibly returns `key`. Called for the side effect of setting the
+#'   `HUD_API_KEY` environment variable (and, when `install = TRUE`, writing it to
+#'   `.Renviron`).
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' register_hud_api_key("your-hud-api-key")
+#' register_hud_api_key("your-hud-api-key", install = TRUE)
+#' }
+register_hud_api_key = function(key, install = FALSE) {
+
+  if (!is.character(key) || length(key) != 1 || is.na(key) || key == "") {
+    stop("`key` must be a single, non-empty character string.") }
+
+  Sys.setenv(HUD_API_KEY = key)
+
+  if (isTRUE(install)) {
+    renviron_path = path.expand(file.path("~", ".Renviron"))
+    existing_lines = if (file.exists(renviron_path)) readLines(renviron_path) else character(0)
+    ## drop any prior HUD_API_KEY entry so repeated calls don't accumulate duplicates
+    retained_lines = existing_lines %>%
+      purrr::discard(~ stringr::str_detect(.x, "^HUD_API_KEY="))
+    writeLines(c(retained_lines, stringr::str_c("HUD_API_KEY=", key)), renviron_path)
+    readRenviron(renviron_path)
+    message("HUD API key written to ", renviron_path, ".") }
+
+  invisible(key)
+}
+
+#' @title Retrieve the stored HUD API key
+#'
+#' @description Returns the HUD API key stored in the `HUD_API_KEY` environment
+#'   variable, erroring with setup guidance if none is found. Used internally by
+#'   [get_chas_housing_affordability()]'s API path.
+#'
+#' @return The HUD API key, as a character string.
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' get_hud_api_key()
+#' }
+get_hud_api_key = function() {
+  key = Sys.getenv("HUD_API_KEY")
+  if (key == "") {
+    stop(stringr::str_c(
+      "No HUD API key found. Register for one at ",
+      "https://www.huduser.gov/portal/dataset/fmr-api.html and store it with ",
+      "`register_hud_api_key()`.")) }
+  key
+}
+
 #' Query an OpenFEMA v2 dataset filtered to a single quoted field value
 #'
 #' Bypasses a bug in `rfema:::gen_api_query()`, which coerces all-digit filter values

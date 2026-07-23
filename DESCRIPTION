@@ -28,6 +28,8 @@ Imports:
     dplyr,
     esri2sf (>= 0.1.1),
     ellmer,
+    exactextractr,
+    FedData (>= 4.4.0),
     glue,
     httr,
     httr2,
@@ -55,6 +57,7 @@ Imports:
     utils,
     uuid
 Remotes:
+    ropensci/FedData,
     ropensci/rfema,
     yonghah/esri2sf,
     UI-Research/crosswalk,
@@ -68,7 +71,8 @@ Suggests:
     scales,
     testthat (>= 3.0.0),
     tidyverse,
-    urbnthemes
+    urbnthemes,
+    withr
 Config/testthat/edition: 3
 VignetteBuilder: knitr
 Config/roxygen2/version: 8.0.0

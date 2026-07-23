@@ -9,6 +9,7 @@ reference:
   - get_wildfire_burn_zones
 - title: Disaster-related damages and funding
   contents: 
+  - get_national_risk_index
   - get_ihp_registrations
   - get_nfip_policies
   - get_nfip_claims
@@ -20,13 +21,15 @@ reference:
   - get_disaster_dollar_database
   - get_sheldus
   - get_preliminary_damage_assessments
-- title: Disaster-impacted domains
+- title: Disaster-relevant domains
   contents: 
   - get_lodes
   - get_business_patterns
   - get_structures
   - get_government_finances
-  - get_national_risk_index
+  - get_chas_housing_affordability
+  - get_nlcd_land_cover
+  - get_nlcd_land_cover_colors
 - title: Land use
   contents:
   - estimate_zoning_envelope
@@ -47,4 +50,6 @@ reference:
   - inflation_adjust
   - cache_it
   - get_naics_codes
+  - get_hud_api_key
+  - register_hud_api_key
 
