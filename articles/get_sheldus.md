@@ -36,6 +36,10 @@ set_urbn_defaults(style = "print")
 sheldus <- get_sheldus()
 ```
 
+    #> Error in `dplyr::select()` at 
+    #> ! Can't select columns that don't exist.
+    #> ✖ Column `allocation_factor` doesn't exist.
+
 ## Data structure
 
 Each row represents a unique combination of county, year, month, and
@@ -64,10 +68,8 @@ sheldus |>
   distinct(hazard) |>
   arrange(hazard) |>
   pull(hazard)
-#>  [1] "Avalanche"                  "Coastal"                    "Drought"                    "Earthquake"                 "Flooding"                  
-#>  [6] "Fog"                        "Hail"                       "Heat"                       "Hurricane/Tropical Storm"   "Landslide"                 
-#> [11] "Lightning"                  "Severe Storm/Thunder Storm" "Tornado"                    "Tsunami/Seiche"             "Volcano"                   
-#> [16] "Wildfire"                   "Wind"                       "Winter Weather"
+#> Error:
+#> ! object 'sheldus' not found
 ```
 
 ### Annual property damage by hazard type
@@ -78,6 +80,8 @@ df1 <- sheldus |>
   summarize(
     .by = c(year, hazard),
     total_damage = sum(damage_property, na.rm = TRUE) / 1e9)
+#> Error:
+#> ! object 'sheldus' not found
 
 top_hazards <- df1 |>
   summarize(
@@ -85,6 +89,9 @@ top_hazards <- df1 |>
     total = sum(total_damage, na.rm = TRUE)) |>
   slice_max(total, n = 5) |>
   pull(hazard)
+#> Error in `summarize()` at 
+#> ! Can't select columns that don't exist.
+#> ✖ Column `hazard` doesn't exist.
 
 df1 |>
   filter(hazard %in% top_hazards) |>
@@ -98,11 +105,11 @@ df1 |>
     x = "",
     y = "Property damage (billions)",
     fill = "Hazard type")
+#> Error in `filter()`:
+#> ℹ In argument: `hazard %in% top_hazards`.
+#> Caused by error in `h()`:
+#> ! error in evaluating the argument 'x' in selecting a method for function '%in%': object 'hazard' not found
 ```
-
-![plot of chunk annual-damage](figure/get_sheldus-annual-damage-1.png)
-
-plot of chunk annual-damage
 
 ### Geographic distribution of flood damage
 
@@ -113,6 +120,8 @@ flood_damage <- sheldus |>
   summarize(
     .by = GEOID,
     total_damage = sum(damage_property, na.rm = TRUE))
+#> Error:
+#> ! object 'sheldus' not found
 
 counties_sf <- tigris::counties(cb = TRUE, year = 2022, progress_bar = FALSE) |>
   st_transform(5070) |>
@@ -130,6 +139,8 @@ flood_map <- counties_sf |>
     damage_category = factor(
       damage_category,
       levels = c("No recorded damage", "< $1M", "$1M - $10M", "$10M - $100M", "> $100M")))
+#> Error:
+#> ! object 'flood_damage' not found
 
 ggplot(flood_map) +
   geom_sf(aes(fill = damage_category), color = NA) +
@@ -144,12 +155,9 @@ ggplot(flood_map) +
     subtitle = "Total property damage from flooding events, 2023 dollars",
     fill = "Total damage") +
   theme_urbn_map()
+#> Error:
+#> ! object 'flood_map' not found
 ```
-
-![plot of chunk
-flood-damage-map](figure/get_sheldus-flood-damage-map-1.png)
-
-plot of chunk flood-damage-map
 
 ### Seasonal patterns in hazard events
 
@@ -160,6 +168,8 @@ seasonal <- sheldus |>
   summarize(
     .by = c(month, hazard),
     total_events = sum(records, na.rm = TRUE))
+#> Error:
+#> ! object 'sheldus' not found
 
 ggplot(seasonal, aes(x = month, y = total_events, color = hazard)) +
   geom_line(linewidth = 1) +
@@ -173,12 +183,9 @@ ggplot(seasonal, aes(x = month, y = total_events, color = hazard)) +
     x = "",
     y = "Number of events",
     color = "Hazard type")
+#> Error:
+#> ! object 'seasonal' not found
 ```
-
-![plot of chunk
-seasonal-patterns](figure/get_sheldus-seasonal-patterns-1.png)
-
-plot of chunk seasonal-patterns
 
 ### Counties with highest fatalities
 
@@ -189,6 +196,8 @@ high_fatality_counties <- sheldus |>
     .by = c(GEOID, state_name, county_name),
     total_fatalities = sum(fatalities, na.rm = TRUE)) |>
   slice_max(total_fatalities, n = 15)
+#> Error:
+#> ! object 'sheldus' not found
 
 high_fatality_counties |>
   mutate(
@@ -200,11 +209,9 @@ high_fatality_counties |>
     title = "Counties with Highest Hazard-Related Fatalities",
     x = "Total fatalities",
     y = "")
+#> Error:
+#> ! object 'high_fatality_counties' not found
 ```
-
-![plot of chunk fatalities](figure/get_sheldus-fatalities-1.png)
-
-plot of chunk fatalities
 
 ### Linking with census data
 

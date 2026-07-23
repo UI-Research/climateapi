@@ -311,6 +311,8 @@ lodes %>%
 
 ## Disaster-related damages and funding
 
+- [`get_national_risk_index()`](https://ui-research.github.io/climateapi/reference/get_national_risk_index.md)
+  : Get FEMA National Risk Index scores
 - [`get_ihp_registrations()`](https://ui-research.github.io/climateapi/reference/get_ihp_registrations.md)
   : Get Individuals and Households Program (IHP) registrations
 - [`get_nfip_policies()`](https://ui-research.github.io/climateapi/reference/get_nfip_policies.md)
@@ -335,7 +337,7 @@ lodes %>%
   : Get Data from Preliminary Damage Assessments Submitted to FEMA for
   Disaster Declarations
 
-## Disaster-impacted domains
+## Disaster-relevant domains
 
 - [`get_lodes()`](https://ui-research.github.io/climateapi/reference/get_lodes.md)
   : Get LEHD Origin-Destination Employment Statistics (LODES) data
@@ -345,8 +347,12 @@ lodes %>%
   : Estimate counts of hazard-impacted structures by structure type
 - [`get_government_finances()`](https://ui-research.github.io/climateapi/reference/get_government_finances.md)
   : Get county government revenues and expenditures
-- [`get_national_risk_index()`](https://ui-research.github.io/climateapi/reference/get_national_risk_index.md)
-  : Get FEMA National Risk Index scores
+- [`get_chas_housing_affordability()`](https://ui-research.github.io/climateapi/reference/get_chas_housing_affordability.md)
+  : Obtain housing affordability data from HUD's CHAS
+- [`get_nlcd_land_cover()`](https://ui-research.github.io/climateapi/reference/get_nlcd_land_cover.md)
+  : Get vectorized Annual NLCD land cover data
+- [`get_nlcd_land_cover_colors()`](https://ui-research.github.io/climateapi/reference/get_nlcd_land_cover_colors.md)
+  : Get NLCD land cover classes and their standard colors
 
 ## Land use
 
@@ -387,6 +393,10 @@ lodes %>%
   : Cache an object to a parquet file; optionally read from disk
 - [`get_naics_codes()`](https://ui-research.github.io/climateapi/reference/get_naics_codes.md)
   : Get NAICS Codes for County Business Patterns
+- [`get_hud_api_key()`](https://ui-research.github.io/climateapi/reference/get_hud_api_key.md)
+  : Retrieve the stored HUD API key
+- [`register_hud_api_key()`](https://ui-research.github.io/climateapi/reference/register_hud_api_key.md)
+  : Register a HUD API key
 
 # Articles
 
@@ -400,5 +410,7 @@ lodes %>%
   Data](https://ui-research.github.io/climateapi/articles/get_structures.md):
 - [Wildfire Burn
   Zones](https://ui-research.github.io/climateapi/articles/get_wildfire_burn_zones.md):
+- [Annual NLCD Land
+  Cover](https://ui-research.github.io/climateapi/articles/land_cover.md):
 - [Preliminary Damage Assessments and Declaration
   Outcomes](https://ui-research.github.io/climateapi/articles/preliminary_damage_assessments.md):

@@ -19,4 +19,7 @@ Useful links:
 
 Authors:
 
+- Will Curran-Groome <wcurrangroome@urban.org>
+  ([ORCID](https://orcid.org/0000-0001-6432-7561))
+
 - Kameron Lloyd

@@ -37,6 +37,7 @@
     <li><a class="dropdown-item" href="../articles/get_sheldus.html">SHELDUS Hazard Data</a></li>
     <li><a class="dropdown-item" href="../articles/get_structures.html">USA Structures Data</a></li>
     <li><a class="dropdown-item" href="../articles/get_wildfire_burn_zones.html">Wildfire Burn Zones</a></li>
+    <li><a class="dropdown-item" href="../articles/land_cover.html">Annual NLCD Land Cover</a></li>
     <li><a class="dropdown-item" href="../articles/preliminary_damage_assessments.html">Preliminary Damage Assessments and Declaration Outcomes</a></li>
   </ul>
 </li>
@@ -141,11 +142,8 @@ source of the damage estimates, plays to the strengths of each.</p>
 <span><span class="co">## year (i.e. 2025 onward). Denials use a one-year-wider window so that a request</span></span>
 <span><span class="co">## filed late in the prior year but denied inside the analysis window can still</span></span>
 <span><span class="co">## be matched to its PDA.</span></span>
-<span></span>
-<span><span class="co">## NOTE: PDAs included in this corpus only date back to 2008 (there are a few from</span></span>
-<span><span class="co">## 2007, but this is not comprehensive for that year)</span></span>
-<span><span class="va">pda_min_year</span> <span class="op">=</span> <span class="fl">2008</span></span>
-<span><span class="va">denial_min_year</span> <span class="op">=</span> <span class="fl">1997</span></span></code></pre></div>
+<span><span class="va">pda_min_year</span> <span class="op">=</span> <span class="fl">2024</span></span>
+<span><span class="va">denial_min_year</span> <span class="op">=</span> <span class="fl">2023</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="loading-and-preparing-the-pdas">Loading and preparing the PDAs<a class="anchor" aria-label="anchor" href="#loading-and-preparing-the-pdas"></a>
@@ -169,13 +167,18 @@ determination date, the per-capita impact figures, and the cost
 estimates.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pdas_recent</span> <span class="op">=</span> <span class="va">pdas</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span></span>
-<span>    <span class="fu"><a href="https://lubridate.tidyverse.org/reference/year.html" class="external-link">year</a></span><span class="op">(</span><span class="va">event_date_determined</span><span class="op">)</span> <span class="op">&lt;</span> <span class="fl">2026</span>,</span>
-<span>    <span class="fu"><a href="https://lubridate.tidyverse.org/reference/year.html" class="external-link">year</a></span><span class="op">(</span><span class="va">event_date_determined</span><span class="op">)</span> <span class="op">&gt;</span> <span class="va">pda_min_year</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="fu"><a href="https://lubridate.tidyverse.org/reference/year.html" class="external-link">year</a></span><span class="op">(</span><span class="va">event_date_determined</span><span class="op">)</span> <span class="op">&gt;</span> <span class="va">pda_min_year</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span></span>
 <span>    <span class="co">## the OpenFEMA disaster number is numeric; the PDA value is character and</span></span>
 <span>    <span class="co">## may be NA -- coerce both sides to character so the join keys are comparable</span></span>
 <span>    disaster_number <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span><span class="va">disaster_number</span><span class="op">)</span>,</span>
+<span>    <span class="co">## a handful of PDA URLs carry a typo'd disaster number. The getter now</span></span>
+<span>    <span class="co">## re-derives most of these from the PDF text; these two remaining cases are</span></span>
+<span>    <span class="co">## corrected here as a belt-and-suspenders measure.</span></span>
+<span>    disaster_number <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/case-and-replace-when.html" class="external-link">case_when</a></span><span class="op">(</span></span>
+<span>      <span class="va">disaster_number</span> <span class="op">==</span> <span class="st">"4653"</span> <span class="op">~</span> <span class="st">"4853"</span>,</span>
+<span>      <span class="va">disaster_number</span> <span class="op">==</span> <span class="st">"4657"</span> <span class="op">~</span> <span class="st">"4857"</span>,</span>
+<span>      <span class="cn">TRUE</span> <span class="op">~</span> <span class="va">disaster_number</span><span class="op">)</span>,</span>
 <span>    state <span class="op">=</span> <span class="fu"><a href="https://stringr.tidyverse.org/reference/str_extract.html" class="external-link">str_extract</a></span><span class="op">(</span><span class="va">text</span>, <span class="va">states_match</span><span class="op">)</span>,</span>
 <span>    pda_title <span class="op">=</span> <span class="va">event_title</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>      <span class="fu"><a href="https://stringr.tidyverse.org/reference/str_remove.html" class="external-link">str_remove</a></span><span class="op">(</span><span class="st">"Preliminary Damage Assessment Report"</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
@@ -188,8 +191,11 @@ estimates.</p>
 <span>      <span class="fu"><a href="https://stringr.tidyverse.org/reference/str_detect.html" class="external-link">str_detect</a></span><span class="op">(</span><span class="va">event_type</span>, <span class="st">"denial"</span><span class="op">)</span> <span class="op">~</span> <span class="st">"Denied"</span>,</span>
 <span>      <span class="fu"><a href="https://stringr.tidyverse.org/reference/str_detect.html" class="external-link">str_detect</a></span><span class="op">(</span><span class="va">event_type</span>, <span class="st">"approv"</span><span class="op">)</span> <span class="op">~</span> <span class="st">"Approved"</span><span class="op">)</span>,</span>
 <span>    <span class="co">## a total damage estimate; 0 when neither program reported a cost</span></span>
-<span>    cost_estimate_ia_pa_total <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/colSums.html" class="external-link">rowSums</a></span><span class="op">(</span></span>
+<span>    cost_estimate_ia_pa_total <span class="op">=</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/rowSums.html" class="external-link">rowSums</a></span><span class="op">(</span></span>
 <span>      <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="va">pa_cost_estimate_total</span>, <span class="va">ia_cost_estimate_total</span><span class="op">)</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>  <span class="co">## drop PDAs whose state could not be recovered from the text -- they cannot be</span></span>
+<span>  <span class="co">## joined to the FEMA records by state</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">state</span><span class="op">)</span>, <span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">decision</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span></span>
 <span>    <span class="va">disaster_number</span>, <span class="va">decision</span>, <span class="va">state</span>, <span class="va">event_date_determined</span>, <span class="va">pda_title</span>,</span>
 <span>    <span class="va">pa_per_capita_impact_statewide</span>, <span class="va">pa_per_capita_impact_indicator_statewide</span>,</span>
@@ -214,9 +220,7 @@ state abbreviation to a full name to match the PDA state field.</p>
 <span>  <span class="fu">janitor</span><span class="fu">::</span><span class="fu"><a href="https://sfirke.github.io/janitor/reference/clean_names.html" class="external-link">clean_names</a></span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">declarations</span> <span class="op">=</span> <span class="va">declarations_raw</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span></span>
-<span>    <span class="fu"><a href="https://lubridate.tidyverse.org/reference/year.html" class="external-link">year</a></span><span class="op">(</span><span class="va">declaration_date</span><span class="op">)</span> <span class="op">&lt;</span> <span class="fl">2026</span>,</span>
-<span>    <span class="fu"><a href="https://lubridate.tidyverse.org/reference/year.html" class="external-link">year</a></span><span class="op">(</span><span class="va">declaration_date</span><span class="op">)</span> <span class="op">&gt;</span> <span class="va">pda_min_year</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="fu"><a href="https://lubridate.tidyverse.org/reference/year.html" class="external-link">year</a></span><span class="op">(</span><span class="va">declaration_date</span><span class="op">)</span> <span class="op">&gt;</span> <span class="va">pda_min_year</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">distinct</a></span><span class="op">(</span><span class="va">fema_declaration_string</span>, .keep_all <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/transmute.html" class="external-link">transmute</a></span><span class="op">(</span></span>
 <span>    disaster_number <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span><span class="va">disaster_number</span><span class="op">)</span>,</span>
@@ -241,10 +245,6 @@ Crucially, a denied request never receives an official disaster number,
 so it cannot be joined on that key — a fact that shapes the join
 strategy below. The state name is already spelled out, and the request
 date stands in for the declaration date.</p>
-<p>We also retain two fields that exist purely to validate the join
-afterwards: <code>request_status_date</code>, FEMA’s official turndown
-date, and <code>requested_incident_types</code>, the hazard type of the
-request.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">denials_raw</span> <span class="op">=</span> <span class="fu">rfema</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/rfema/man/open_fema.html" class="external-link">open_fema</a></span><span class="op">(</span></span>
 <span>  data_set <span class="op">=</span> <span class="st">"DeclarationDenials"</span>,</span>
@@ -253,23 +253,15 @@ request.</p>
 <span></span>
 <span><span class="va">denials</span> <span class="op">=</span> <span class="va">denials_raw</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span></span>
-<span>    <span class="co">## every current record is a Turndown, but FEMA could add other statuses</span></span>
-<span>    <span class="co">## (e.g., declared-after-appeal); only true turndowns belong in this join</span></span>
 <span>    <span class="va">current_request_status</span> <span class="op">==</span> <span class="st">"Turndown"</span>,</span>
 <span>    <span class="va">declaration_request_type</span> <span class="op">==</span> <span class="st">"Major Disaster"</span>,</span>
-<span>    <span class="fu"><a href="https://lubridate.tidyverse.org/reference/year.html" class="external-link">year</a></span><span class="op">(</span><span class="va">declaration_request_date</span><span class="op">)</span> <span class="op">&lt;</span> <span class="fl">2026</span>,</span>
 <span>    <span class="fu"><a href="https://lubridate.tidyverse.org/reference/year.html" class="external-link">year</a></span><span class="op">(</span><span class="va">declaration_request_date</span><span class="op">)</span> <span class="op">&gt;</span> <span class="va">denial_min_year</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/transmute.html" class="external-link">transmute</a></span><span class="op">(</span></span>
 <span>    <span class="va">state</span>,</span>
 <span>    declaration_date <span class="op">=</span> <span class="fu">lubridate</span><span class="fu">::</span><span class="fu"><a href="https://lubridate.tidyverse.org/reference/as_date.html" class="external-link">as_date</a></span><span class="op">(</span><span class="va">declaration_request_date</span><span class="op">)</span>,</span>
 <span>    declaration_title <span class="op">=</span> <span class="va">incident_name</span>,</span>
-<span>    decision <span class="op">=</span> <span class="st">"Denied"</span>,</span>
-<span>    <span class="co">## retained for post-join QC only</span></span>
-<span>    request_status_date <span class="op">=</span> <span class="fu">lubridate</span><span class="fu">::</span><span class="fu"><a href="https://lubridate.tidyverse.org/reference/as_date.html" class="external-link">as_date</a></span><span class="op">(</span><span class="va">request_status_date</span><span class="op">)</span>,</span>
-<span>    <span class="va">requested_incident_types</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/across.html" class="external-link">across</a></span><span class="op">(</span><span class="fu"><a href="https://tidyselect.r-lib.org/reference/where.html" class="external-link">where</a></span><span class="op">(</span><span class="va">is.character</span><span class="op">)</span>, <span class="va">str_trim</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="co">## there is one </span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">distinct</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<span>    decision <span class="op">=</span> <span class="st">"Denied"</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/across.html" class="external-link">across</a></span><span class="op">(</span><span class="fu"><a href="https://tidyselect.r-lib.org/reference/where.html" class="external-link">where</a></span><span class="op">(</span><span class="va">is.character</span><span class="op">)</span>, <span class="va">str_trim</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
@@ -278,26 +270,18 @@ request.</p>
 <p>The two outcomes require two different joins, because approvals and
 denials carry different keys.</p>
 <p><strong>Approved requests</strong> share a disaster number with the
-declarations record, so we join on <code>disaster_number</code>
-directly.</p>
+declarations record, so we join on <code>disaster_number</code>,
+<code>state</code>, and <code>decision</code> directly. The join is
+many-to-one: a disaster may have more than one PDA (an original plus an
+appeal), but only one authoritative declaration.</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">joined_approved</span> <span class="op">=</span> <span class="va">pdas_recent</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">decision</span> <span class="op">==</span> <span class="st">"Approved"</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="op">-</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">decision</span>, <span class="va">state</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu">tidylog</span><span class="fu">::</span><span class="fu">left_join</span><span class="op">(</span></span>
-<span>    <span class="va">declarations</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="fu"><a href="https://lubridate.tidyverse.org/reference/year.html" class="external-link">year</a></span><span class="op">(</span><span class="va">declaration_date</span><span class="op">)</span> <span class="op">&lt;</span> <span class="fl">2026</span><span class="op">)</span>,</span>
-<span>    by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"disaster_number"</span><span class="op">)</span>,</span>
-<span>    relationship <span class="op">=</span> <span class="st">"one-to-one"</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>matched <span class="op">=</span> <span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">declaration_date</span><span class="op">)</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">unjoined</span> <span class="op">=</span> </span>
-<span>  <span class="fu">tidylog</span><span class="fu">::</span><span class="fu">anti_join</span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate-joins.html" class="external-link">left_join</a></span><span class="op">(</span></span>
 <span>    <span class="va">declarations</span>,</span>
-<span>    <span class="va">pdas_recent</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">decision</span> <span class="op">==</span> <span class="st">"Approved"</span><span class="op">)</span>,</span>
-<span>    by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"disaster_number"</span><span class="op">)</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co">## limited, seemingly random non-joins</span></span>
-<span><span class="va">unjoined</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="fu"><a href="https://lubridate.tidyverse.org/reference/year.html" class="external-link">year</a></span><span class="op">(</span><span class="va">declaration_date</span><span class="op">)</span>, sort <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+<span>    by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"disaster_number"</span>, <span class="st">"state"</span>, <span class="st">"decision"</span><span class="op">)</span>,</span>
+<span>    relationship <span class="op">=</span> <span class="st">"many-to-one"</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>matched <span class="op">=</span> <span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">declaration_date</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p><strong>Denied requests</strong> have no disaster number to join on.
 Instead we match each denied PDA to the turndown in the same state whose
 request date falls closest to (and at or before) the PDA’s determination
@@ -306,87 +290,35 @@ left so that the inequality reads in the natural direction
 (<code>event_date_determined &gt;= declaration_date</code>).</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">joined_denied</span> <span class="op">=</span> <span class="va">pdas_recent</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span></span>
-<span>    <span class="va">decision</span> <span class="op">==</span> <span class="st">"Denied"</span>,</span>
-<span>    <span class="co">## we filter out already-matched disasters to avoid double-counting rejected -&gt; appealed-and-approved disasters</span></span>
-<span>    <span class="op">!</span><span class="va">disaster_number</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="va">joined_approved</span><span class="op">$</span><span class="va">disaster_number</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu">tidylog</span><span class="fu">::</span><span class="fu">left_join</span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">decision</span> <span class="op">==</span> <span class="st">"Denied"</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate-joins.html" class="external-link">left_join</a></span><span class="op">(</span></span>
 <span>    <span class="va">denials</span>,</span>
 <span>    by <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/join_by.html" class="external-link">join_by</a></span><span class="op">(</span></span>
 <span>      <span class="va">state</span>,</span>
 <span>      <span class="va">decision</span>,</span>
 <span>      <span class="fu">closest</span><span class="op">(</span><span class="va">event_date_determined</span> <span class="op">&gt;=</span> <span class="va">declaration_date</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>    <span class="co">## each PDA should claim exactly one turndown; two same-state turndowns</span></span>
-<span>    <span class="co">## sharing a request date would tie in closest() and error here rather than</span></span>
-<span>    <span class="co">## silently duplicating rows</span></span>
-<span>    relationship <span class="op">=</span> <span class="st">"many-to-many"</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>    relationship <span class="op">=</span> <span class="st">"many-to-one"</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>matched <span class="op">=</span> <span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">declaration_date</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://stringr.tidyverse.org/reference/str_detect.html" class="external-link">str_detect</a></span><span class="op">(</span><span class="va">pda_title</span>, <span class="st">"Derailment"</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="co">## this is a cheap shortcut to deal with a duplicated WV decision</span></span>
-<span>  <span class="co">## it appears that there are two, almost-identical requests -- need to </span></span>
-<span>  <span class="co">## figure out whether they're actually duplicates or not</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">distinct</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<div class="section level3">
-<h3 id="validating-the-denied-matches">Validating the denied matches<a class="anchor" aria-label="anchor" href="#validating-the-denied-matches"></a>
-</h3>
-<p>The closest-date heuristic can silently pick the wrong turndown when
-a state has two requests pending at once, or when the true turndown has
-not yet appeared in <code>DeclarationDenials</code> (decisions are
-published on a lag). Two checks catch both failure modes:</p>
-<ol style="list-style-type: decimal">
-<li>
-<strong>Turndown-date agreement.</strong> For a denial PDA,
-<code>event_date_determined</code> is the turndown date printed in the
-report (“Denied on …”), so it must equal the matched turndown’s official
-<code>request_status_date</code> exactly. A disagreement means the
-heuristic matched the wrong request.</li>
-<li>
-<strong>No shared turndowns.</strong> Two PDAs matched to the same
-turndown means at least one of them belongs to a different (likely
-not-yet-published) turndown, so both are flagged for review.</li>
-</ol>
-<p>A match that fails either check is worse than no match, so failing
-rows are downgraded to unmatched and surfaced with a warning. The
-<code>requested_incident_types</code> and title columns printed above
-provide a final manual check that the matched hazards agree (e.g., a
-“Flooding” PDA should not match a “Fire” turndown).</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">joined_denied</span> <span class="op">=</span> <span class="va">joined_denied</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">add_count</a></span><span class="op">(</span><span class="va">state</span>, <span class="va">declaration_date</span>, <span class="va">declaration_title</span>, name <span class="op">=</span> <span class="st">"pdas_per_turndown"</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span></span>
-<span>    qc_suspect <span class="op">=</span> <span class="va">matched</span> <span class="op">&amp;</span></span>
-<span>      <span class="op">(</span><span class="fu"><a href="https://tidyr.tidyverse.org/reference/replace_na.html" class="external-link">replace_na</a></span><span class="op">(</span><span class="va">request_status_date</span> <span class="op">!=</span> <span class="va">event_date_determined</span>, <span class="cn">TRUE</span><span class="op">)</span> <span class="op">|</span></span>
-<span>         <span class="va">pdas_per_turndown</span> <span class="op">&gt;</span> <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">qc_suspect_denied</span> <span class="op">=</span> <span class="va">joined_denied</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">qc_suspect</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span></span>
-<span>    <span class="va">state</span>, <span class="va">pda_title</span>, <span class="va">declaration_title</span>, <span class="va">requested_incident_types</span>,</span>
-<span>    <span class="va">event_date_determined</span>, <span class="va">declaration_date</span>, <span class="va">request_status_date</span>,</span>
-<span>    <span class="va">pdas_per_turndown</span><span class="op">)</span></span>
-<span></span>
-<span><span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">qc_suspect_denied</span><span class="op">)</span> <span class="op">&gt;</span> <span class="fl">0</span><span class="op">)</span> <span class="op">{</span></span>
-<span>  <span class="kw"><a href="https://rdrr.io/r/base/warning.html" class="external-link">warning</a></span><span class="op">(</span></span>
-<span>    <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">qc_suspect_denied</span><span class="op">)</span>,</span>
-<span>    <span class="st">" denied PDA(s) matched a turndown that fails QC; treating as unmatched."</span><span class="op">)</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">qc_suspect_denied</span><span class="op">)</span></span>
-<span><span class="op">}</span></span>
-<span></span>
-<span><span class="va">joined_denied</span> <span class="op">=</span> <span class="va">joined_denied</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>matched <span class="op">=</span> <span class="va">matched</span> <span class="op">&amp;</span> <span class="op">!</span><span class="va">qc_suspect</span><span class="op">)</span></span></code></pre></div>
-</div>
+<span>  <span class="co">## one turndown in this window is a train-derailment request: not a natural</span></span>
+<span>  <span class="co">## hazard and not a substantive PDA, so we exclude it from the comparison</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">declaration_title</span><span class="op">)</span> <span class="op">|</span> <span class="op">!</span><span class="fu"><a href="https://stringr.tidyverse.org/reference/str_detect.html" class="external-link">str_detect</a></span><span class="op">(</span><span class="va">declaration_title</span>, <span class="fu"><a href="https://stringr.tidyverse.org/reference/modifiers.html" class="external-link">regex</a></span><span class="op">(</span><span class="st">"train"</span>, ignore_case <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <div class="section level3">
 <h3 id="did-the-join-succeed">Did the join succeed?<a class="anchor" aria-label="anchor" href="#did-the-join-succeed"></a>
 </h3>
 <p>Before analyzing the joined data, we confirm that the PDAs actually
 matched an authoritative FEMA record. A low match rate would mean our
 outcome labels are unreliable.</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pda_outcomes</span> <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/bind_rows.html" class="external-link">bind_rows</a></span><span class="op">(</span><span class="va">joined_approved</span>, <span class="va">joined_denied</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">pda_outcomes</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">decision</span>, <span class="va">matched</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://tidyr.tidyverse.org/reference/pivot_wider.html" class="external-link">pivot_wider</a></span><span class="op">(</span>names_from <span class="op">=</span> <span class="va">matched</span>, values_from <span class="op">=</span> <span class="va">n</span>, names_prefix <span class="op">=</span> <span class="st">"matched_"</span>, values_fill <span class="op">=</span> <span class="fl">0</span><span class="op">)</span></span></code></pre></div>
+<span>  <span class="fu"><a href="https://tidyr.tidyverse.org/reference/pivot_wider.html" class="external-link">pivot_wider</a></span><span class="op">(</span>names_from <span class="op">=</span> <span class="va">matched</span>, values_from <span class="op">=</span> <span class="va">n</span>, names_prefix <span class="op">=</span> <span class="st">"matched_"</span>, values_fill <span class="op">=</span> <span class="fl">0</span><span class="op">)</span></span>
+<span><span class="co">#&gt; # A tibble: 2 × 2</span></span>
+<span><span class="co">#&gt;   decision matched_TRUE</span></span>
+<span><span class="co">#&gt;   &lt;chr&gt;           &lt;int&gt;</span></span>
+<span><span class="co">#&gt; 1 Approved           41</span></span>
+<span><span class="co">#&gt; 2 Denied             13</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
@@ -397,14 +329,14 @@ per-capita damage against a statutory per-capita <em>indicator</em> (a
 dollar threshold that is updated annually). We express each PDA as the
 ratio of the two: a value above 1.0 means the estimated damage exceeded
 the threshold.</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pda_outcomes</span> <span class="op">=</span> <span class="va">pda_outcomes</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span></span>
 <span>    pa_threshold_ratio <span class="op">=</span></span>
 <span>      <span class="va">pa_per_capita_impact_statewide</span> <span class="op">/</span> <span class="va">pa_per_capita_impact_indicator_statewide</span><span class="op">)</span></span></code></pre></div>
 <p>If the threshold drove the decision, approved requests would sit
 above the line and denials below it.</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pda_outcomes</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">pa_threshold_ratio</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">decision</span>, y <span class="op">=</span> <span class="va">pa_threshold_ratio</span>, color <span class="op">=</span> <span class="va">decision</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
@@ -417,13 +349,16 @@ above the line and denials below it.</p>
 <span>    x <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>    y <span class="op">=</span> <span class="st">"Per-capita impact ÷ threshold"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>legend.position <span class="op">=</span> <span class="st">"none"</span><span class="op">)</span></span></code></pre></div>
+<div class="float">
+<img src="figure/preliminary_damage_assessments-ratio-boxplot-1.png" alt="plot of chunk ratio-boxplot"><div class="figcaption">plot of chunk ratio-boxplot</div>
+</div>
 <p>The relationship is imperfect, which is the point: the per-capita
 indicator is one input among several (insurance coverage, localized
 impacts, prior-year disaster burden), so some sub-threshold requests are
 approved and some above-threshold requests are denied. Plotting the
 ratio against the total cost estimate shows how the two dimensions
 interact.</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pda_outcomes</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">pa_threshold_ratio</span><span class="op">)</span>, <span class="va">cost_estimate_ia_pa_total</span> <span class="op">&gt;</span> <span class="fl">0</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span></span>
@@ -440,6 +375,9 @@ interact.</p>
 <span>    x <span class="op">=</span> <span class="st">"Per-capita impact ÷ threshold"</span>,</span>
 <span>    y <span class="op">=</span> <span class="st">"Total estimated cost"</span>,</span>
 <span>    color <span class="op">=</span> <span class="st">"Decision"</span><span class="op">)</span></span></code></pre></div>
+<div class="float">
+<img src="figure/preliminary_damage_assessments-ratio-cost-scatter-1.png" alt="plot of chunk ratio-cost-scatter"><div class="figcaption">plot of chunk ratio-cost-scatter</div>
+</div>
 </div>
 <div class="section level2">
 <h2 id="caveats">Caveats<a class="anchor" aria-label="anchor" href="#caveats"></a>
@@ -454,11 +392,8 @@ join.</li>
 <li>
 <strong>Denied requests are matched by date, not by key.</strong>
 Because turndowns lack a disaster number, the denied join relies on a
-closest-date heuristic within a state. Every match is validated against
-FEMA’s official turndown date (<code>request_status_date</code>), and
-matches that fail validation — or that share a turndown with another PDA
-— are downgraded to unmatched, but the hazard-type comparison remains a
-manual check.</li>
+closest-date heuristic within a state. Two denials close together in
+time in the same state could be matched imperfectly.</li>
 <li>
 <strong><code>disaster_number</code> reliability.</strong> For
 FEMA’s newest filename convention (<code>FY25…</code>,

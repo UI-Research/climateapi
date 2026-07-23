@@ -37,6 +37,7 @@
     <li><a class="dropdown-item" href="../articles/get_sheldus.html">SHELDUS Hazard Data</a></li>
     <li><a class="dropdown-item" href="../articles/get_structures.html">USA Structures Data</a></li>
     <li><a class="dropdown-item" href="../articles/get_wildfire_burn_zones.html">Wildfire Burn Zones</a></li>
+    <li><a class="dropdown-item" href="../articles/land_cover.html">Annual NLCD Land Cover</a></li>
     <li><a class="dropdown-item" href="../articles/preliminary_damage_assessments.html">Preliminary Damage Assessments and Declaration Outcomes</a></li>
   </ul>
 </li>
@@ -168,6 +169,9 @@ county.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">sheldus_df</span> <span class="op">=</span> <span class="fu"><a href="../reference/get_sheldus.html">get_sheldus</a></span><span class="op">(</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>   <span class="fu"><a href="https://dplyr.tidyverse.org/reference/summarise.html" class="external-link">summarize</a></span><span class="op">(</span>.by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">GEOID</span>, <span class="va">year</span><span class="op">)</span>, damage_property_millions <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">damage_property</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span> <span class="op">/</span> <span class="fl">1000000</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Error in `dplyr::select()` at </span></span>
+<span><span class="co">#&gt; ! Can't select columns that don't exist.</span></span>
+<span><span class="co">#&gt; ✖ Column `allocation_factor` doesn't exist.</span></span>
 <span></span>
 <span><span class="va">sheldus_df</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> </span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">GEOID</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="va">affected_county_fips</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
@@ -175,10 +179,9 @@ county.</p>
 <span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_path.html" class="external-link">geom_line</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
 <span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">geom_point</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
 <span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_continuous.html" class="external-link">scale_y_continuous</a></span><span class="op">(</span>labels <span class="op">=</span> <span class="fu">scales</span><span class="fu">::</span><span class="fu"><a href="https://scales.r-lib.org/reference/dollar_format.html" class="external-link">dollar_format</a></span><span class="op">(</span>suffix <span class="op">=</span> <span class="st">"M"</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
-<span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>x <span class="op">=</span> <span class="st">"Year"</span>, y <span class="op">=</span> <span class="st">"Property damage (millions)"</span><span class="op">)</span></span></code></pre></div>
-<div class="float">
-<img src="figure/economic_recovery_factsheet-unnamed-chunk-4-1.png" alt="plot of chunk unnamed-chunk-4"><div class="figcaption">plot of chunk unnamed-chunk-4</div>
-</div>
+<span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>x <span class="op">=</span> <span class="st">"Year"</span>, y <span class="op">=</span> <span class="st">"Property damage (millions)"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Error:</span></span>
+<span><span class="co">#&gt; ! object 'sheldus_df' not found</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="industry-composition-over-time">Industry Composition over Time<a class="anchor" aria-label="anchor" href="#industry-composition-over-time"></a>
@@ -283,10 +286,12 @@ disaster-related economic shocks.</p>
 <span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">geom_point</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
 <span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_abline.html" class="external-link">geom_vline</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">finances_prior_disaster_years</span>, color <span class="op">=</span> <span class="st">"grey"</span>, linetype <span class="op">=</span> <span class="st">"dashed"</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>xintercept <span class="op">=</span> <span class="va">year_declared</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span> </span>
 <span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_continuous.html" class="external-link">scale_y_continuous</a></span><span class="op">(</span>labels <span class="op">=</span> <span class="fu">scales</span><span class="fu">::</span><span class="fu"><a href="https://scales.r-lib.org/reference/dollar_format.html" class="external-link">dollar_format</a></span><span class="op">(</span>suffix <span class="op">=</span> <span class="st">"M"</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
-<span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>x <span class="op">=</span> <span class="st">"Year"</span>, y <span class="op">=</span> <span class="st">"USD (Millions)"</span><span class="op">)</span> </span></code></pre></div>
-<div class="float">
-<img src="figure/economic_recovery_factsheet-baseline-fiscal-1.png" alt="plot of chunk baseline-fiscal"><div class="figcaption">plot of chunk baseline-fiscal</div>
-</div>
+<span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>x <span class="op">=</span> <span class="st">"Year"</span>, y <span class="op">=</span> <span class="st">"USD (Millions)"</span><span class="op">)</span> </span>
+<span><span class="co">#&gt; Error:</span></span>
+<span><span class="co">#&gt; ! '</span></span>
+<span><span class="co">#&gt;   </span></span>
+<span><span class="co">#&gt;   </span></span>
+<span><span class="co">#&gt;   does not exist.</span></span></code></pre></div>
 <hr>
 </div>
 </div>
@@ -324,7 +329,9 @@ matching.</p>
 <code class="sourceCode R"><span><span class="va">sheldus_reference_year</span> <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/if_else.html" class="external-link">if_else</a></span><span class="op">(</span><span class="va">reference_year</span> <span class="op">&lt;</span> <span class="fl">2023</span>, <span class="va">reference_year</span>, <span class="fl">2023</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">sheldus_matching</span> <span class="op">=</span> <span class="va">sheldus_df</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">year</span> <span class="op">==</span> <span class="va">sheldus_reference_year</span><span class="op">)</span></span></code></pre></div>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">year</span> <span class="op">==</span> <span class="va">sheldus_reference_year</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Error:</span></span>
+<span><span class="co">#&gt; ! object 'sheldus_df' not found</span></span></code></pre></div>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Industry employment shares from County Business Patterns</span></span>
 <span><span class="co"># Use 2-digit NAICS codes for broad sector shares</span></span>
@@ -385,7 +392,9 @@ matching.</p>
 <span>  <span class="co"># Replace NAs with 0 for disaster counts (counties with no disasters)</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/across.html" class="external-link">across</a></span><span class="op">(</span><span class="fu"><a href="https://tidyselect.r-lib.org/reference/starts_with.html" class="external-link">ends_with</a></span><span class="op">(</span><span class="st">"_prior_5yr"</span><span class="op">)</span>, <span class="op">~</span> <span class="fu"><a href="https://tidyr.tidyverse.org/reference/replace_na.html" class="external-link">replace_na</a></span><span class="op">(</span><span class="va">.x</span>, <span class="fl">0</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="co"># Drop counties with missing core variables</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">total_population_universe</span><span class="op">)</span>, <span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">total_employees</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">total_population_universe</span><span class="op">)</span>, <span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">total_employees</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Error:</span></span>
+<span><span class="co">#&gt; ! object 'sheldus_matching' not found</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="select-comparison-counties">Select Comparison Counties<a class="anchor" aria-label="anchor" href="#select-comparison-counties"></a>
@@ -403,6 +412,8 @@ matching.</p>
 <span><span class="co"># Get affected county's characteristics</span></span>
 <span><span class="va">affected_county_chars</span> <span class="op">&lt;-</span> <span class="va">matching_data</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">GEOID</span> <span class="op">==</span> <span class="va">affected_county_fips</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Error:</span></span>
+<span><span class="co">#&gt; ! object 'matching_data' not found</span></span>
 <span></span>
 <span><span class="co"># Join matching data</span></span>
 <span><span class="va">comparison_candidates</span> <span class="op">&lt;-</span> <span class="va">comparison_pool</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
@@ -412,7 +423,9 @@ matching.</p>
 <span>    <span class="va">total_population_universe</span> <span class="op">&lt;</span> <span class="va">affected_county_chars</span><span class="op">$</span><span class="va">total_population_universe</span> <span class="op">*</span> <span class="fl">1.25</span>,</span>
 <span>    <span class="va">median_household_income_universe_allraces</span> <span class="op">&gt;</span> <span class="va">affected_county_chars</span><span class="op">$</span><span class="va">median_household_income_universe_allraces</span> <span class="op">*</span> <span class="fl">.75</span>,</span>
 <span>    <span class="va">median_household_income_universe_allraces</span> <span class="op">&lt;</span> <span class="va">affected_county_chars</span><span class="op">$</span><span class="va">median_household_income_universe_allraces</span> <span class="op">*</span> <span class="fl">1.25</span>,</span>
-<span>    <span class="va">GEOID</span> <span class="op">!=</span> <span class="va">affected_county_fips</span><span class="op">)</span>  <span class="co"># Exclude affected county</span></span></code></pre></div>
+<span>    <span class="va">GEOID</span> <span class="op">!=</span> <span class="va">affected_county_fips</span><span class="op">)</span>  <span class="co"># Exclude affected county</span></span>
+<span><span class="co">#&gt; Error:</span></span>
+<span><span class="co">#&gt; ! object 'matching_data' not found</span></span></code></pre></div>
 <div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Calculate Mahalanobis distance to affected county</span></span>
 <span></span>
@@ -430,14 +443,22 @@ matching.</p>
 <span><span class="va">matrix_candidates</span> <span class="op">&lt;-</span> <span class="va">comparison_candidates</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="fu"><a href="https://tidyselect.r-lib.org/reference/all_of.html" class="external-link">all_of</a></span><span class="op">(</span><span class="va">matching_vars</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">as.matrix</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Error in `h()`:</span></span>
+<span><span class="co">#&gt; ! error in evaluating the argument 'x' in selecting a method for function 'as.matrix': object 'comparison_candidates' not found</span></span>
 <span></span>
 <span><span class="va">matrix_affected</span> <span class="op">&lt;-</span> <span class="va">affected_county_chars</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="fu"><a href="https://tidyselect.r-lib.org/reference/all_of.html" class="external-link">all_of</a></span><span class="op">(</span><span class="va">matching_vars</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">as.matrix</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Error in `h()`:</span></span>
+<span><span class="co">#&gt; ! error in evaluating the argument 'x' in selecting a method for function 'as.matrix': object 'affected_county_chars' not found</span></span>
 <span></span>
 <span><span class="co"># Calculate covariance matrix and Mahalanobis distance</span></span>
 <span><span class="va">covariance_matrix</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/cor.html" class="external-link">cov</a></span><span class="op">(</span><span class="va">matrix_candidates</span>, use <span class="op">=</span> <span class="st">"pairwise.complete.obs"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Error:</span></span>
+<span><span class="co">#&gt; ! object 'matrix_candidates' not found</span></span>
 <span><span class="va">distances</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/mahalanobis.html" class="external-link">mahalanobis</a></span><span class="op">(</span><span class="va">matrix_candidates</span>, center <span class="op">=</span> <span class="va">matrix_affected</span>, cov <span class="op">=</span> <span class="va">covariance_matrix</span>, tol<span class="op">=</span><span class="fl">1e-30</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Error:</span></span>
+<span><span class="co">#&gt; ! object 'matrix_candidates' not found</span></span>
 <span></span>
 <span><span class="co"># Select top k nearest neighbors</span></span>
 <span><span class="va">k_neighbors</span> <span class="op">&lt;-</span> <span class="fl">10</span></span>
@@ -447,7 +468,9 @@ matching.</p>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/slice.html" class="external-link">slice_min</a></span><span class="op">(</span><span class="va">mahalanobis_distance</span>, n <span class="op">=</span> <span class="va">k_neighbors</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">GEOID</span>, <span class="va">comparison_disaster_year</span>, <span class="va">mahalanobis_distance</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate-joins.html" class="external-link">left_join</a></span><span class="op">(</span><span class="fu">tidycensus</span><span class="fu">::</span><span class="va"><a href="https://walker-data.com/tidycensus/reference/fips_codes.html" class="external-link">fips_codes</a></span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/transmute.html" class="external-link">transmute</a></span><span class="op">(</span><span class="va">county</span>, GEOID <span class="op">=</span> <span class="fu"><a href="https://stringr.tidyverse.org/reference/str_c.html" class="external-link">str_c</a></span><span class="op">(</span><span class="va">state_code</span>, <span class="va">county_code</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/slice.html" class="external-link">slice</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span><span class="op">)</span></span></code></pre></div>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/slice.html" class="external-link">slice</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Error:</span></span>
+<span><span class="co">#&gt; ! object 'comparison_candidates' not found</span></span></code></pre></div>
 <hr>
 </div>
 </div>
@@ -469,6 +492,8 @@ matching.</p>
 <span>      <span class="va">GEOID</span>,</span>
 <span>      disaster_year_event <span class="op">=</span> <span class="va">comparison_disaster_year</span>,</span>
 <span>      county_type <span class="op">=</span> <span class="st">"comparison"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Error:</span></span>
+<span><span class="co">#&gt; ! object 'comparison_counties' not found</span></span>
 <span></span>
 <span><span class="co"># Define event window</span></span>
 <span><span class="va">event_window</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">5</span>, <span class="fl">4</span><span class="op">)</span></span></code></pre></div>
@@ -481,7 +506,9 @@ matching.</p>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>event_time <span class="op">=</span> <span class="va">calendar_year</span> <span class="op">-</span> <span class="va">disaster_year_event</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">event_time</span> <span class="op">&gt;=</span> <span class="va">event_window</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span>, <span class="va">event_time</span> <span class="op">&lt;=</span> <span class="va">event_window</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">GEOID</span>, <span class="va">county_type</span>, <span class="va">disaster_year_event</span>, <span class="va">calendar_year</span>, <span class="va">event_time</span>,</span>
-<span>         <span class="va">industry</span>, <span class="va">employees</span>, <span class="va">employers</span>, <span class="va">annual_payroll</span><span class="op">)</span>   </span></code></pre></div>
+<span>         <span class="va">industry</span>, <span class="va">employees</span>, <span class="va">employers</span>, <span class="va">annual_payroll</span><span class="op">)</span>   </span>
+<span><span class="co">#&gt; Error:</span></span>
+<span><span class="co">#&gt; ! object 'county_reference' not found</span></span></code></pre></div>
 <div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Align to event time</span></span>
 <span><span class="va">fiscal_event_aligned</span> <span class="op">&lt;-</span> <span class="va">county_expenses</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
@@ -490,7 +517,9 @@ matching.</p>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>event_time <span class="op">=</span> <span class="va">calendar_year</span> <span class="op">-</span> <span class="va">disaster_year_event</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">event_time</span> <span class="op">&gt;=</span> <span class="va">event_window</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span>, <span class="va">event_time</span> <span class="op">&lt;=</span> <span class="va">event_window</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">GEOID</span>, <span class="va">county_type</span>, <span class="va">disaster_year_event</span>, <span class="va">calendar_year</span>, <span class="va">event_time</span>,</span>
-<span>         <span class="va">expenditure_total</span>, <span class="va">revenue_total</span><span class="op">)</span></span></code></pre></div>
+<span>         <span class="va">expenditure_total</span>, <span class="va">revenue_total</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Error:</span></span>
+<span><span class="co">#&gt; ! object 'county_reference' not found</span></span></code></pre></div>
 <div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># SBA disaster loans</span></span>
 <span><span class="va">sba_raw</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_sba_loans.html">get_sba_loans</a></span><span class="op">(</span><span class="op">)</span></span>
@@ -527,30 +556,35 @@ matching.</p>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>event_time <span class="op">=</span> <span class="va">calendar_year</span> <span class="op">-</span> <span class="va">disaster_year_event</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">event_time</span> <span class="op">&gt;=</span> <span class="va">event_window</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span>, <span class="va">event_time</span> <span class="op">&lt;=</span> <span class="va">event_window</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">GEOID</span>, <span class="va">county_type</span>, <span class="va">disaster_year_event</span>, <span class="va">calendar_year</span>, <span class="va">event_time</span>,</span>
-<span>         <span class="fu"><a href="https://tidyselect.r-lib.org/reference/starts_with.html" class="external-link">matches</a></span><span class="op">(</span><span class="st">"loan"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" tabindex="-1"></a><span class="co"># FEMA Public Assistance</span></span>
-<span id="cb22-2"><a href="#cb22-2" tabindex="-1"></a>pa_raw <span class="ot">&lt;-</span> <span class="fu">get_public_assistance</span>()</span>
-<span id="cb22-3"><a href="#cb22-3" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb22-4"><a href="#cb22-4" tabindex="-1"></a>Processed <span class="dv">360244</span> groups out of <span class="fl">656351.</span> <span class="dv">55</span>% done. Time elapsed<span class="sc">:</span> <span class="dv">3</span>s. ETA<span class="sc">:</span> <span class="dv">2</span>s.</span>
-<span id="cb22-5"><a href="#cb22-5" tabindex="-1"></a>Processed <span class="dv">550614</span> groups out of <span class="fl">656351.</span> <span class="dv">84</span>% done. Time elapsed<span class="sc">:</span> <span class="dv">4</span>s. ETA<span class="sc">:</span> <span class="dv">0</span>s.</span>
-<span id="cb22-6"><a href="#cb22-6" tabindex="-1"></a>Processed <span class="dv">656351</span> groups out of <span class="fl">656351.</span> <span class="dv">100</span>% done. Time elapsed<span class="sc">:</span> <span class="dv">4</span>s. ETA<span class="sc">:</span> <span class="dv">0</span>s.</span>
-<span id="cb22-7"><a href="#cb22-7" tabindex="-1"></a></span>
-<span id="cb22-8"><a href="#cb22-8" tabindex="-1"></a><span class="co"># Aggregate to county-year level</span></span>
-<span id="cb22-9"><a href="#cb22-9" tabindex="-1"></a>pa_county_year <span class="ot">&lt;-</span> pa_raw <span class="sc">%&gt;%</span></span>
-<span id="cb22-10"><a href="#cb22-10" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb22-11"><a href="#cb22-11" tabindex="-1"></a>    <span class="at">GEOID =</span> county_fips,</span>
-<span id="cb22-12"><a href="#cb22-12" tabindex="-1"></a>    <span class="at">calendar_year =</span> declaration_year) <span class="sc">%&gt;%</span></span>
-<span id="cb22-13"><a href="#cb22-13" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
-<span id="cb22-14"><a href="#cb22-14" tabindex="-1"></a>    <span class="at">.by =</span> <span class="fu">c</span>(GEOID, calendar_year),</span>
-<span id="cb22-15"><a href="#cb22-15" tabindex="-1"></a>    <span class="fu">across</span>(<span class="at">.cols =</span> <span class="fu">matches</span>(<span class="st">"split"</span>), <span class="sc">~</span> <span class="fu">sum</span>(.x, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)))</span>
-<span id="cb22-16"><a href="#cb22-16" tabindex="-1"></a></span>
-<span id="cb22-17"><a href="#cb22-17" tabindex="-1"></a><span class="co"># Align to event time</span></span>
-<span id="cb22-18"><a href="#cb22-18" tabindex="-1"></a>pa_event_aligned <span class="ot">&lt;-</span> pa_county_year <span class="sc">%&gt;%</span></span>
-<span id="cb22-19"><a href="#cb22-19" tabindex="-1"></a>  <span class="fu">inner_join</span>(county_reference, <span class="at">by =</span> <span class="st">"GEOID"</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb22-20"><a href="#cb22-20" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">event_time =</span> calendar_year <span class="sc">-</span> disaster_year_event) <span class="sc">%&gt;%</span></span>
-<span id="cb22-21"><a href="#cb22-21" tabindex="-1"></a>  <span class="fu">filter</span>(event_time <span class="sc">&gt;=</span> event_window[<span class="dv">1</span>], event_time <span class="sc">&lt;=</span> event_window[<span class="dv">2</span>]) <span class="sc">%&gt;%</span></span>
-<span id="cb22-22"><a href="#cb22-22" tabindex="-1"></a>  <span class="fu">select</span>(GEOID, county_type, disaster_year_event, calendar_year, event_time,</span>
-<span id="cb22-23"><a href="#cb22-23" tabindex="-1"></a>         pa_federal_funding_obligated_split)</span></code></pre></div>
+<span>         <span class="fu"><a href="https://tidyselect.r-lib.org/reference/starts_with.html" class="external-link">matches</a></span><span class="op">(</span><span class="st">"loan"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Error:</span></span>
+<span><span class="co">#&gt; ! object 'county_reference' not found</span></span></code></pre></div>
+<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># FEMA Public Assistance</span></span>
+<span><span class="va">pa_raw</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_public_assistance.html">get_public_assistance</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Error:</span></span>
+<span><span class="co">#&gt; ! Invalid: Parquet magic bytes not found in footer. Either the file is corrupted or this is not a parquet file.</span></span>
+<span></span>
+<span><span class="co"># Aggregate to county-year level</span></span>
+<span><span class="va">pa_county_year</span> <span class="op">&lt;-</span> <span class="va">pa_raw</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span></span>
+<span>    GEOID <span class="op">=</span> <span class="va">county_fips</span>,</span>
+<span>    calendar_year <span class="op">=</span> <span class="va">declaration_year</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/summarise.html" class="external-link">summarise</a></span><span class="op">(</span></span>
+<span>    .by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">GEOID</span>, <span class="va">calendar_year</span><span class="op">)</span>,</span>
+<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/across.html" class="external-link">across</a></span><span class="op">(</span>.cols <span class="op">=</span> <span class="fu"><a href="https://tidyselect.r-lib.org/reference/starts_with.html" class="external-link">matches</a></span><span class="op">(</span><span class="st">"split"</span><span class="op">)</span>, <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">.x</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Error:</span></span>
+<span><span class="co">#&gt; ! object 'pa_raw' not found</span></span>
+<span></span>
+<span><span class="co"># Align to event time</span></span>
+<span><span class="va">pa_event_aligned</span> <span class="op">&lt;-</span> <span class="va">pa_county_year</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate-joins.html" class="external-link">inner_join</a></span><span class="op">(</span><span class="va">county_reference</span>, by <span class="op">=</span> <span class="st">"GEOID"</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>event_time <span class="op">=</span> <span class="va">calendar_year</span> <span class="op">-</span> <span class="va">disaster_year_event</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">event_time</span> <span class="op">&gt;=</span> <span class="va">event_window</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span>, <span class="va">event_time</span> <span class="op">&lt;=</span> <span class="va">event_window</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">GEOID</span>, <span class="va">county_type</span>, <span class="va">disaster_year_event</span>, <span class="va">calendar_year</span>, <span class="va">event_time</span>,</span>
+<span>         <span class="va">pa_federal_funding_obligated_split</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Error:</span></span>
+<span><span class="co">#&gt; ! object 'pa_county_year' not found</span></span></code></pre></div>
 <div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># FEMA Individual and Households Program</span></span>
 <span><span class="co"># ihp_raw &lt;- get_ihp_registrations()</span></span>
@@ -602,10 +636,9 @@ aligned to their disaster year</li>
 <span>    x <span class="op">=</span> <span class="st">"Years Relative to Disaster (t=0)"</span>,</span>
 <span>    y <span class="op">=</span> <span class="st">"Total Employees"</span>,</span>
 <span>    title <span class="op">=</span> <span class="st">"Employment Trajectory: Affected vs. Comparison Counties"</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>legend.position <span class="op">=</span> <span class="st">"none"</span><span class="op">)</span></span></code></pre></div>
-<div class="float">
-<img src="figure/economic_recovery_factsheet-employment-total-1.png" alt="plot of chunk employment-total"><div class="figcaption">plot of chunk employment-total</div>
-</div>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>legend.position <span class="op">=</span> <span class="st">"none"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Error:</span></span>
+<span><span class="co">#&gt; ! object 'cbp_event_aligned' not found</span></span></code></pre></div>
 <hr>
 </div>
 <div class="section level2">
@@ -629,10 +662,9 @@ post-disaster.</p>
 <span>    x <span class="op">=</span> <span class="st">"Years Relative to Disaster (t=0)"</span>,</span>
 <span>    y <span class="op">=</span> <span class="st">"Total County Expenses (Millions)"</span>,</span>
 <span>    title <span class="op">=</span> <span class="st">"County Government Expenses: Affected vs. Comparison Counties"</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>legend.position <span class="op">=</span> <span class="st">"none"</span><span class="op">)</span></span></code></pre></div>
-<div class="float">
-<img src="figure/economic_recovery_factsheet-fiscal-expenses-1.png" alt="plot of chunk fiscal-expenses"><div class="figcaption">plot of chunk fiscal-expenses</div>
-</div>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>legend.position <span class="op">=</span> <span class="st">"none"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Error:</span></span>
+<span><span class="co">#&gt; ! object 'fiscal_event_aligned' not found</span></span></code></pre></div>
 <div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Total county expenses over event time</span></span>
 <span><span class="va">fiscal_event_aligned</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
@@ -647,10 +679,9 @@ post-disaster.</p>
 <span>    x <span class="op">=</span> <span class="st">"Years Relative to Disaster (t=0)"</span>,</span>
 <span>    y <span class="op">=</span> <span class="st">"Total County Revenues (Millions)"</span>,</span>
 <span>    title <span class="op">=</span> <span class="st">"County Government Revenues: Affected vs. Comparison Counties"</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>legend.position <span class="op">=</span> <span class="st">"none"</span><span class="op">)</span></span></code></pre></div>
-<div class="float">
-<img src="figure/economic_recovery_factsheet-fiscal-revenue-1.png" alt="plot of chunk fiscal-revenue"><div class="figcaption">plot of chunk fiscal-revenue</div>
-</div>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>legend.position <span class="op">=</span> <span class="st">"none"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Error:</span></span>
+<span><span class="co">#&gt; ! object 'fiscal_event_aligned' not found</span></span></code></pre></div>
 <hr>
 </div>
 <div class="section level2">
@@ -681,12 +712,10 @@ comparison counties’ post-disaster resource flows as projections.</p>
 <span>    x <span class="op">=</span> <span class="st">"Years relative to disaster (t=0)"</span>,</span>
 <span>    y <span class="op">=</span> <span class="st">"SBA loans (cumulative)"</span>,</span>
 <span>    title <span class="op">=</span> <span class="st">"Cumulative SBA Loans - Residential"</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>legend.position <span class="op">=</span> <span class="st">"none"</span><span class="op">)</span></span></code></pre></div>
-<div class="float">
-<img src="figure/economic_recovery_factsheet-recovery-sba-1.png" alt="plot of chunk recovery-sba"><div class="figcaption">plot of chunk recovery-sba</div>
-</div>
-<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>legend.position <span class="op">=</span> <span class="st">"none"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Error:</span></span>
+<span><span class="co">#&gt; ! object 'sba_event_aligned' not found</span></span>
+<span></span>
 <span><span class="va">sba_event_aligned</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/arrange.html" class="external-link">arrange</a></span><span class="op">(</span><span class="va">GEOID</span>, <span class="va">event_time</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span></span>
@@ -701,15 +730,14 @@ comparison counties’ post-disaster resource flows as projections.</p>
 <span>    x <span class="op">=</span> <span class="st">"Years relative to disaster (t=0)"</span>,</span>
 <span>    y <span class="op">=</span> <span class="st">"SBA loans (cumulative)"</span>,</span>
 <span>    title <span class="op">=</span> <span class="st">"Cumulative SBA Loans - Business"</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>legend.position <span class="op">=</span> <span class="st">"none"</span><span class="op">)</span></span></code></pre></div>
-<div class="float">
-<img src="figure/economic_recovery_factsheet-recovery-sba-2.png" alt="plot of chunk recovery-sba"><div class="figcaption">plot of chunk recovery-sba</div>
-</div>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>legend.position <span class="op">=</span> <span class="st">"none"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Error:</span></span>
+<span><span class="co">#&gt; ! object 'sba_event_aligned' not found</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="fema-public-assistance">FEMA Public Assistance<a class="anchor" aria-label="anchor" href="#fema-public-assistance"></a>
 </h3>
-<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># PA funding over event time (comparison counties only for post-period)</span></span>
 <span><span class="va">pa_event_aligned</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>county_type <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/if_else.html" class="external-link">if_else</a></span><span class="op">(</span><span class="fu"><a href="https://stringr.tidyverse.org/reference/str_detect.html" class="external-link">str_detect</a></span><span class="op">(</span><span class="va">county_type</span>, <span class="st">"affected"</span><span class="op">)</span>, <span class="st">"Impacted"</span>, <span class="st">"Comparison"</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
@@ -721,15 +749,14 @@ comparison counties’ post-disaster resource flows as projections.</p>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span></span>
 <span>    x <span class="op">=</span> <span class="st">"Years Relative to Disaster (t=0)"</span>,</span>
 <span>    y <span class="op">=</span> <span class="st">"FEMA PA Federal Share Obligated (Millions)"</span>,</span>
-<span>    title <span class="op">=</span> <span class="st">"FEMA Public Assistance in Comparison Counties"</span><span class="op">)</span></span></code></pre></div>
-<div class="float">
-<img src="figure/economic_recovery_factsheet-recovery-pa-1.png" alt="plot of chunk recovery-pa"><div class="figcaption">plot of chunk recovery-pa</div>
-</div>
+<span>    title <span class="op">=</span> <span class="st">"FEMA Public Assistance in Comparison Counties"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Error:</span></span>
+<span><span class="co">#&gt; ! object 'pa_event_aligned' not found</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="individual-and-households-program">Individual and Households Program<a class="anchor" aria-label="anchor" href="#individual-and-households-program"></a>
 </h3>
-<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># # IHP funding over event time (comparison counties only for post-period)</span></span>
 <span><span class="co"># ihp_event_aligned %&gt;%</span></span>
 <span><span class="co">#   ggplot(aes(x = event_time, y = ihp_amount_total / 1e6, group = GEOID)) +</span></span>
@@ -749,7 +776,7 @@ comparison counties’ post-disaster resource flows as projections.</p>
 <div class="section level2">
 <h2 id="section-7-key-takeaways">Section 7: Key Takeaways<a class="anchor" aria-label="anchor" href="#section-7-key-takeaways"></a>
 </h2>
-<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Programmatically generate summary statistics for the factsheet:</span></span>
 <span><span class="co"># - Pre-disaster vulnerability indicators for affected county</span></span>
 <span><span class="co"># - Median/range of recovery trajectories from comparison counties</span></span>
@@ -757,7 +784,7 @@ comparison counties’ post-disaster resource flows as projections.</p>
 <div class="section level3">
 <h3 id="summary-table">Summary Table<a class="anchor" aria-label="anchor" href="#summary-table"></a>
 </h3>
-<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Create summary table of key indicators</span></span></code></pre></div>
 <hr>
 </div>

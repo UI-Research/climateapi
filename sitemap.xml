@@ -7,6 +7,7 @@
 <url><loc>https://ui-research.github.io/climateapi/articles/get_structures.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/articles/get_wildfire_burn_zones.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/articles/index.html</loc></url>
+<url><loc>https://ui-research.github.io/climateapi/articles/land_cover.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/articles/preliminary_damage_assessments.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/authors.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/index.html</loc></url>
@@ -19,6 +20,7 @@
 <url><loc>https://ui-research.github.io/climateapi/reference/estimate_zoning_envelope.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/get_box_path.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/get_business_patterns.html</loc></url>
+<url><loc>https://ui-research.github.io/climateapi/reference/get_chas_housing_affordability.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/get_current_fire_perimeters.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/get_dataset_columns.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/get_disaster_dollar_database.html</loc></url>
@@ -27,6 +29,7 @@
 <url><loc>https://ui-research.github.io/climateapi/reference/get_geography_metadata.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/get_government_finances.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/get_hazard_mitigation_assistance.html</loc></url>
+<url><loc>https://ui-research.github.io/climateapi/reference/get_hud_api_key.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/get_ihp_registrations.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/get_lodes.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/get_naics_codes.html</loc></url>
@@ -34,6 +37,8 @@
 <url><loc>https://ui-research.github.io/climateapi/reference/get_nfip_claims.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/get_nfip_policies.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/get_nfip_residential_penetration.html</loc></url>
+<url><loc>https://ui-research.github.io/climateapi/reference/get_nlcd_land_cover.html</loc></url>
+<url><loc>https://ui-research.github.io/climateapi/reference/get_nlcd_land_cover_colors.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/get_openfema_cache_path.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/get_preliminary_damage_assessments.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/get_public_assistance.html</loc></url>
@@ -48,5 +53,6 @@
 <url><loc>https://ui-research.github.io/climateapi/reference/list_openfema_endpoints.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/read_ipums_cached.html</loc></url>
 <url><loc>https://ui-research.github.io/climateapi/reference/read_xlsx_from_url.html</loc></url>
+<url><loc>https://ui-research.github.io/climateapi/reference/register_hud_api_key.html</loc></url>
 </urlset>
 

@@ -103,6 +103,9 @@ acs_matching_variables = c(
 
 sheldus_df = get_sheldus() %>%
    summarize(.by = c(GEOID, year), damage_property_millions = sum(damage_property, na.rm = TRUE) / 1000000)
+#> Error in `dplyr::select()` at 
+#> ! Can't select columns that don't exist.
+#> ✖ Column `allocation_factor` doesn't exist.
 
 sheldus_df %>% 
   filter(GEOID %in% affected_county_fips) %>%
@@ -111,12 +114,9 @@ sheldus_df %>%
     geom_point() +
     scale_y_continuous(labels = scales::dollar_format(suffix = "M")) +
     labs(x = "Year", y = "Property damage (millions)")
+#> Error:
+#> ! object 'sheldus_df' not found
 ```
-
-![plot of chunk
-unnamed-chunk-4](figure/economic_recovery_factsheet-unnamed-chunk-4-1.png)
-
-plot of chunk unnamed-chunk-4
 
 ### Industry Composition over Time
 
@@ -230,12 +230,12 @@ county_expenses %>%
     geom_vline(data = finances_prior_disaster_years, color = "grey", linetype = "dashed", aes(xintercept = year_declared)) + 
     scale_y_continuous(labels = scales::dollar_format(suffix = "M")) +
     labs(x = "Year", y = "USD (Millions)") 
+#> Error:
+#> ! '
+#>   
+#>   
+#>   does not exist.
 ```
-
-![plot of chunk
-baseline-fiscal](figure/economic_recovery_factsheet-baseline-fiscal-1.png)
-
-plot of chunk baseline-fiscal
 
 ------------------------------------------------------------------------
 
@@ -277,6 +277,8 @@ sheldus_reference_year = if_else(reference_year < 2023, reference_year, 2023)
 
 sheldus_matching = sheldus_df %>%
   filter(year == sheldus_reference_year)
+#> Error:
+#> ! object 'sheldus_df' not found
 ```
 
 ``` r
@@ -353,6 +355,8 @@ matching_data <- acs_matching %>%
   mutate(across(ends_with("_prior_5yr"), ~ replace_na(.x, 0))) %>%
   # Drop counties with missing core variables
   filter(!is.na(total_population_universe), !is.na(total_employees))
+#> Error:
+#> ! object 'sheldus_matching' not found
 ```
 
 ### Select Comparison Counties
@@ -371,6 +375,8 @@ comparison_pool <- disasters %>%
 # Get affected county's characteristics
 affected_county_chars <- matching_data %>%
   filter(GEOID == affected_county_fips)
+#> Error:
+#> ! object 'matching_data' not found
 
 # Join matching data
 comparison_candidates <- comparison_pool %>%
@@ -381,6 +387,8 @@ comparison_candidates <- comparison_pool %>%
     median_household_income_universe_allraces > affected_county_chars$median_household_income_universe_allraces * .75,
     median_household_income_universe_allraces < affected_county_chars$median_household_income_universe_allraces * 1.25,
     GEOID != affected_county_fips)  # Exclude affected county
+#> Error:
+#> ! object 'matching_data' not found
 ```
 
 ``` r
@@ -401,14 +409,22 @@ matching_vars <- c(
 matrix_candidates <- comparison_candidates %>%
   select(all_of(matching_vars)) %>%
   as.matrix()
+#> Error in `h()`:
+#> ! error in evaluating the argument 'x' in selecting a method for function 'as.matrix': object 'comparison_candidates' not found
 
 matrix_affected <- affected_county_chars %>%
   select(all_of(matching_vars)) %>%
   as.matrix()
+#> Error in `h()`:
+#> ! error in evaluating the argument 'x' in selecting a method for function 'as.matrix': object 'affected_county_chars' not found
 
 # Calculate covariance matrix and Mahalanobis distance
 covariance_matrix <- cov(matrix_candidates, use = "pairwise.complete.obs")
+#> Error:
+#> ! object 'matrix_candidates' not found
 distances <- mahalanobis(matrix_candidates, center = matrix_affected, cov = covariance_matrix, tol=1e-30)
+#> Error:
+#> ! object 'matrix_candidates' not found
 
 # Select top k nearest neighbors
 k_neighbors <- 10
@@ -419,6 +435,8 @@ comparison_counties <- comparison_candidates %>%
   select(GEOID, comparison_disaster_year, mahalanobis_distance) %>%
   left_join(tidycensus::fips_codes %>% transmute(county, GEOID = str_c(state_code, county_code))) %>%
   slice(1:5)
+#> Error:
+#> ! object 'comparison_candidates' not found
 ```
 
 ------------------------------------------------------------------------
@@ -442,6 +460,8 @@ county_reference <- bind_rows(
       GEOID,
       disaster_year_event = comparison_disaster_year,
       county_type = "comparison"))
+#> Error:
+#> ! object 'comparison_counties' not found
 
 # Define event window
 event_window <- c(-5, 4)
@@ -458,6 +478,8 @@ cbp_event_aligned <- cbp_df %>%
   filter(event_time >= event_window[1], event_time <= event_window[2]) %>%
   select(GEOID, county_type, disaster_year_event, calendar_year, event_time,
          industry, employees, employers, annual_payroll)   
+#> Error:
+#> ! object 'county_reference' not found
 ```
 
 ``` r
@@ -470,6 +492,8 @@ fiscal_event_aligned <- county_expenses %>%
   filter(event_time >= event_window[1], event_time <= event_window[2]) %>%
   select(GEOID, county_type, disaster_year_event, calendar_year, event_time,
          expenditure_total, revenue_total)
+#> Error:
+#> ! object 'county_reference' not found
 ```
 
 ``` r
@@ -510,15 +534,16 @@ sba_event_aligned <- sba_county %>%
   filter(event_time >= event_window[1], event_time <= event_window[2]) %>%
   select(GEOID, county_type, disaster_year_event, calendar_year, event_time,
          matches("loan"))
+#> Error:
+#> ! object 'county_reference' not found
 ```
 
 ``` r
+
 # FEMA Public Assistance
 pa_raw <- get_public_assistance()
-#> 
-Processed 360244 groups out of 656351. 55% done. Time elapsed: 3s. ETA: 2s.
-Processed 550614 groups out of 656351. 84% done. Time elapsed: 4s. ETA: 0s.
-Processed 656351 groups out of 656351. 100% done. Time elapsed: 4s. ETA: 0s.
+#> Error:
+#> ! Invalid: Parquet magic bytes not found in footer. Either the file is corrupted or this is not a parquet file.
 
 # Aggregate to county-year level
 pa_county_year <- pa_raw %>%
@@ -528,6 +553,8 @@ pa_county_year <- pa_raw %>%
   summarise(
     .by = c(GEOID, calendar_year),
     across(.cols = matches("split"), ~ sum(.x, na.rm = TRUE)))
+#> Error:
+#> ! object 'pa_raw' not found
 
 # Align to event time
 pa_event_aligned <- pa_county_year %>%
@@ -536,6 +563,8 @@ pa_event_aligned <- pa_county_year %>%
   filter(event_time >= event_window[1], event_time <= event_window[2]) %>%
   select(GEOID, county_type, disaster_year_event, calendar_year, event_time,
          pa_federal_funding_obligated_split)
+#> Error:
+#> ! object 'pa_county_year' not found
 ```
 
 ``` r
@@ -591,12 +620,9 @@ cbp_event_aligned %>%
     y = "Total Employees",
     title = "Employment Trajectory: Affected vs. Comparison Counties") +
   theme(legend.position = "none")
+#> Error:
+#> ! object 'cbp_event_aligned' not found
 ```
-
-![plot of chunk
-employment-total](figure/economic_recovery_factsheet-employment-total-1.png)
-
-plot of chunk employment-total
 
 ------------------------------------------------------------------------
 
@@ -622,12 +648,9 @@ fiscal_event_aligned %>%
     y = "Total County Expenses (Millions)",
     title = "County Government Expenses: Affected vs. Comparison Counties") +
   theme(legend.position = "none")
+#> Error:
+#> ! object 'fiscal_event_aligned' not found
 ```
-
-![plot of chunk
-fiscal-expenses](figure/economic_recovery_factsheet-fiscal-expenses-1.png)
-
-plot of chunk fiscal-expenses
 
 ``` r
 
@@ -645,12 +668,9 @@ fiscal_event_aligned %>%
     y = "Total County Revenues (Millions)",
     title = "County Government Revenues: Affected vs. Comparison Counties") +
   theme(legend.position = "none")
+#> Error:
+#> ! object 'fiscal_event_aligned' not found
 ```
-
-![plot of chunk
-fiscal-revenue](figure/economic_recovery_factsheet-fiscal-revenue-1.png)
-
-plot of chunk fiscal-revenue
 
 ------------------------------------------------------------------------
 
@@ -683,15 +703,8 @@ sba_event_aligned %>%
     y = "SBA loans (cumulative)",
     title = "Cumulative SBA Loans - Residential") +
   theme(legend.position = "none")
-```
-
-![plot of chunk
-recovery-sba](figure/economic_recovery_factsheet-recovery-sba-1.png)
-
-plot of chunk recovery-sba
-
-``` r
-
+#> Error:
+#> ! object 'sba_event_aligned' not found
 
 sba_event_aligned %>%
   arrange(GEOID, event_time) %>%
@@ -708,12 +721,9 @@ sba_event_aligned %>%
     y = "SBA loans (cumulative)",
     title = "Cumulative SBA Loans - Business") +
   theme(legend.position = "none")
+#> Error:
+#> ! object 'sba_event_aligned' not found
 ```
-
-![plot of chunk
-recovery-sba](figure/economic_recovery_factsheet-recovery-sba-2.png)
-
-plot of chunk recovery-sba
 
 ### FEMA Public Assistance
 
@@ -731,12 +741,9 @@ pa_event_aligned %>%
     x = "Years Relative to Disaster (t=0)",
     y = "FEMA PA Federal Share Obligated (Millions)",
     title = "FEMA Public Assistance in Comparison Counties")
+#> Error:
+#> ! object 'pa_event_aligned' not found
 ```
-
-![plot of chunk
-recovery-pa](figure/economic_recovery_factsheet-recovery-pa-1.png)
-
-plot of chunk recovery-pa
 
 ### Individual and Households Program
 

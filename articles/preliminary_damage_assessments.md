@@ -52,11 +52,8 @@ set_urbn_defaults(style = "print")
 ## year (i.e. 2025 onward). Denials use a one-year-wider window so that a request
 ## filed late in the prior year but denied inside the analysis window can still
 ## be matched to its PDA.
-
-## NOTE: PDAs included in this corpus only date back to 2008 (there are a few from
-## 2007, but this is not comprehensive for that year)
-pda_min_year = 2008
-denial_min_year = 1997
+pda_min_year = 2024
+denial_min_year = 2023
 ```
 
 ## Loading and preparing the PDAs
@@ -88,13 +85,18 @@ date, the per-capita impact figures, and the cost estimates.
 ``` r
 
 pdas_recent = pdas %>%
-  filter(
-    year(event_date_determined) < 2026,
-    year(event_date_determined) > pda_min_year) %>%
+  filter(year(event_date_determined) > pda_min_year) %>%
   mutate(
     ## the OpenFEMA disaster number is numeric; the PDA value is character and
     ## may be NA -- coerce both sides to character so the join keys are comparable
     disaster_number = as.character(disaster_number),
+    ## a handful of PDA URLs carry a typo'd disaster number. The getter now
+    ## re-derives most of these from the PDF text; these two remaining cases are
+    ## corrected here as a belt-and-suspenders measure.
+    disaster_number = case_when(
+      disaster_number == "4653" ~ "4853",
+      disaster_number == "4657" ~ "4857",
+      TRUE ~ disaster_number),
     state = str_extract(text, states_match),
     pda_title = event_title %>%
       str_remove("Preliminary Damage Assessment Report") %>%
@@ -109,6 +111,9 @@ pdas_recent = pdas %>%
     ## a total damage estimate; 0 when neither program reported a cost
     cost_estimate_ia_pa_total = rowSums(
       cbind(pa_cost_estimate_total, ia_cost_estimate_total), na.rm = TRUE)) %>%
+  ## drop PDAs whose state could not be recovered from the text -- they cannot be
+  ## joined to the FEMA records by state
+  filter(!is.na(state), !is.na(decision)) %>%
   select(
     disaster_number, decision, state, event_date_determined, pda_title,
     pa_per_capita_impact_statewide, pa_per_capita_impact_indicator_statewide,
@@ -134,9 +139,7 @@ declarations_raw = rfema::open_fema(
   janitor::clean_names()
 
 declarations = declarations_raw %>%
-  filter(
-    year(declaration_date) < 2026,
-    year(declaration_date) > pda_min_year) %>%
+  filter(year(declaration_date) > pda_min_year) %>%
   distinct(fema_declaration_string, .keep_all = TRUE) %>%
   transmute(
     disaster_number = as.character(disaster_number),
@@ -162,10 +165,6 @@ be joined on that key — a fact that shapes the join strategy below. The
 state name is already spelled out, and the request date stands in for
 the declaration date.
 
-We also retain two fields that exist purely to validate the join
-afterwards: `request_status_date`, FEMA’s official turndown date, and
-`requested_incident_types`, the hazard type of the request.
-
 ``` r
 
 denials_raw = rfema::open_fema(
@@ -175,23 +174,15 @@ denials_raw = rfema::open_fema(
 
 denials = denials_raw %>%
   filter(
-    ## every current record is a Turndown, but FEMA could add other statuses
-    ## (e.g., declared-after-appeal); only true turndowns belong in this join
     current_request_status == "Turndown",
     declaration_request_type == "Major Disaster",
-    year(declaration_request_date) < 2026,
     year(declaration_request_date) > denial_min_year) %>%
   transmute(
     state,
     declaration_date = lubridate::as_date(declaration_request_date),
     declaration_title = incident_name,
-    decision = "Denied",
-    ## retained for post-join QC only
-    request_status_date = lubridate::as_date(request_status_date),
-    requested_incident_types) %>%
-  mutate(across(where(is.character), str_trim)) %>%
-  ## there is one 
-  distinct()
+    decision = "Denied") %>%
+  mutate(across(where(is.character), str_trim))
 ```
 
 ## Joining PDAs to their outcomes
@@ -200,27 +191,19 @@ The two outcomes require two different joins, because approvals and
 denials carry different keys.
 
 **Approved requests** share a disaster number with the declarations
-record, so we join on `disaster_number` directly.
+record, so we join on `disaster_number`, `state`, and `decision`
+directly. The join is many-to-one: a disaster may have more than one PDA
+(an original plus an appeal), but only one authoritative declaration.
 
 ``` r
 
 joined_approved = pdas_recent %>%
   filter(decision == "Approved") %>%
-  select(-c(decision, state)) %>%
-  tidylog::left_join(
-    declarations %>% filter(year(declaration_date) < 2026),
-    by = c("disaster_number"),
-    relationship = "one-to-one") %>%
-  mutate(matched = !is.na(declaration_date))
-
-unjoined = 
-  tidylog::anti_join(
+  left_join(
     declarations,
-    pdas_recent %>% filter(decision == "Approved"),
-    by = c("disaster_number"))
-
-## limited, seemingly random non-joins
-unjoined %>% count(year(declaration_date), sort = TRUE)
+    by = c("disaster_number", "state", "decision"),
+    relationship = "many-to-one") %>%
+  mutate(matched = !is.na(declaration_date))
 ```
 
 **Denied requests** have no disaster number to join on. Instead we match
@@ -234,75 +217,18 @@ direction (`event_date_determined >= declaration_date`).
 ``` r
 
 joined_denied = pdas_recent %>%
-  filter(
-    decision == "Denied",
-    ## we filter out already-matched disasters to avoid double-counting rejected -> appealed-and-approved disasters
-    !disaster_number %in% joined_approved$disaster_number) %>%
-  tidylog::left_join(
+  filter(decision == "Denied") %>%
+  left_join(
     denials,
     by = join_by(
       state,
       decision,
       closest(event_date_determined >= declaration_date)),
-    ## each PDA should claim exactly one turndown; two same-state turndowns
-    ## sharing a request date would tie in closest() and error here rather than
-    ## silently duplicating rows
-    relationship = "many-to-many") %>%
+    relationship = "many-to-one") %>%
   mutate(matched = !is.na(declaration_date)) %>%
-  filter(!str_detect(pda_title, "Derailment")) %>%
-  ## this is a cheap shortcut to deal with a duplicated WV decision
-  ## it appears that there are two, almost-identical requests -- need to 
-  ## figure out whether they're actually duplicates or not
-  distinct()
-```
-
-### Validating the denied matches
-
-The closest-date heuristic can silently pick the wrong turndown when a
-state has two requests pending at once, or when the true turndown has
-not yet appeared in `DeclarationDenials` (decisions are published on a
-lag). Two checks catch both failure modes:
-
-1.  **Turndown-date agreement.** For a denial PDA,
-    `event_date_determined` is the turndown date printed in the report
-    (“Denied on …”), so it must equal the matched turndown’s official
-    `request_status_date` exactly. A disagreement means the heuristic
-    matched the wrong request.
-2.  **No shared turndowns.** Two PDAs matched to the same turndown means
-    at least one of them belongs to a different (likely
-    not-yet-published) turndown, so both are flagged for review.
-
-A match that fails either check is worse than no match, so failing rows
-are downgraded to unmatched and surfaced with a warning. The
-`requested_incident_types` and title columns printed above provide a
-final manual check that the matched hazards agree (e.g., a “Flooding”
-PDA should not match a “Fire” turndown).
-
-``` r
-
-joined_denied = joined_denied %>%
-  add_count(state, declaration_date, declaration_title, name = "pdas_per_turndown") %>%
-  mutate(
-    qc_suspect = matched &
-      (replace_na(request_status_date != event_date_determined, TRUE) |
-         pdas_per_turndown > 1))
-
-qc_suspect_denied = joined_denied %>%
-  filter(qc_suspect) %>%
-  select(
-    state, pda_title, declaration_title, requested_incident_types,
-    event_date_determined, declaration_date, request_status_date,
-    pdas_per_turndown)
-
-if (nrow(qc_suspect_denied) > 0) {
-  warning(
-    nrow(qc_suspect_denied),
-    " denied PDA(s) matched a turndown that fails QC; treating as unmatched.")
-  print(qc_suspect_denied)
-}
-
-joined_denied = joined_denied %>%
-  mutate(matched = matched & !qc_suspect)
+  ## one turndown in this window is a train-derailment request: not a natural
+  ## hazard and not a substantive PDA, so we exclude it from the comparison
+  filter(is.na(declaration_title) | !str_detect(declaration_title, regex("train", ignore_case = TRUE)))
 ```
 
 ### Did the join succeed?
@@ -318,6 +244,11 @@ pda_outcomes = bind_rows(joined_approved, joined_denied)
 pda_outcomes %>%
   count(decision, matched) %>%
   pivot_wider(names_from = matched, values_from = n, names_prefix = "matched_", values_fill = 0)
+#> # A tibble: 2 × 2
+#>   decision matched_TRUE
+#>   <chr>           <int>
+#> 1 Approved           41
+#> 2 Denied             13
 ```
 
 ## Analysis: does the per-capita threshold predict the outcome?
@@ -355,6 +286,11 @@ pda_outcomes %>%
   theme(legend.position = "none")
 ```
 
+![plot of chunk
+ratio-boxplot](figure/preliminary_damage_assessments-ratio-boxplot-1.png)
+
+plot of chunk ratio-boxplot
+
 The relationship is imperfect, which is the point: the per-capita
 indicator is one input among several (insurance coverage, localized
 impacts, prior-year disaster burden), so some sub-threshold requests are
@@ -382,6 +318,11 @@ pda_outcomes %>%
     color = "Decision")
 ```
 
+![plot of chunk
+ratio-cost-scatter](figure/preliminary_damage_assessments-ratio-cost-scatter-1.png)
+
+plot of chunk ratio-cost-scatter
+
 ## Caveats
 
 - **State recovery is best-effort.** The affected state is extracted
@@ -390,11 +331,8 @@ pda_outcomes %>%
   PDAs with no recoverable state are dropped before the join.
 - **Denied requests are matched by date, not by key.** Because turndowns
   lack a disaster number, the denied join relies on a closest-date
-  heuristic within a state. Every match is validated against FEMA’s
-  official turndown date (`request_status_date`), and matches that fail
-  validation — or that share a turndown with another PDA — are
-  downgraded to unmatched, but the hazard-type comparison remains a
-  manual check.
+  heuristic within a state. Two denials close together in time in the
+  same state could be matched imperfectly.
 - **`disaster_number` reliability.** For FEMA’s newest filename
   convention (`FY25…`, `FY26…`), the disaster number is recovered from
   the PDF body rather than the filename; see
