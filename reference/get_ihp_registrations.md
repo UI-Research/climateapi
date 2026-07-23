@@ -74,6 +74,15 @@ include:
 
   FEMA disaster number.
 
+- residence_type:
+
+  Type of the applicant's damaged dwelling, decoded from FEMA's
+  single/two-letter `residenceType` code into a readable label: one of
+  "House/Duplex", "Apartment", "Mobile Home", "Townhouse", "Condo",
+  "Travel Trailer", "Boat", "Military Housing", "College Dorm",
+  "Assisted Living Facility", "Correctional Facility",
+  "Non-Traditional", or "Other".
+
 - amount_individual_housing_program:
 
   Total IHP assistance amount in dollars.
