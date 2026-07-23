@@ -35,6 +35,11 @@ to properly aggregate. Columns include:
 \item{geoid_tract}{11-digit census tract FIPS code.}
 \item{geoid_block_group}{12-digit census block group FIPS code.}
 \item{disaster_number}{FEMA disaster number.}
+\item{residence_type}{Type of the applicant's damaged dwelling, decoded from
+FEMA's single/two-letter \code{residenceType} code into a readable label: one of
+"House/Duplex", "Apartment", "Mobile Home", "Townhouse", "Condo", "Travel Trailer",
+"Boat", "Military Housing", "College Dorm", "Assisted Living Facility",
+"Correctional Facility", "Non-Traditional", or "Other".}
 \item{amount_individual_housing_program}{Total IHP assistance amount in dollars.}
 \item{amount_housing_assistance}{Housing assistance amount in dollars.}
 \item{amount_other_needs_assistance}{Other needs assistance amount in dollars.}

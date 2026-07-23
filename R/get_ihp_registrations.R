@@ -27,6 +27,11 @@
 #'     \item{geoid_tract}{11-digit census tract FIPS code.}
 #'     \item{geoid_block_group}{12-digit census block group FIPS code.}
 #'     \item{disaster_number}{FEMA disaster number.}
+#'     \item{residence_type}{Type of the applicant's damaged dwelling, decoded from
+#'       FEMA's single/two-letter `residenceType` code into a readable label: one of
+#'       "House/Duplex", "Apartment", "Mobile Home", "Townhouse", "Condo", "Travel Trailer",
+#'       "Boat", "Military Housing", "College Dorm", "Assisted Living Facility",
+#'       "Correctional Facility", "Non-Traditional", or "Other".}
 #'     \item{amount_individual_housing_program}{Total IHP assistance amount in dollars.}
 #'     \item{amount_housing_assistance}{Housing assistance amount in dollars.}
 #'     \item{amount_other_needs_assistance}{Other needs assistance amount in dollars.}
@@ -142,7 +147,7 @@ get_ihp_registrations = function(
           is.na(allocation_factor_zcta_to_county) & !is.na(geoid_county) ~ 1,
           TRUE ~ allocation_factor_zcta_to_county),
         geoid_county = dplyr::if_else(is.na(geoid_county), county_code, geoid_county),
-        zcta_code = zip_code, geoid_tract, geoid_block_group, disaster_number,
+        zcta_code = zip_code, geoid_tract, geoid_block_group, disaster_number, residence_type,
         amount_individual_housing_program, amount_housing_assistance, amount_other_needs_assistance,
         amount_rental_assistance, amount_repairs, amount_replacement, amount_personal_property,
         amount_flood_insurance_premium_paid_by_fema) %>%
@@ -210,6 +215,7 @@ clean_ihp = function(data) {
       household_residents = household_composition,
       household_income_gross = gross_income,
       household_tenure = own_rent,
+      residence_type,
       amount_individual_housing_program = ihp_amount,
       amount_flood_insurance_premium_paid_by_fema = fip_amount,
       amount_housing_assistance = ha_amount,
@@ -233,7 +239,25 @@ clean_ihp = function(data) {
       geoid_tract = stringr::str_sub(geoid_block_group, 1, 11),
       geoid_county = stringr::str_sub(geoid_block_group, 1, 5),
       unique_id = uuid::UUIDgenerate(n = nrow(.)),
-      zip_code = stringr::str_pad(zip_code, width = 5, pad = "0", side = "left")) %>%
+      zip_code = stringr::str_pad(zip_code, width = 5, pad = "0", side = "left"),
+      ## the raw residenceType field is a single/two-letter code; decode it into a
+      ## readable label per FEMA's data dictionary so equivalent records share one value
+      residence_type = dplyr::case_match(
+        residence_type,
+        "H" ~ "House/Duplex",
+        "A" ~ "Apartment",
+        "M" ~ "Mobile Home",
+        "TH" ~ "Townhouse",
+        "C" ~ "Condo",
+        "T" ~ "Travel Trailer",
+        "B" ~ "Boat",
+        "N" ~ "Non-Traditional",
+        "MIL" ~ "Military Housing",
+        "CD" ~ "College Dorm",
+        "ALF" ~ "Assisted Living Facility",
+        "CF" ~ "Correctional Facility",
+        "O" ~ "Other",
+        .default = residence_type)) %>%
     dplyr::left_join(
       tidycensus::fips_codes %>%
         dplyr::select(state, state_code, state_name) %>% dplyr::distinct(),
@@ -254,6 +278,7 @@ utils::globalVariables(c(
   "max_individual_households_program_flag", "max_housing_assistance_flag", "max_other_needs_assistance_flag",
   "date_last_updated", "zip_county_xwalk", "access_functional_needs",
   "damaged_city", "damaged_state_abbreviation", "damaged_zip_code", "emergency_needs",
+  "residence_type", "residenceType",
   "fip_amount", "food_need", "gross_income", "ha_amount", "ha_max", "household_composition",
   "ihp_amount", "ihp_max", "last_refresh", "ona_amount", "ona_max", "own_rent", "personal_property_amount",
   "ppfvl", "rpfvl", "repair_amount", "replacement_amount", "rental_assistance_amount", "shelter_need",

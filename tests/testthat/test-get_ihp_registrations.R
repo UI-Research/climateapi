@@ -71,6 +71,7 @@ test_that("get_ihp_registrations returns expected columns", {
   expected_cols <- c(
     "unique_id", "allocation_factor_zcta_to_county", "geoid_county",
     "zcta_code", "geoid_tract", "geoid_block_group", "disaster_number",
+    "residence_type",
     "amount_individual_housing_program", "amount_housing_assistance",
     "amount_other_needs_assistance", "amount_rental_assistance",
     "amount_repairs", "amount_replacement", "amount_personal_property",
@@ -105,4 +106,23 @@ test_that("get_ihp_registrations geoid_county is 5 characters", {
 
   geoids <- ihp_test_data$geoid_county[!is.na(ihp_test_data$geoid_county)]
   expect_true(all(nchar(geoids) == 5))
+})
+
+test_that("get_ihp_registrations residence_type is decoded to readable labels", {
+  skip_if_no_box()
+  skip_if(is.null(ihp_test_data), "IHP test data not loaded")
+
+  allowed <- c(
+    "House/Duplex", "Apartment", "Mobile Home", "Townhouse", "Condo",
+    "Travel Trailer", "Boat", "Military Housing", "College Dorm",
+    "Assisted Living Facility", "Correctional Facility", "Non-Traditional", "Other")
+
+  vals <- unique(ihp_test_data$residence_type)
+  vals <- vals[!is.na(vals)]
+
+  expect_true(
+    all(vals %in% allowed),
+    info = paste(
+      "Unexpected (undecoded?) residence_type value(s):",
+      paste(setdiff(vals, allowed), collapse = ", ")))
 })
