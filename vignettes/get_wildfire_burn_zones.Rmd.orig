@@ -89,7 +89,7 @@ Key variables include:
 
 ### Annual trends in wildfire disasters
 
-```{r annual-trends}
+```{r annual-trends, fig.alt = "Bar charts, one panel per state, of the number of wildfire disasters each year in the five states with the most wildfires."}
 # Extract state FIPS from the first county in the pipe-delimited list
 df1 = burn_zones |>
   st_drop_geometry() |>
@@ -123,7 +123,7 @@ df1 %>%
 
 ### Geographic distribution of impacts
 
-```{r state-impacts}
+```{r state-impacts, fig.alt = "Horizontal bar chart of the states with the most wildfire burn zone disasters between 2000 and 2025."}
 state_impacts <- burn_zones |>
   st_drop_geometry() |>
   mutate(state_fips = str_sub(county_fips, 1, 2)) |>
@@ -154,7 +154,7 @@ state_impacts |>
 
 ### Mapping wildfire burn zones
 
-```{r map-example, fig.height = 8}
+```{r map-example, fig.alt = "Map of California counties with 2020 wildfire burn zone perimeters shaded by the number of structures destroyed.", fig.height = 8}
 # Get wildfires from a recent year in California
 ca_2020_fires <- burn_zones |>
   filter(str_detect(county_fips, "^06"), year == 2020)
@@ -176,7 +176,7 @@ ggplot() +
 
 ### Analyzing structure loss severity
 
-```{r severity-analysis}
+```{r severity-analysis, fig.alt = "Stacked bar chart of the share of wildfires each year falling into each range of structures destroyed."}
 burn_zones |>
   st_drop_geometry() |>
   distinct(wildfire_id, year, wildfire_name, structures_destroyed) |>

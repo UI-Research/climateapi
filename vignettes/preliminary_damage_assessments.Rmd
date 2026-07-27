@@ -290,7 +290,7 @@ pda_outcomes %>%
   theme(legend.position = "none")
 ```
 
-![plot of chunk ratio-boxplot](figure/preliminary_damage_assessments-ratio-boxplot-1.png)
+<img src="figure/preliminary_damage_assessments-ratio-boxplot-1.png" alt="Boxplot with jittered points of the ratio of estimated statewide per-capita impact to FEMA's Public Assistance per-capita indicator, with a dashed line at a ratio of one." />
 
 The relationship is imperfect, which is the point: the per-capita indicator is
 one input among several (insurance coverage, localized impacts, prior-year
@@ -318,7 +318,7 @@ pda_outcomes %>%
     color = "Decision")
 ```
 
-![plot of chunk ratio-cost-scatter](figure/preliminary_damage_assessments-ratio-cost-scatter-1.png)
+<img src="figure/preliminary_damage_assessments-ratio-cost-scatter-1.png" alt="Scatterplot of the per-capita threshold ratio against total estimated damage, with a dashed vertical line at a ratio of one." />
 
 ## Caveats
 

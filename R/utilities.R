@@ -630,13 +630,16 @@ date_string_to_date = function(date_string) {
 
 #' Inflation adjust dollar values using annual PCE Index
 #'
-#' The Personal Consumption Expenditures Price Index (PCE Index) is from the
-#' Federal Reserve Bank of St. Louis's FRED tool.
+#' The Personal Consumption Expenditures Price Index (PCE Index) is retrieved
+#' live from the Federal Reserve Bank of St. Louis's FRED download endpoint
+#' (annual series DPCERG3A086NBEA), so adjustments always reflect the most
+#' recent year FRED publishes. The function stops with an informative error if
+#' the FRED endpoint cannot be reached; no local copy is read as a fallback.
 #'
 #' @param df The dataframe with values to inflation-adjust
 #' @param year_variable The name of the column denoting the year that existing dollar-denominated figures are based in.
 #' @param dollar_variables The variables to inflation-adjust.
-#' @param base_year The year to use as the base for inflation adjustment. If NULL, defaults to the most recent year in the PCE index data.
+#' @param base_year The year to use as the base for inflation adjustment. If `NULL` (the default), uses the most recent year available in the FRED PCE index data.
 #' @param names_suffix A suffix to add to the names of the inflation-adjusted variables. If NULL, defaults to "_<base_year>". If "", columns are renamed in place.
 #'
 #' @return A tibble identical to the input `df` with additional inflation-adjusted columns. For each column specified in `dollar_variables`, a new column is created with the same name plus `names_suffix` (default: "_\{base_year\}"). The adjusted values are calculated by multiplying original values by an inflation factor derived from the PCE Price Index ratio between the base year and each observation's year. Original columns are preserved unchanged.
@@ -662,19 +665,49 @@ inflation_adjust = function(
     year_variable,
     dollar_variables,
     names_suffix = NULL,
-    base_year = 2024) {
+    base_year = NULL) {
 
-  inflation_data = readr::read_csv(file.path(get_box_path(), "utilities", "pce_index_annual_fred_2025_03_27.csv")) %>%
+  ## Pull the annual PCE Price Index (series DPCERG3A086NBEA) live from FRED's
+  ## no-key CSV download endpoint so the data always extend through the most
+  ## recent year available.
+  pce_url = "https://fred.stlouisfed.org/graph/fredgraph.csv?id=DPCERG3A086NBEA"
+
+  pce_response = tryCatch(
+    httr2::request(pce_url) %>%
+      httr2::req_timeout(seconds = 30) %>%
+      httr2::req_perform(),
+    error = function(e) stop(stringr::str_c(
+      "Could not download the PCE Price Index from FRED at ", pce_url, ". ",
+      "Confirm you have an internet connection and that the endpoint is reachable. ",
+      "Underlying error: ", conditionMessage(e)), call. = FALSE))
+
+  pce_raw = pce_response %>%
+    httr2::resp_body_string() %>%
+    readr::read_csv(show_col_types = FALSE)
+
+  if (!all(c("observation_date", "DPCERG3A086NBEA") %in% names(pce_raw))) {
+    stop(stringr::str_c(
+      "The response from FRED at ", pce_url, " did not contain the expected ",
+      "`observation_date` and `DPCERG3A086NBEA` columns; the endpoint may have changed."),
+      call. = FALSE) }
+
+  inflation_data = pce_raw %>%
     dplyr::transmute(
       inflation_year_ = lubridate::year(observation_date) %>% as.numeric(),
       pce_index = DPCERG3A086NBEA)
 
-  if (is.null(base_year)) base_year = max(inflation_data$year)
+  if (is.null(base_year)) base_year = max(inflation_data$inflation_year_)
   if (is.null(names_suffix)) names_suffix = paste0("_", base_year)
+
+  if (!base_year %in% inflation_data$inflation_year_) {
+    stop(stringr::str_c(
+      "`base_year` (", base_year, ") is not available in the FRED PCE Price Index, ",
+      "which currently spans ", min(inflation_data$inflation_year_), "-",
+      max(inflation_data$inflation_year_), "."), call. = FALSE) }
 
   inflation_data = inflation_data %>%
     dplyr::mutate(
-      inflation_factor = (pce_index[inflation_year_ == dplyr::if_else(is.null(base_year), max(inflation_year_), base_year)]) / pce_index)
+      inflation_factor = pce_index[inflation_year_ == base_year] / pce_index)
 
   df1 = df %>%
     dplyr::mutate(
@@ -686,6 +719,6 @@ inflation_adjust = function(
 }
 
 utils::globalVariables(c(
-  "DPCERG3A086NBEA", "crop_damage_adjusted_2023", "inflation_factor", "inflation_year_",
+  "DPCERG3A086NBEA", "observation_date", "crop_damage_adjusted_2023", "inflation_factor", "inflation_year_",
   "pce_index", "property_damage_adjusted_2023", "B01003_001E", "geometry", "geography_area",
   "overlap_pct", "STATEFP"))

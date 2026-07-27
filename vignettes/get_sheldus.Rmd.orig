@@ -79,7 +79,7 @@ sheldus |>
 
 ### Annual property damage by hazard type
 
-```{r annual-damage}
+```{r annual-damage, fig.alt = "Stacked bar chart of annual property damage in billions of 2023 dollars, split by the five hazard types with the most damage."}
 df1 <- sheldus |>
   summarize(
     .by = c(year, hazard),
@@ -108,7 +108,7 @@ df1 |>
 
 ### Geographic distribution of flood damage
 
-```{r flood-damage-map, fig.height = 7}
+```{r flood-damage-map, fig.alt = "Map of the contiguous United States shading each county by its cumulative flood property damage in 2023 dollars.", fig.height = 7}
 flood_damage <- sheldus |>
   filter(hazard == "Flooding") |>
   summarize(
@@ -149,7 +149,7 @@ ggplot(flood_map) +
 
 ### Seasonal patterns in hazard events
 
-```{r seasonal-patterns}
+```{r seasonal-patterns, fig.alt = "Line chart of the number of hazard events by month of the year, one line for each of the five hazard types with the most damage."}
 seasonal <- sheldus |>
   filter(hazard %in% top_hazards) |>
   summarize(
@@ -172,7 +172,7 @@ ggplot(seasonal, aes(x = month, y = total_events, color = hazard)) +
 
 ### Counties with highest fatalities
 
-```{r fatalities}
+```{r fatalities, fig.alt = "Horizontal bar chart of the fifteen counties with the most hazard-related fatalities."}
 high_fatality_counties <- sheldus |>
   summarize(
     .by = c(GEOID, state_name, county_name),

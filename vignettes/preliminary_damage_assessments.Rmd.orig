@@ -273,7 +273,7 @@ pda_outcomes = pda_outcomes %>%
 If the threshold drove the decision, approved requests would sit above the line
 and denials below it.
 
-```{r ratio-boxplot}
+```{r ratio-boxplot, fig.alt = "Boxplot with jittered points of the ratio of estimated statewide per-capita impact to FEMA's Public Assistance per-capita indicator, with a dashed line at a ratio of one."}
 pda_outcomes %>%
   filter(!is.na(pa_threshold_ratio)) %>%
   ggplot(aes(x = decision, y = pa_threshold_ratio, color = decision)) +
@@ -294,7 +294,7 @@ disaster burden), so some sub-threshold requests are approved and some
 above-threshold requests are denied. Plotting the ratio against the total cost
 estimate shows how the two dimensions interact.
 
-```{r ratio-cost-scatter}
+```{r ratio-cost-scatter, fig.alt = "Scatterplot of the per-capita threshold ratio against total estimated damage, with a dashed vertical line at a ratio of one."}
 pda_outcomes %>%
   filter(!is.na(pa_threshold_ratio), cost_estimate_ia_pa_total > 0) %>%
   ggplot(aes(

@@ -9,7 +9,7 @@ inflation_adjust(
   year_variable,
   dollar_variables,
   names_suffix = NULL,
-  base_year = 2024
+  base_year = NULL
 )
 }
 \arguments{
@@ -21,14 +21,17 @@ inflation_adjust(
 
 \item{names_suffix}{A suffix to add to the names of the inflation-adjusted variables. If NULL, defaults to "_<base_year>". If "", columns are renamed in place.}
 
-\item{base_year}{The year to use as the base for inflation adjustment. If NULL, defaults to the most recent year in the PCE index data.}
+\item{base_year}{The year to use as the base for inflation adjustment. If \code{NULL} (the default), uses the most recent year available in the FRED PCE index data.}
 }
 \value{
 A tibble identical to the input \code{df} with additional inflation-adjusted columns. For each column specified in \code{dollar_variables}, a new column is created with the same name plus \code{names_suffix} (default: "_\{base_year\}"). The adjusted values are calculated by multiplying original values by an inflation factor derived from the PCE Price Index ratio between the base year and each observation's year. Original columns are preserved unchanged.
 }
 \description{
-The Personal Consumption Expenditures Price Index (PCE Index) is from the
-Federal Reserve Bank of St. Louis's FRED tool.
+The Personal Consumption Expenditures Price Index (PCE Index) is retrieved
+live from the Federal Reserve Bank of St. Louis's FRED download endpoint
+(annual series DPCERG3A086NBEA), so adjustments always reflect the most
+recent year FRED publishes. The function stops with an informative error if
+the FRED endpoint cannot be reached; no local copy is read as a fallback.
 }
 \examples{
 \dontrun{

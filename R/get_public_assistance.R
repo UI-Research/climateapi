@@ -188,6 +188,10 @@ get_public_assistance= function(
         county_population,
         county_name) })
 
+  ## the set of real county FIPS codes, used below to detect county codes that do
+  ## not correspond to an actual county
+  valid_county_fips = unique(state_county_xwalk$county_code)
+
   public_assistance3a = public_assistance2 |>
     dplyr::mutate(
       county_fips = dplyr::case_when(
@@ -208,6 +212,19 @@ get_public_assistance= function(
         county_fips == "38109" ~ "46109",
         county_name == "Jasper County" & disaster_number %in% c(4318,4226) ~ "05101",
         TRUE ~ county_fips),
+      ## after the targeted remaps above, any *county-level* record whose county_fips
+      ## still does not match a real county is a source-data error -- typically a
+      ## municipality mis-recorded as a county with a nonexistent FIPS (e.g. NJ
+      ## "Monroe County" -> 34055, which is not a valid New Jersey county). Record the
+      ## offending value for the message below, then set county_fips to NA so
+      ## imputed_statewide_flag (further down) distributes the project across its state
+      ## rather than silently losing the project's funding at the county-population
+      ## join. Records already flagged statewide are excluded -- their county_fips is a
+      ## placeholder (e.g. "34000") and is dropped/expanded to all counties regardless.
+      invalid_county_fips = dplyr::if_else(
+        statewide_flag == 0 & !is.na(county_fips) & !county_fips %in% valid_county_fips,
+        county_fips, NA_character_),
+      county_fips = dplyr::if_else(is.na(invalid_county_fips), county_fips, NA_character_),
       county_name = dplyr::case_when(
         stringr::str_detect(county_name, "Wade Hampton") ~ "Kusilvak Census Area",
         stringr::str_detect(county_name, "Valdez-Cordova") ~ "Chugach Census Area",
@@ -248,6 +265,17 @@ get_public_assistance= function(
       is.na(state_fips)) |>
     dplyr::pull(id)
 
+  invalid_county_codes = public_assistance3a |>
+    dplyr::filter(!is.na(invalid_county_fips)) |>
+    dplyr::distinct(invalid_county_fips) |>
+    dplyr::arrange(invalid_county_fips) |>
+    dplyr::pull(invalid_county_fips)
+  if (length(invalid_county_codes) > 0) {
+    message(stringr::str_c(
+      length(invalid_county_codes), " county code(s) did not correspond to a known county ",
+      "and were attributed as statewide (distributed across the state by population): ",
+      stringr::str_c(invalid_county_codes, collapse = ", "), ".")) }
+
   if (imputed_statewide_projects > 0) {
     message(stringr::str_c(
       imputed_statewide_projects, " projects have been attributed",
@@ -257,7 +285,8 @@ get_public_assistance= function(
       length(dropped_projects), " projects have been omitted due to missing state-level identifiers.")) }
 
   public_assistance3b = public_assistance3a |>
-    dplyr::filter(!id %in% dropped_projects)
+    dplyr::filter(!id %in% dropped_projects) |>
+    dplyr::select(-invalid_county_fips)
 
   public_assistance_4a = public_assistance3b |>
     dplyr::select(-county_population, -imputed_statewide_flag) |>
@@ -444,4 +473,4 @@ utils::globalVariables(c(
   "damage_category_code", "damage_category_descrip", "damage_category_description",
   "distinct_state_records_per_id", "imputed_statewide_flag", "pa_category", "project_status",
   "source_geoid", "target_geoid", "allocation_factor_source_to_target", "state_fips",
-  "region_weight"))
+  "region_weight", "invalid_county_fips"))

@@ -165,7 +165,10 @@ get_sheldus = function(file_path = NULL) {
     dplyr::mutate(
       unique_id = uuid::UUIDgenerate(n = nrow(df3))) %>%
     dplyr::select(unique_id, dplyr::everything()) %>%
-    dplyr::select(-allocation_factor)
+    ## drop the crosswalk's allocation-factor helper column if it survived the
+    ## Connecticut interpolation above; `crosswalk` renamed it from
+    ## `allocation_factor` to `allocation_factor_source_to_target`
+    dplyr::select(-dplyr::any_of("allocation_factor_source_to_target"))
 
   message(stringr::str_c(
     "The unit of observation is: county x year x month x hazard. ",

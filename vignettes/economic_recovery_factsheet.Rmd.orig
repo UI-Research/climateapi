@@ -55,13 +55,13 @@ set_urbn_defaults(style = "print")
 Define the affected county and disaster characteristics. These would be updated for each new event.
 ```{r parameters}
 # Affected county
-affected_county_fips <- "12087"
-affected_county_name <- "Monroe County, FL"
-affected_state <- "FL"
+affected_county_fips <- "48265"
+affected_county_name <- "Kerr County, TX"
+affected_state <- "TX"
 
 # Disaster characteristics
-disaster_type <- "Hurricane"
-disaster_year <- 2026
+disaster_type <- "Flooding"
+disaster_year <- 2025
 
 # Event-study window
 years_before <- 6
@@ -97,7 +97,7 @@ acs_matching_variables = c(
 
 ## Hazard Damages over Time
 
-```{r}
+```{r, fig.alt = "Line chart of annual property damage in the affected counties, in millions of dollars, by year."}
 sheldus_df = get_sheldus() %>%
    summarize(.by = c(GEOID, year), damage_property_millions = sum(damage_property, na.rm = TRUE) / 1000000)
 
@@ -115,7 +115,7 @@ sheldus_df %>%
 
 Identify sectors that may be particularly vulnerable to this disaster type.
 
-```{r baseline-industry}
+```{r baseline-industry, fig.alt = "Line chart of employment by industry in the affected counties over time, with dashed vertical lines marking years in which a disaster was declared."}
 cbp_df = cache_it(
   cbp_df, 
   file_name = "cbp_2016_2023", 
@@ -152,7 +152,7 @@ cbp_affected %>%
 
 Identify smaller businesses, which may be more vulnerable to disaster-related economic shocks.
 
-```{r}
+```{r, fig.alt = "Stacked area charts, one per industry, showing the number of employers by employee size range over time."}
 total_employers = cbp_affected %>%
   filter(industry == "total", employee_size_range_label == "All establishments") %>%
   slice_max(year) %>%
@@ -166,12 +166,14 @@ cbp_affected %>%
       employee_size_range_label %in% c("<100-249 employees", "250-499 employees") ~ "100-499 employees",
       employee_size_range_label %in% c("500-999 employees", "1000+") ~ "500+ employees",
       TRUE ~ employee_size_range_label),
+    ## NB: an unordered factor here -- the level order still controls the geom_area
+    ## stacking order, but an *ordered* factor triggers urbnthemes' ordinal fill
+    ## scale, which emits an invalid color for 8 levels ("Invalid hexadecimal digit")
     employee_size_range = factor(
-      employee_size_range_label, 
+      employee_size_range_label,
       levels = c(
-        "1-4 employees", "<5 employees", "5-9 employees", "10-19 employees", "20-49 employees", 
-        "50-99 employees", "100-499 employees", "500+ employees"), 
-        ordered = TRUE),
+        "1-4 employees", "<5 employees", "5-9 employees", "10-19 employees", "20-49 employees",
+        "50-99 employees", "100-499 employees", "500+ employees")),
     industry_label = factor(
       industry_label, 
       levels = count(., industry_label, sort = TRUE) %>% pull(industry_label),
@@ -187,7 +189,7 @@ cbp_affected %>%
 
 ## County Fiscal Capacity Over Time
 
-```{r baseline-fiscal}
+```{r baseline-fiscal, fig.alt = "Line chart of county government finances in millions of dollars over time, with dashed vertical lines marking years in which a disaster was declared."}
 county_expenses = get_government_finances()
 finances_years = county_expenses %>% pull(year) %>% unique()
 
@@ -201,7 +203,7 @@ county_expenses %>%
   pivot_longer(-c(year, GEOID, county_name)) %>%
   filter(name %in% c("revenue_total", "expenditure_total")) %>%
   mutate(name = if_else(str_detect(name, "expenditure"), "Expenditures", "Revenues")) %>%
-  inflation_adjust(year_variable = "year", dollar_variables = "value", base_year = 2024, names_suffix = "_adjusted") %>%
+  inflation_adjust(year_variable = "year", dollar_variables = "value", names_suffix = "_adjusted") %>%
   ggplot(aes(x = year, y = value, color = name, group = name)) +
     geom_line() +
     geom_point() +
@@ -526,7 +528,7 @@ Plot employment trends with time relative to disaster (t=0).
 - **Affected county**: t-6 through t=0 (present)
 - **Comparison counties**: full t-6 through t+6 window, aligned to their disaster year
 
-```{r employment-total}
+```{r employment-total, fig.alt = "Line chart of total employment in each county against years relative to the disaster, with affected counties in blue and comparison counties in grey."}
 # Total employment over event time
 cbp_event_aligned %>%
   filter(industry == "total", employees > 0) %>%
@@ -551,7 +553,7 @@ cbp_event_aligned %>%
 
 Examine how local government finances evolved in comparison counties post-disaster.
 
-```{r fiscal-expenses}
+```{r fiscal-expenses, fig.alt = "Line chart of county government expenses against years relative to the disaster, with affected counties in blue and comparison counties in grey."}
 # Total county expenses over event time
 fiscal_event_aligned %>%
   mutate(county_type = if_else(str_detect(county_type, "affected"), "Impacted", "Comparison")) %>%
@@ -569,7 +571,7 @@ fiscal_event_aligned %>%
   theme(legend.position = "none")
 ```
 
-```{r fiscal-revenue}
+```{r fiscal-revenue, fig.alt = "Line chart of county government revenues against years relative to the disaster, with affected counties in blue and comparison counties in grey."}
 # Total county expenses over event time
 fiscal_event_aligned %>%
   mutate(county_type = if_else(str_detect(county_type, "affected"), "Impacted", "Comparison")) %>%
@@ -594,7 +596,7 @@ Describe typical federal assistance flows based on historical analogs. Since the
 
 ## SBA Disaster Loans
 
-```{r recovery-sba}
+```{r recovery-sba, fig.alt = c("Line chart of cumulative residential SBA loan amounts against years relative to the disaster, with affected counties in blue and comparison counties in grey.", "Line chart of cumulative business SBA loan amounts against years relative to the disaster, with affected counties in blue and comparison counties in grey.")}
 # SBA loans over event time (comparison counties only for post-period)
 
 sba_event_aligned %>%
@@ -634,7 +636,7 @@ sba_event_aligned %>%
 
 ## FEMA Public Assistance
 
-```{r recovery-pa}
+```{r recovery-pa, fig.alt = "Line chart of FEMA Public Assistance funding in comparison counties against years relative to the disaster."}
 # PA funding over event time (comparison counties only for post-period)
 pa_event_aligned %>%
   mutate(county_type = if_else(str_detect(county_type, "affected"), "Impacted", "Comparison")) %>%

@@ -43,7 +43,7 @@ rides along on the result as an attribute, so we pull out the `SpatRaster` for
 the requested year, convert it to a data frame of cell centers, and color each
 cell by its land cover class with `ggplot2`.
 
-```{r plot-land-cover}
+```{r plot-land-cover, fig.alt = "Map of Washington, DC with each 30-meter cell colored by its NLCD land cover class in 2024."}
 ## the raw raster is attached as an attribute; pull out the SpatRaster for the
 ## (single) requested year
 land_cover_raster = attr(land_cover, "nlcd_raster")$rast[[1]]

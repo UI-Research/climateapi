@@ -94,7 +94,7 @@ dc_structures |>
 
 ### Structure composition by tract
 
-```{r tract-composition}
+```{r tract-composition, fig.alt = "Scatterplot of the share of structures that are residential against the total number of structures, one point per Washington, DC census tract."}
 dc_summary <- dc_structures |>
   summarize(
     .by = GEOID,
@@ -117,7 +117,7 @@ dc_summary |>
 
 ### Mapping structure density
 
-```{r map-structures, fig.height = 8}
+```{r map-structures, fig.alt = "Map of Washington, DC census tracts shaded by the number of structures in each tract.", fig.height = 8}
 dc_tracts <- tigris::tracts(state = "DC", cb = TRUE, year = 2023, progress_bar = FALSE) |>
   st_transform(5070)
 

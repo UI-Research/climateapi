@@ -28,6 +28,7 @@ reference:
   - get_structures
   - get_government_finances
   - get_chas_housing_affordability
+  - get_chas_codebook
   - get_nlcd_land_cover
   - get_nlcd_land_cover_colors
 - title: Land use
