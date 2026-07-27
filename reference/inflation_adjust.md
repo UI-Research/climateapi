@@ -1,7 +1,11 @@
 # Inflation adjust dollar values using annual PCE Index
 
-The Personal Consumption Expenditures Price Index (PCE Index) is from
-the Federal Reserve Bank of St. Louis's FRED tool.
+The Personal Consumption Expenditures Price Index (PCE Index) is
+retrieved live from the Federal Reserve Bank of St. Louis's FRED
+download endpoint (annual series DPCERG3A086NBEA), so adjustments always
+reflect the most recent year FRED publishes. The function stops with an
+informative error if the FRED endpoint cannot be reached; no local copy
+is read as a fallback.
 
 ## Usage
 
@@ -11,7 +15,7 @@ inflation_adjust(
   year_variable,
   dollar_variables,
   names_suffix = NULL,
-  base_year = 2024
+  base_year = NULL
 )
 ```
 
@@ -38,8 +42,9 @@ inflation_adjust(
 
 - base_year:
 
-  The year to use as the base for inflation adjustment. If NULL,
-  defaults to the most recent year in the PCE index data.
+  The year to use as the base for inflation adjustment. If `NULL` (the
+  default), uses the most recent year available in the FRED PCE index
+  data.
 
 ## Value
 

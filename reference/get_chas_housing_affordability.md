@@ -69,43 +69,102 @@ get_chas_housing_affordability(
   An optional character vector of raw column names to read from the
   parquet file (disk path only). Names refer to the source's original
   column codes, i.e. before the codebook renaming described in Details.
-  If `NULL` (the default), all columns are read.
+  `geoid` and `year` are always read, whether or not they are listed. If
+  `NULL` (the default), all columns are read.
 
 ## Value
 
 A tibble of CHAS results, one row per geography. Estimate columns whose
 codes appear in the data dictionary are renamed to descriptive
-snake_case names of the form `table_<n>_<description>_estimate_<k>`; all
-other columns (identifiers such as `geoid`/`tract_geoid`, the `year`
-label, and margin-of-error columns) retain their original names. API
-results are returned with HUD's own column names unless they happen to
-match dictionary codes.
+snake_case names built from the variable's definition, for example
+`owner_occupied_income_lte_30_hamfi_cost_burden_gt_50`. See
+[`get_chas_codebook()`](https://ui-research.github.io/climateapi/reference/get_chas_codebook.md)
+for the abbreviations these names use (`lte`, `hh`, `ppr`, and so on).
+All other columns (the `geoid` identifier, the `year` label,
+margin-of-error columns, and any column whose descriptive name is
+ambiguous among those returned) retain their original names. API results
+are returned with HUD's own column names unless they happen to match
+dictionary codes.
+
+The result carries a `"chas_codebook"` attribute holding the tibble
+returned by
+[`get_chas_codebook()`](https://ui-research.github.io/climateapi/reference/get_chas_codebook.md)
+for the period used – one row per CHAS estimate variable, giving its
+descriptive name, source code, table, and definition. When no dictionary
+is available the attribute is a zero-row tibble of that same shape.
 
 ## Details
 
 CHAS releases cover five-year ACS periods; `end_year` is the last year
 of that period (e.g. `end_year = 2021` is the 2017-2021 release).
 
+The source writes every identifier with its summary level in front,
+separated by `"US"` – `"1400000US01001020100"` for a tract in recent
+releases, `"14000US..."` in releases through 2015-2019, and
+`"08000US..."` in the tract-part files. That prefix is removed, so
+`geoid` is the plain eleven-digit tract identifier used by
+[`tigris::tracts()`](https://rdrr.io/pkg/tigris/man/tracts.html) and by
+`tidycensus`, and joins to them without further work.
+
 For 2009-2012, the source publishes counts for census tract *parts*
-rather than whole tracts; these are summed up to the tract level (keyed
-on a `tract_geoid` derived from the source geoid) before being returned.
+rather than whole tracts. Each part identifier is state, county, county
+subdivision, place, and tract, so the tract is taken from the state,
+county, and final six digits, and the parts are summed to whole-tract
+counts. These years return the same `geoid` column as every other year
+(earlier versions of this function returned a separate `tract_geoid`
+column that was not in fact a tract identifier).
 
 Column renaming uses the CHAS data dictionary found under
-`directory_path` (an `.xlsx` file whose name contains "dictionary",
-matched to `end_year`). The dictionary's hierarchical descriptions are
-collapsed into a single descriptive snake_case name per column and
-applied to any matching columns; columns without a dictionary match
-(including margin-of-error columns, which the dictionary does not
-describe the same way) keep their original names. If no dictionary is
-found (for example, when querying the API without the Box mirror
-synced), the data are returned with the source's original column names.
+`directory_path`, read via
+[`get_chas_codebook()`](https://ui-research.github.io/climateapi/reference/get_chas_codebook.md).
+The dictionary's hierarchical descriptions are collapsed into a single
+descriptive snake_case name per column and applied to any matching
+columns; columns without a dictionary match (including margin-of-error
+columns, which the dictionary does not describe separately) keep their
+original names. If no dictionary is found (for example, when querying
+the API without the Box mirror synced), the data are returned with the
+source's original column names. If a dictionary is found for a different
+period than the one requested,
+[`get_chas_codebook()`](https://ui-research.github.io/climateapi/reference/get_chas_codebook.md)
+warns and the substituted period is recorded in the codebook's `vintage`
+column.
+
+That codebook is attached to the returned data as an attribute named
+`"chas_codebook"`, so the definition of any column can be looked up
+without reading the dictionary from disk again:
+
+    chas = get_chas_housing_affordability(geography = "tract", end_year = 2021)
+    codebook = attr(chas, "chas_codebook")
+
+The attribute holds the whole codebook for the period, including
+variables not present in the returned columns. Most data-manipulation
+functions drop attributes they do not recognize, so save the codebook to
+its own object before reshaping, joining, or filtering the data.
+
+Descriptive names are unique within a CHAS table but repeat across
+tables, since each table has its own "owner occupied" total and the
+like. A name is therefore treated as ambiguous only when it describes
+more than one of the columns actually being returned; those columns keep
+their original names and a message reports how many. In practice this
+means requesting a single table always renames cleanly, while requesting
+the whole file leaves a small number of top-level totals unrenamed. Use
+[`get_chas_codebook()`](https://ui-research.github.io/climateapi/reference/get_chas_codebook.md)
+to look up what any column means.
+
+## See also
+
+[`get_chas_codebook()`](https://ui-research.github.io/climateapi/reference/get_chas_codebook.md)
+for the descriptive name and definition of every CHAS variable.
 
 ## Examples
 
 ``` r
 if (FALSE) { # \dontrun{
 ## tract-level data for the 2017-2021 period, read from the on-disk Box mirror
-get_chas_housing_affordability(geography = "tract", end_year = 2021)
+chas = get_chas_housing_affordability(geography = "tract", end_year = 2021)
+
+## the definitions of the columns returned above
+codebook = attr(chas, "chas_codebook")
 
 ## county-level data from the HUD API (requires a registered key)
 register_hud_api_key("your-hud-api-key")

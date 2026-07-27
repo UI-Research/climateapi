@@ -49,6 +49,8 @@
   : Get county government revenues and expenditures
 - [`get_chas_housing_affordability()`](https://ui-research.github.io/climateapi/reference/get_chas_housing_affordability.md)
   : Obtain housing affordability data from HUD's CHAS
+- [`get_chas_codebook()`](https://ui-research.github.io/climateapi/reference/get_chas_codebook.md)
+  : Obtain a codebook for HUD CHAS variables
 - [`get_nlcd_land_cover()`](https://ui-research.github.io/climateapi/reference/get_nlcd_land_cover.md)
   : Get vectorized Annual NLCD land cover data
 - [`get_nlcd_land_cover_colors()`](https://ui-research.github.io/climateapi/reference/get_nlcd_land_cover_colors.md)

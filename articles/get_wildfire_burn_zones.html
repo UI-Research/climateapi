@@ -34,6 +34,7 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/economic_recovery_factsheet.html">Economic Recovery Post Disaster</a></li>
+    <li><a class="dropdown-item" href="../articles/get_chas_housing_affordability.html">Housing Affordability (CHAS)</a></li>
     <li><a class="dropdown-item" href="../articles/get_sheldus.html">SHELDUS Hazard Data</a></li>
     <li><a class="dropdown-item" href="../articles/get_structures.html">USA Structures Data</a></li>
     <li><a class="dropdown-item" href="../articles/get_wildfire_burn_zones.html">Wildfire Burn Zones</a></li>
@@ -139,25 +140,25 @@ disaster.</p>
 <code class="sourceCode R"><span><span class="fu"><a href="https://pillar.r-lib.org/reference/glimpse.html" class="external-link">glimpse</a></span><span class="op">(</span><span class="va">burn_zones</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Rows: 8,010</span></span>
 <span><span class="co">#&gt; Columns: 19</span></span>
-<span><span class="co">#&gt; $ wildfire_id                          &lt;dbl&gt; 1, 1, 2, 3, 4, 5, 6, 7, 8,…</span></span>
-<span><span class="co">#&gt; $ id_fema                              &lt;chr&gt; NA, NA, "FM-5491-OK", NA, …</span></span>
-<span><span class="co">#&gt; $ year                                 &lt;int&gt; 2018, 2018, 2024, 2017, 20…</span></span>
-<span><span class="co">#&gt; $ wildfire_name                        &lt;chr&gt; "DONNELL", "DONNELL", "57"…</span></span>
-<span><span class="co">#&gt; $ state_fips                           &lt;chr&gt; "06", "06", "40", "12", "0…</span></span>
-<span><span class="co">#&gt; $ county_fips                          &lt;chr&gt; "06003", "06109", "40153",…</span></span>
-<span><span class="co">#&gt; $ county_name                          &lt;chr&gt; "Alpine County", "Tuolumne…</span></span>
-<span><span class="co">#&gt; $ area_sq_km                           &lt;dbl&gt; 146.200893, 146.200893, 19…</span></span>
-<span><span class="co">#&gt; $ wildfire_complex_binary              &lt;lgl&gt; FALSE, FALSE, FALSE, FALSE…</span></span>
-<span><span class="co">#&gt; $ date_start                           &lt;date&gt; 2018-08-01, 2018-08-01, 2…</span></span>
-<span><span class="co">#&gt; $ date_containment                     &lt;date&gt; 2018-10-31, 2018-10-31, 2…</span></span>
-<span><span class="co">#&gt; $ fatalities_total                     &lt;int&gt; NA, NA, NA, NA, NA, NA, NA…</span></span>
-<span><span class="co">#&gt; $ injuries_total                       &lt;int&gt; 6, 6, 2, NA, NA, 1, NA, NA…</span></span>
-<span><span class="co">#&gt; $ structures_destroyed                 &lt;int&gt; 135, 135, 1, 19, 5, 4, 4, …</span></span>
-<span><span class="co">#&gt; $ structures_threatened                &lt;int&gt; NA, NA, 1720, NA, 0, 0, NA…</span></span>
-<span><span class="co">#&gt; $ evacuation_total                     &lt;int&gt; NA, NA, NA, NA, NA, 7000, …</span></span>
-<span><span class="co">#&gt; $ wui_type                             &lt;chr&gt; NA, NA, NA, "intermix", NA…</span></span>
-<span><span class="co">#&gt; $ density_people_sq_km_wildfire_buffer &lt;dbl&gt; 0.07433545, 0.07433545, 4.…</span></span>
-<span><span class="co">#&gt; $ geometry                             &lt;POLYGON [m]&gt; POLYGON ((-2033577…</span></span></code></pre></div>
+<span><span class="co">#&gt; $ wildfire_id                          &lt;dbl&gt; 1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10…</span></span>
+<span><span class="co">#&gt; $ id_fema                              &lt;chr&gt; NA, NA, "FM-5491-OK", NA, NA, "F…</span></span>
+<span><span class="co">#&gt; $ year                                 &lt;int&gt; 2018, 2018, 2024, 2017, 2014, 20…</span></span>
+<span><span class="co">#&gt; $ wildfire_name                        &lt;chr&gt; "DONNELL", "DONNELL", "57", "GAR…</span></span>
+<span><span class="co">#&gt; $ state_fips                           &lt;chr&gt; "06", "06", "40", "12", "02", "1…</span></span>
+<span><span class="co">#&gt; $ county_fips                          &lt;chr&gt; "06003", "06109", "40153", "1208…</span></span>
+<span><span class="co">#&gt; $ county_name                          &lt;chr&gt; "Alpine County", "Tuolumne Count…</span></span>
+<span><span class="co">#&gt; $ area_sq_km                           &lt;dbl&gt; 146.200893, 146.200893, 19.10569…</span></span>
+<span><span class="co">#&gt; $ wildfire_complex_binary              &lt;lgl&gt; FALSE, FALSE, FALSE, FALSE, FALS…</span></span>
+<span><span class="co">#&gt; $ date_start                           &lt;date&gt; 2018-08-01, 2018-08-01, 2024-04…</span></span>
+<span><span class="co">#&gt; $ date_containment                     &lt;date&gt; 2018-10-31, 2018-10-31, 2024-04…</span></span>
+<span><span class="co">#&gt; $ fatalities_total                     &lt;int&gt; NA, NA, NA, NA, NA, NA, NA, NA, …</span></span>
+<span><span class="co">#&gt; $ injuries_total                       &lt;int&gt; 6, 6, 2, NA, NA, 1, NA, NA, NA, …</span></span>
+<span><span class="co">#&gt; $ structures_destroyed                 &lt;int&gt; 135, 135, 1, 19, 5, 4, 4, 7, 3, …</span></span>
+<span><span class="co">#&gt; $ structures_threatened                &lt;int&gt; NA, NA, 1720, NA, 0, 0, NA, NA, …</span></span>
+<span><span class="co">#&gt; $ evacuation_total                     &lt;int&gt; NA, NA, NA, NA, NA, 7000, 50, NA…</span></span>
+<span><span class="co">#&gt; $ wui_type                             &lt;chr&gt; NA, NA, NA, "intermix", NA, "int…</span></span>
+<span><span class="co">#&gt; $ density_people_sq_km_wildfire_buffer &lt;dbl&gt; 0.07433545, 0.07433545, 4.128572…</span></span>
+<span><span class="co">#&gt; $ geometry                             &lt;POLYGON [m]&gt; POLYGON ((-2033577 19616…</span></span></code></pre></div>
 <p>Key variables include:</p>
 <ul>
 <li>
@@ -222,9 +223,7 @@ impacts</li>
 <span>    x <span class="op">=</span> <span class="st">""</span>,</span>
 <span>    y <span class="op">=</span> <span class="st">"Number of wildfires"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/facet_wrap.html" class="external-link">facet_wrap</a></span><span class="op">(</span><span class="op">~</span><span class="va">state</span><span class="op">)</span></span></code></pre></div>
-<div class="float">
-<img src="figure/get_wildfire_burn_zones-annual-trends-1.png" alt="plot of chunk annual-trends"><div class="figcaption">plot of chunk annual-trends</div>
-</div>
+<p><img src="figure/get_wildfire_burn_zones-annual-trends-1.png" alt="Bar charts, one panel per state, of the number of wildfire disasters each year in the five states with the most wildfires."></p>
 </div>
 <div class="section level3">
 <h3 id="geographic-distribution-of-impacts">Geographic distribution of impacts<a class="anchor" aria-label="anchor" href="#geographic-distribution-of-impacts"></a>
@@ -256,9 +255,7 @@ impacts</li>
 <span>    x <span class="op">=</span> <span class="st">"Number of distinct wildfires"</span>,</span>
 <span>    y <span class="op">=</span> <span class="st">""</span></span>
 <span>  <span class="op">)</span></span></code></pre></div>
-<div class="float">
-<img src="figure/get_wildfire_burn_zones-state-impacts-1.png" alt="plot of chunk state-impacts"><div class="figcaption">plot of chunk state-impacts</div>
-</div>
+<p><img src="figure/get_wildfire_burn_zones-state-impacts-1.png" alt="Horizontal bar chart of the states with the most wildfire burn zone disasters between 2000 and 2025."></p>
 </div>
 <div class="section level3">
 <h3 id="mapping-wildfire-burn-zones">Mapping wildfire burn zones<a class="anchor" aria-label="anchor" href="#mapping-wildfire-burn-zones"></a>
@@ -281,9 +278,7 @@ impacts</li>
 <span>    subtitle <span class="op">=</span> <span class="st">"Burn zone perimeters colored by structures destroyed"</span>,</span>
 <span>    fill <span class="op">=</span> <span class="st">"Structures\ndestroyed"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/pkg/urbnthemes/man/theme_urbn_map.html" class="external-link">theme_urbn_map</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<div class="float">
-<img src="figure/get_wildfire_burn_zones-map-example-1.png" alt="plot of chunk map-example"><div class="figcaption">plot of chunk map-example</div>
-</div>
+<p><img src="figure/get_wildfire_burn_zones-map-example-1.png" alt="Map of California counties with 2020 wildfire burn zone perimeters shaded by the number of structures destroyed."></p>
 </div>
 <div class="section level3">
 <h3 id="analyzing-structure-loss-severity">Analyzing structure loss severity<a class="anchor" aria-label="anchor" href="#analyzing-structure-loss-severity"></a>
@@ -318,9 +313,7 @@ impacts</li>
 <span>    title <span class="op">=</span> <span class="st">"Most wildifres destroy under 10 structures"</span>,</span>
 <span>    x <span class="op">=</span> <span class="st">""</span>,</span>
 <span>    y <span class="op">=</span> <span class="st">""</span><span class="op">)</span></span></code></pre></div>
-<div class="float">
-<img src="figure/get_wildfire_burn_zones-severity-analysis-1.png" alt="plot of chunk severity-analysis"><div class="figcaption">plot of chunk severity-analysis</div>
-</div>
+<p><img src="figure/get_wildfire_burn_zones-severity-analysis-1.png" alt="Stacked bar chart of the share of wildfires each year falling into each range of structures destroyed."></p>
 </div>
 </div>
 <div class="section level2">

@@ -58,7 +58,5 @@ ggplot(land_cover_df, aes(x = x, y = y, fill = land_cover_class)) +
     theme_void()
 ```
 
-![plot of chunk
-plot-land-cover](figure/land_cover-plot-land-cover-1.png)
-
-plot of chunk plot-land-cover
+![Map of Washington, DC with each 30-meter cell colored by its NLCD land
+cover class in 2024.](figure/land_cover-plot-land-cover-1.png)

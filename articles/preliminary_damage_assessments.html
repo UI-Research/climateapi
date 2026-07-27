@@ -34,6 +34,7 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/economic_recovery_factsheet.html">Economic Recovery Post Disaster</a></li>
+    <li><a class="dropdown-item" href="../articles/get_chas_housing_affordability.html">Housing Affordability (CHAS)</a></li>
     <li><a class="dropdown-item" href="../articles/get_sheldus.html">SHELDUS Hazard Data</a></li>
     <li><a class="dropdown-item" href="../articles/get_structures.html">USA Structures Data</a></li>
     <li><a class="dropdown-item" href="../articles/get_wildfire_burn_zones.html">Wildfire Burn Zones</a></li>
@@ -349,9 +350,7 @@ above the line and denials below it.</p>
 <span>    x <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>    y <span class="op">=</span> <span class="st">"Per-capita impact ÷ threshold"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>legend.position <span class="op">=</span> <span class="st">"none"</span><span class="op">)</span></span></code></pre></div>
-<div class="float">
-<img src="figure/preliminary_damage_assessments-ratio-boxplot-1.png" alt="plot of chunk ratio-boxplot"><div class="figcaption">plot of chunk ratio-boxplot</div>
-</div>
+<p><img src="figure/preliminary_damage_assessments-ratio-boxplot-1.png" alt="Boxplot with jittered points of the ratio of estimated statewide per-capita impact to FEMA's Public Assistance per-capita indicator, with a dashed line at a ratio of one."></p>
 <p>The relationship is imperfect, which is the point: the per-capita
 indicator is one input among several (insurance coverage, localized
 impacts, prior-year disaster burden), so some sub-threshold requests are
@@ -375,9 +374,7 @@ interact.</p>
 <span>    x <span class="op">=</span> <span class="st">"Per-capita impact ÷ threshold"</span>,</span>
 <span>    y <span class="op">=</span> <span class="st">"Total estimated cost"</span>,</span>
 <span>    color <span class="op">=</span> <span class="st">"Decision"</span><span class="op">)</span></span></code></pre></div>
-<div class="float">
-<img src="figure/preliminary_damage_assessments-ratio-cost-scatter-1.png" alt="plot of chunk ratio-cost-scatter"><div class="figcaption">plot of chunk ratio-cost-scatter</div>
-</div>
+<p><img src="figure/preliminary_damage_assessments-ratio-cost-scatter-1.png" alt="Scatterplot of the per-capita threshold ratio against total estimated damage, with a dashed vertical line at a ratio of one."></p>
 </div>
 <div class="section level2">
 <h2 id="caveats">Caveats<a class="anchor" aria-label="anchor" href="#caveats"></a>

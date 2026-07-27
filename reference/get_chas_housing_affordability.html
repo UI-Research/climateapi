@@ -33,6 +33,7 @@ descriptive snake_case names (see Details)."></head><body>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/economic_recovery_factsheet.html">Economic Recovery Post Disaster</a></li>
+    <li><a class="dropdown-item" href="../articles/get_chas_housing_affordability.html">Housing Affordability (CHAS)</a></li>
     <li><a class="dropdown-item" href="../articles/get_sheldus.html">SHELDUS Hazard Data</a></li>
     <li><a class="dropdown-item" href="../articles/get_structures.html">USA Structures Data</a></li>
     <li><a class="dropdown-item" href="../articles/get_wildfire_burn_zones.html">Wildfire Burn Zones</a></li>
@@ -121,41 +122,81 @@ disk (tract) path and for locating the dictionary used to rename columns.</p></d
 <dt id="arg-columns">columns<a class="anchor" aria-label="anchor" href="#arg-columns"></a></dt>
 <dd><p>An optional character vector of raw column names to read from the
 parquet file (disk path only). Names refer to the source's original column codes,
-i.e. before the codebook renaming described in Details. If <code>NULL</code> (the default),
-all columns are read.</p></dd>
+i.e. before the codebook renaming described in Details. <code>geoid</code> and <code>year</code> are always
+read, whether or not they are listed. If <code>NULL</code> (the default), all columns are read.</p></dd>
 
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A tibble of CHAS results, one row per geography. Estimate columns whose codes
-appear in the data dictionary are renamed to descriptive snake_case names of the
-form <code>table_&lt;n&gt;_&lt;description&gt;_estimate_&lt;k&gt;</code>; all other columns (identifiers such as
-<code>geoid</code>/<code>tract_geoid</code>, the <code>year</code> label, and margin-of-error columns) retain their
-original names. API results are returned with HUD's own column names unless they
-happen to match dictionary codes.</p>
+appear in the data dictionary are renamed to descriptive snake_case names built from
+the variable's definition, for example
+<code>owner_occupied_income_lte_30_hamfi_cost_burden_gt_50</code>. See <code><a href="get_chas_codebook.html">get_chas_codebook()</a></code> for
+the abbreviations these names use (<code>lte</code>, <code>hh</code>, <code>ppr</code>, and so on). All other columns
+(the <code>geoid</code> identifier, the <code>year</code> label, margin-of-error columns, and any column
+whose descriptive name is ambiguous among those returned) retain their original
+names. API results are returned with HUD's own column names unless they happen to
+match dictionary codes.</p>
+<p>The result carries a <code>"chas_codebook"</code> attribute holding the tibble returned by
+<code><a href="get_chas_codebook.html">get_chas_codebook()</a></code> for the period used – one row per CHAS estimate variable,
+giving its descriptive name, source code, table, and definition. When no dictionary
+is available the attribute is a zero-row tibble of that same shape.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>CHAS releases cover five-year ACS periods; <code>end_year</code> is the last year of
 that period (e.g. <code>end_year = 2021</code> is the 2017-2021 release).</p>
+<p>The source writes every identifier with its summary level in front, separated by
+<code>"US"</code> – <code>"1400000US01001020100"</code> for a tract in recent releases, <code>"14000US..."</code> in
+releases through 2015-2019, and <code>"08000US..."</code> in the tract-part files. That prefix
+is removed, so <code>geoid</code> is the plain eleven-digit tract identifier used by
+<code><a href="https://rdrr.io/pkg/tigris/man/tracts.html" class="external-link">tigris::tracts()</a></code> and by <code>tidycensus</code>, and joins to them without further work.</p>
 <p>For 2009-2012, the source publishes counts for census tract <em>parts</em> rather than
-whole tracts; these are summed up to the tract level (keyed on a <code>tract_geoid</code>
-derived from the source geoid) before being returned.</p>
-<p>Column renaming uses the CHAS data dictionary found under <code>directory_path</code> (an
-<code>.xlsx</code> file whose name contains "dictionary", matched to <code>end_year</code>). The
-dictionary's hierarchical descriptions are collapsed into a single descriptive
-snake_case name per column and applied to any matching columns; columns without a
-dictionary match (including margin-of-error columns, which the dictionary does not
-describe the same way) keep their original names. If no dictionary is found (for
-example, when querying the API without the Box mirror synced), the data are
-returned with the source's original column names.</p>
+whole tracts. Each part identifier is state, county, county subdivision, place, and
+tract, so the tract is taken from the state, county, and final six digits, and the
+parts are summed to whole-tract counts. These years return the same <code>geoid</code> column as
+every other year (earlier versions of this function returned a separate <code>tract_geoid</code>
+column that was not in fact a tract identifier).</p>
+<p>Column renaming uses the CHAS data dictionary found under <code>directory_path</code>, read via
+<code><a href="get_chas_codebook.html">get_chas_codebook()</a></code>. The dictionary's hierarchical descriptions are collapsed into
+a single descriptive snake_case name per column and applied to any matching columns;
+columns without a dictionary match (including margin-of-error columns, which the
+dictionary does not describe separately) keep their original names. If no dictionary
+is found (for example, when querying the API without the Box mirror synced), the data
+are returned with the source's original column names. If a dictionary is found for a
+different period than the one requested, <code><a href="get_chas_codebook.html">get_chas_codebook()</a></code> warns and the
+substituted period is recorded in the codebook's <code>vintage</code> column.</p>
+<p>That codebook is attached to the returned data as an attribute named
+<code>"chas_codebook"</code>, so the definition of any column can be looked up without reading
+the dictionary from disk again:</p>
+<p></p><div class="sourceCode"><pre><code><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a>chas <span class="ot">=</span> <span class="fu">get_chas_housing_affordability</span>(<span class="at">geography =</span> <span class="st">"tract"</span>, <span class="at">end_year =</span> <span class="dv">2021</span>)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a>codebook <span class="ot">=</span> <span class="fu">attr</span>(chas, <span class="st">"chas_codebook"</span>)</span></code></pre><p></p></div>
+<p>The attribute holds the whole codebook for the period, including variables not
+present in the returned columns. Most data-manipulation functions drop attributes
+they do not recognize, so save the codebook to its own object before reshaping,
+joining, or filtering the data.</p>
+<p>Descriptive names are unique within a CHAS table but repeat across tables, since each
+table has its own "owner occupied" total and the like. A name is therefore treated as
+ambiguous only when it describes more than one of the columns actually being
+returned; those columns keep their original names and a message reports how many. In
+practice this means requesting a single table always renames cleanly, while
+requesting the whole file leaves a small number of top-level totals unrenamed. Use
+<code><a href="get_chas_codebook.html">get_chas_codebook()</a></code> to look up what any column means.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
+    <div class="dont-index"><p><code><a href="get_chas_codebook.html">get_chas_codebook()</a></code> for the descriptive name and definition of every CHAS
+variable.</p></div>
     </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
 <span class="r-in"><span><span class="co">## tract-level data for the 2017-2021 period, read from the on-disk Box mirror</span></span></span>
-<span class="r-in"><span><span class="fu">get_chas_housing_affordability</span><span class="op">(</span>geography <span class="op">=</span> <span class="st">"tract"</span>, end_year <span class="op">=</span> <span class="fl">2021</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">chas</span> <span class="op">=</span> <span class="fu">get_chas_housing_affordability</span><span class="op">(</span>geography <span class="op">=</span> <span class="st">"tract"</span>, end_year <span class="op">=</span> <span class="fl">2021</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co">## the definitions of the columns returned above</span></span></span>
+<span class="r-in"><span><span class="va">codebook</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">chas</span>, <span class="st">"chas_codebook"</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">## county-level data from the HUD API (requires a registered key)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="register_hud_api_key.html">register_hud_api_key</a></span><span class="op">(</span><span class="st">"your-hud-api-key"</span><span class="op">)</span></span></span>
