@@ -604,12 +604,18 @@ get_geography_metadata = function(
 
 #' Convert named month-including dates to standardized date-type variables
 #'
+#' Punctuation separating the day from the year is removed first. Both
+#' "January 01 2000" and "January 01, 2000" occur in the source documents this
+#' is applied to, and without that step the comma survives the space-to-hyphen
+#' substitution below ("01-01,-2000") and no date is matched at all.
+#'
 #' @param date_string A text-based date of the form January 01 2000
 #'
 #' @return A date-type variable
 #' @noRd
 date_string_to_date = function(date_string) {
   date_string %>%
+    stringr::str_remove_all(",") %>%
     stringr::str_replace_all(c(
       "January" = "01",
       "February" = "02",

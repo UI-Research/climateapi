@@ -121,13 +121,19 @@ get_structures = function(
         dplyr::pull(state_name) %>%
         unique()
 
-      ## scoped to the state's own subfolder (not the full box_path tree), so an
-      ## unrelated stray/duplicate folder for another state can't produce a false match
-      ## and silently bypass this state's own cache
-      existing_file = list.files(file.path(box_path, state_abbreviation), full.names = TRUE, recursive = TRUE) %>%
-        purrr::keep(stringr::str_detect(., stringr::str_c(state_abbreviation, "_Structures.gdb/gdb$"))) %>%
-        stringr::str_remove("/gdb$")
+      ## locate the state's geodatabase directory itself (e.g., WV_Structures.gdb),
+      ## at any depth under the state's own subfolder (not the full box_path tree),
+      ## so that differing zip layouts across states are all handled and an unrelated
+      ## stray/duplicate folder for another state can't produce a false match
+      find_structures_gdb = function() {
+        list.files(
+            file.path(box_path, state_abbreviation),
+            full.names = TRUE, recursive = TRUE, include.dirs = TRUE) %>%
+          purrr::keep(
+            ~ stringr::str_detect(
+              .x, stringr::str_c(state_abbreviation, "_Structures\\.gdb$"))) }
 
+      existing_file = find_structures_gdb()
 
       ## if there's an existing file on Box, we read the data locally rather than
       ## download them from the website (which is very slow)
@@ -150,10 +156,14 @@ get_structures = function(
           zip = outpath,
           exdir = file.path(box_path, state_abbreviation))
 
-        structures1 = sf::st_read(
-          list.files(file.path(box_path, state_abbreviation), full.names = TRUE) %>%
-            list.files(full.names = TRUE) %>%
-            purrr::keep(~ stringr::str_detect(.x, "gdb"))) }
+        downloaded_gdb = find_structures_gdb()
+
+        if (length(downloaded_gdb) != 1) {
+          stop(stringr::str_c(
+            "Expected exactly one ", state_abbreviation, "_Structures.gdb directory ",
+            "after unzipping, but found ", length(downloaded_gdb), ".")) }
+
+        structures1 = sf::st_read(downloaded_gdb) }
 
       ## translate to appropriate spatial format, filter to the user-provided `boundaries`
       ## object, and select the relevant columns

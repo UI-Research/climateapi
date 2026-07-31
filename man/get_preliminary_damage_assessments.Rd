@@ -16,8 +16,9 @@ get_preliminary_damage_assessments(
 \item{file_path}{The file path to the cached dataset, or if there is no cache, the path
 at which to cache the resulting data.}
 
-\item{directory_path}{The path to the directory where PDA PDFs are stored. Use
-\code{scrape_pda_pdfs} to generate these files.}
+\item{directory_path}{The path to the directory where PDA PDFs are stored.
+These files are not fetched by this function; run \code{\link[=scrape_pda_pdfs]{scrape_pda_pdfs()}} to
+download them and to refresh the archive as FEMA publishes new reports.}
 
 \item{use_cache}{Boolean. Read the existing dataset stored at \code{file_path}? If FALSE,
 data will be generated anew. Else, if a file exists at \code{file_path}, this file will be returned.}
@@ -78,6 +79,23 @@ Data are extracted from PDF reports hosted at
 Owing to the unstructured nature of the source documents, some fields may be incorrect
 in the data returned by the function, though significant quality checks have been
 implemented in an effort to produce a high-quality dataset.
+
+Before the data are returned -- whether newly generated or read from the cache --
+they are checked for the ways that parsing an unstructured PDF fails silently:
+values that are not finite numbers, negative counts, percentages outside 0-100,
+cost estimates small enough to be a label's footnote number rather than a total,
+demographic shares of exactly zero (the signature of a blank field whose footnote
+number was read as the value),
+statutory per capita thresholds outside their published range, damage categories
+summing to more than the stated total of impacted residences, values recorded for
+a program the report says was not requested, values far above the rest of their
+column, malformed or missing disaster numbers, implausible determination dates,
+and columns that are almost entirely empty among the reports that should state
+them. Anything found is raised as a single \code{warning()} naming example source
+reports; the values themselves are returned as parsed, so each can be checked
+against its PDF. The share of each field that is missing among the reports that
+requested the program and were approved is reported with \code{message()}, since
+whether a given rate is a problem is a judgment rather than a rule.
 }
 \examples{
 \dontrun{
