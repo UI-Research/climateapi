@@ -7,18 +7,40 @@
 scrape_pda_pdfs(
   cache_directory = file.path(climateapi::get_box_path(), "hazards", "urban",
     "preliminary-damage-assessments", "pdfs"),
+  pages = NULL,
   max_pages = 200,
-  attempts_per_page = 3
+  attempts_per_page = 5,
+  delay_seconds = 2,
+  quiet = FALSE
 )
 }
 \arguments{
 \item{cache_directory}{The folder where scraped PDFs are written.}
+
+\item{pages}{Which listing pages to read, as a numeric vector. The default
+\code{NULL} walks the whole listing until a page returns no links, which is the
+only setting that guarantees complete coverage. FEMA lists newest first, so
+\code{pages = 0:2} is enough to pick up recently published reports and is much
+faster. Two caveats when this is set: cached files that are no longer listed
+cannot be detected, because the full listing was never read; and filename
+collisions are resolved only against the pages requested, so a name could be
+assigned that a page outside the range also claims.}
 
 \item{max_pages}{A guard against an unbounded walk if the listing ever stops
 returning empty pages. Raises an error if reached.}
 
 \item{attempts_per_page}{How many times to try a listing page before treating
 it as a failure.}
+
+\item{delay_seconds}{Seconds to pause between listing pages, to avoid
+hammering FEMA's site. This is what dominates the running time of a full
+walk -- roughly 70 pages -- not the downloads, which are skipped for reports
+already in \code{cache_directory}.}
+
+\item{quiet}{Suppress progress messages? The walk covers roughly 70 pages with
+a pause between each and is otherwise silent for several minutes, so progress
+is reported by default. Warnings about failed downloads and about cached
+files no longer listed are always raised, regardless of this setting.}
 }
 \value{
 Invisibly, a tibble with one row per report found on the site,
