@@ -51,6 +51,7 @@ Imports:
     sf,
     stats,
     stringr,
+    terra,
     tibble,
     tidycensus,
     tidyr,
