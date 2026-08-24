@@ -28,7 +28,13 @@ A dataframe of preliminary damage assessment reports. Columns include:
 \describe{
 \item{path}{The local file path to the source PDA PDF.}
 \item{disaster_number}{FEMA disaster number.}
-\item{event_type}{Type of decision: "approved", "denial", "appeal_approved", or "appeal_denial".}
+\item{event_type}{Type of decision: "approved", "denial", "appeal_approved", or
+"appeal_denial". The denial classes are read from FEMA's filename convention and the
+report title. "appeal_approved" is read from the report body instead, because an
+approved appeal is titled and named exactly like a first-instance approval and carries
+a disaster number; what identifies it is a narrative of a denied request that was
+subsequently appealed. Both halves of that narrative are required, so ordinary
+approvals that merely describe the appeals process are not misclassified.}
 \item{event_title}{Title/description of the disaster event.}
 \item{event_date_determined}{Date the PDA determination was made.}
 \item{event_native_flag}{1 if tribal request, 0 otherwise.}
@@ -37,12 +43,16 @@ A dataframe of preliminary damage assessment reports. Columns include:
 \item{pa_primary_impact}{The primary type of impact described for Public Assistance purposes.}
 \item{pa_cost_estimate_total}{Estimated total Public Assistance cost.}
 \item{pa_per_capita_impact_statewide}{Statewide (or territory/commonwealth) per capita impact amount.}
-\item{pa_per_capita_impact_indicator_statewide}{Numeric ratio of the statewide per capita impact
-to the applicable threshold -- a decimal ratio (e.g. 1.5, 1.89), not a "Met"/"Not Met"
-categorical indicator despite the field's FEMA-assigned name.}
+\item{pa_per_capita_impact_indicator_statewide}{FEMA's statutory statewide per capita
+\emph{threshold} in dollars for the relevant year (observed range 1.24--1.94), not a ratio
+and not a "Met"/"Not Met" categorical despite the field's FEMA-assigned name. Compare
+it against \code{pa_per_capita_impact_statewide}, which is the estimated per capita impact
+in the same units; the ratio of the two is what indicates whether the threshold was met.}
 \item{pa_per_capita_impact_countywide}{Raw text of countywide per capita impact ratios (may list
 multiple values across affected counties for a multi-county event).}
-\item{pa_per_capita_impact_indicator_countywide}{Truncated text of the countywide per capita impact indicator.}
+\item{pa_per_capita_impact_indicator_countywide}{FEMA's statutory countywide per capita
+threshold in dollars (observed range 3.11--4.60), on the same basis as the statewide
+indicator above.}
 \item{pa_per_capita_impact_countywide_max}{Maximum countywide per capita impact ratio parsed
 from \code{pa_per_capita_impact_countywide}.}
 \item{pa_per_capita_impact_countywide_min}{Minimum countywide per capita impact ratio parsed

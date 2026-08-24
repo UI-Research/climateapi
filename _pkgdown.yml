@@ -5,6 +5,8 @@ reference:
 - title: Disaster events
   contents: 
   - get_fema_disaster_declarations
+  - get_fema_floodplain
+  - get_usgs_gage
   - get_current_fire_perimeters
   - get_wildfire_burn_zones
 - title: Disaster-related damages and funding
@@ -53,4 +55,5 @@ reference:
   - get_naics_codes
   - get_hud_api_key
   - register_hud_api_key
+  - scrape_pda_pdfs
 
