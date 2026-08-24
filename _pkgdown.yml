@@ -9,6 +9,7 @@ reference:
   - get_usgs_gage
   - get_current_fire_perimeters
   - get_wildfire_burn_zones
+  - get_hrrr_smoke
 - title: Disaster-related damages and funding
   contents: 
   - get_national_risk_index

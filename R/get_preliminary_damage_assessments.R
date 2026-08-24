@@ -1286,7 +1286,10 @@ correct_duplicate_disaster_numbers = function(pda_df) {
   corrected = pda_df %>%
     ## coerce so the if_else() below is type-stable regardless of how a cached CSV
     ## parsed the column (readr may guess double; the extracted value is character)
-    dplyr::mutate(disaster_number = as.character(disaster_number)) %>%
+    dplyr::mutate(
+      dplyr::across(
+        dplyr::any_of(c("disaster_number", "disaster_number_filename")),
+        as.character)) %>%
     dplyr::add_count(disaster_number, name = "disaster_number_count") %>%
     dplyr::mutate(
       disaster_number_from_text = stringr::str_extract(text, "FEMA-[0-9]{4}") %>%
