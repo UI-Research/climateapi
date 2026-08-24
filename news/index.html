@@ -21,12 +21,12 @@
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/economic_recovery_factsheet.html">Economic Recovery Post Disaster</a></li>
     <li><a class="dropdown-item" href="../articles/get_chas_housing_affordability.html">Housing Affordability (CHAS)</a></li>
     <li><a class="dropdown-item" href="../articles/get_fema_floodplain.html">FEMA Floodplains</a></li>
+    <li><a class="dropdown-item" href="../articles/get_hrrr_smoke.html">Animating Wildfire Smoke</a></li>
     <li><a class="dropdown-item" href="../articles/get_sheldus.html">SHELDUS Hazard Data</a></li>
     <li><a class="dropdown-item" href="../articles/get_structures.html">USA Structures Data</a></li>
     <li><a class="dropdown-item" href="../articles/get_usgs_gage.html">USGS Stream-Gage Histories</a></li>
     <li><a class="dropdown-item" href="../articles/get_wildfire_burn_zones.html">Wildfire Burn Zones</a></li>
     <li><a class="dropdown-item" href="../articles/land_cover.html">Annual NLCD Land Cover</a></li>
-    <li><a class="dropdown-item" href="../articles/preliminary_damage_assessments.html">Preliminary Damage Assessments and Declaration Outcomes</a></li>
   </ul></li>
 <li class="active nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -45,7 +45,14 @@
 
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="development version" id="climateapi-development-version">climateapi (development version)<a class="anchor" aria-label="anchor" href="#climateapi-development-version"></a></h2>
-<div class="section level3">
+<ul><li>
+<code>get_preliminary_damage_assessments()</code> now returns <code>pda_ia_requested</code> and <code>pda_pa_requested</code> as TRUE/FALSE rather than 1/0, matching the <code>fema_*_requested</code> columns.</li>
+<li>
+<code>get_preliminary_damage_assessments()</code> now reads the Public Assistance cost estimate from reports that print the label as “Total Public Assistance Cost Estimate” rather than “cost estimate” (disasters 1736-1739), which previously came back as missing.</li>
+<li>
+<code>get_preliminary_damage_assessments()</code> now fills in a missing or out-of-range countywide per capita impact indicator the same way it already filled the statewide one: with the value the other reports of the same federal fiscal year state.</li>
+<li>Adding <code>transform_pda_counties()</code>, which splits the county listing a preliminary damage assessment report prints for Public Assistance into one row per report-county, with the county’s FIPS code and its per capita impact as a number.</li>
+</ul><div class="section level3">
 <h3 id="v0009001-development-version">v0.0.0.9001<a class="anchor" aria-label="anchor" href="#v0009001-development-version"></a></h3>
 <ul><li>Updating README</li>
 <li>Reorganizing References</li>

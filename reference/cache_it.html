@@ -27,12 +27,12 @@ reading/writing and adds "_sf" to the filename to indicate the file format.'></h
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/economic_recovery_factsheet.html">Economic Recovery Post Disaster</a></li>
     <li><a class="dropdown-item" href="../articles/get_chas_housing_affordability.html">Housing Affordability (CHAS)</a></li>
     <li><a class="dropdown-item" href="../articles/get_fema_floodplain.html">FEMA Floodplains</a></li>
+    <li><a class="dropdown-item" href="../articles/get_hrrr_smoke.html">Animating Wildfire Smoke</a></li>
     <li><a class="dropdown-item" href="../articles/get_sheldus.html">SHELDUS Hazard Data</a></li>
     <li><a class="dropdown-item" href="../articles/get_structures.html">USA Structures Data</a></li>
     <li><a class="dropdown-item" href="../articles/get_usgs_gage.html">USGS Stream-Gage Histories</a></li>
     <li><a class="dropdown-item" href="../articles/get_wildfire_burn_zones.html">Wildfire Burn Zones</a></li>
     <li><a class="dropdown-item" href="../articles/land_cover.html">Annual NLCD Land Cover</a></li>
-    <li><a class="dropdown-item" href="../articles/preliminary_damage_assessments.html">Preliminary Damage Assessments and Declaration Outcomes</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -102,6 +102,14 @@ Set to NULL or Inf to keep all versions.</p></dd>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>The object that was cached (either written or read)</p>
+    </div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>Parquet stores durations in seconds, so a difftime column written in another unit
+(days, hours, minutes, weeks) would otherwise be read back labelled in seconds. The
+original units are recorded when the file is written and re-applied when it is read,
+so difftime columns keep the units they were cached with. Files cached before this
+behavior was added carry no record of their units and are read back in seconds.</p>
     </div>
 
     <div class="section level2">

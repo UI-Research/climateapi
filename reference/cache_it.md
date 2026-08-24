@@ -56,6 +56,15 @@ cache_it(object, file_name = NULL, path = ".", read = TRUE, keep_n = 5)
 
 The object that was cached (either written or read)
 
+## Details
+
+Parquet stores durations in seconds, so a difftime column written in
+another unit (days, hours, minutes, weeks) would otherwise be read back
+labelled in seconds. The original units are recorded when the file is
+written and re-applied when it is read, so difftime columns keep the
+units they were cached with. Files cached before this behavior was added
+carry no record of their units and are read back in seconds.
+
 ## Examples
 
 ``` r

@@ -12,6 +12,8 @@
   : Acquire current wildfire perimeters
 - [`get_wildfire_burn_zones()`](https://ui-research.github.io/climateapi/reference/get_wildfire_burn_zones.md)
   : Get wildfire burn zones
+- [`get_hrrr_smoke()`](https://ui-research.github.io/climateapi/reference/get_hrrr_smoke.md)
+  : Get hourly wildfire smoke concentrations from the HRRR-Smoke model
 
 ## Disaster-related damages and funding
 
@@ -37,9 +39,6 @@
   : Get Disaster Dollar Database Data
 - [`get_sheldus()`](https://ui-research.github.io/climateapi/reference/get_sheldus.md)
   : Access temporal county-level SHELDUS hazard damage data
-- [`get_preliminary_damage_assessments()`](https://ui-research.github.io/climateapi/reference/get_preliminary_damage_assessments.md)
-  : Get Data from Preliminary Damage Assessments Submitted to FEMA for
-  Disaster Declarations
 
 ## Disaster-relevant domains
 
@@ -103,5 +102,3 @@
   : Retrieve the stored HUD API key
 - [`register_hud_api_key()`](https://ui-research.github.io/climateapi/reference/register_hud_api_key.md)
   : Register a HUD API key
-- [`scrape_pda_pdfs()`](https://ui-research.github.io/climateapi/reference/scrape_pda_pdfs.md)
-  : Download Preliminary Damage Assessment (PDA) Reports to Disk
