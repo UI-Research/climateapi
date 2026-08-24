@@ -41,6 +41,13 @@ This function writes an R object to a parquet file with an automatic datestamp
 file if one exists. For sf objects, the function automatically uses sfarrow for
 reading/writing and adds "_sf" to the filename to indicate the file format.
 }
+\details{
+Parquet stores durations in seconds, so a difftime column written in another unit
+(days, hours, minutes, weeks) would otherwise be read back labelled in seconds. The
+original units are recorded when the file is written and re-applied when it is read,
+so difftime columns keep the units they were cached with. Files cached before this
+behavior was added carry no record of their units and are read back in seconds.
+}
 \examples{
 \dontrun{
 ## Note: datestamps in filenames are illustrative; user results will

@@ -80,9 +80,14 @@ file and the pull resumes wherever it left off.
 \details{
 Site metadata (name, county, coordinates, drainage area) is attached
 to every reading. Data are from the USGS Water Data APIs; see
-\url{https://api.waterdata.usgs.gov/}. USGS asks that heavy users register
-a free API key (see \code{dataRetrieval::setAccess()} documentation); unkeyed
-access is rate-limited but sufficient for modest pulls.
+\url{https://api.waterdata.usgs.gov/}. Unkeyed access is rate-limited per
+IP address and hour-long lockouts follow when the limit is hit, so
+anything beyond a modest pull (especially \code{statistic = "daily_max"}, or
+many counties) needs a free API key: request one at
+\url{https://api.waterdata.usgs.gov/signup/}, add
+\code{API_USGS_PAT = "your_key"} to your \code{.Renviron} file (e.g. via
+\code{usethis::edit_r_environ()}), and restart R. \code{dataRetrieval} then sends
+the key automatically.
 }
 \examples{
 \dontrun{

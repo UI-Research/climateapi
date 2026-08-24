@@ -5,6 +5,12 @@
 #' file if one exists. For sf objects, the function automatically uses sfarrow for
 #' reading/writing and adds "_sf" to the filename to indicate the file format.
 #'
+#' Parquet stores durations in seconds, so a difftime column written in another unit
+#' (days, hours, minutes, weeks) would otherwise be read back labelled in seconds. The
+#' original units are recorded when the file is written and re-applied when it is read,
+#' so difftime columns keep the units they were cached with. Files cached before this
+#' behavior was added carry no record of their units and are read back in seconds.
+#'
 #' @param object A dataframe, tibble, or sf object to cache. Can be provided as
 #'   either a quoted or unquoted name. Optional when reading from cache - in this
 #'   case, file_name must be provided.
@@ -171,6 +177,24 @@ cache_it <- function(object,
     list.files(path, pattern = pattern, full.names = TRUE)
   }
 
+  # Helper function to restore the original units of difftime columns. Arrow stores
+  # durations in seconds, so a column written in days is read back as an equivalent
+  # number of seconds; the original units are recorded as a column attribute at write
+  # time and re-applied here.
+  restore_difftime_units <- function(data) {
+    recorded_units <- purrr::map(data, \(column) attr(column, "climateapi_difftime_units"))
+    columns_to_restore <- names(recorded_units)[!purrr::map_lgl(recorded_units, is.null)]
+
+    for (column_name in columns_to_restore) {
+      if (inherits(data[[column_name]], "difftime")) {
+        units(data[[column_name]]) <- recorded_units[[column_name]]
+      }
+      attr(data[[column_name]], "climateapi_difftime_units") <- NULL
+    }
+
+    data
+  }
+
   # Handle reading based on read parameter
   if (isTRUE(read)) {
     cached_files <- find_cached_files()
@@ -192,9 +216,9 @@ cache_it <- function(object,
       message("Reading cached file: ", basename(most_recent_file), " (dated ", most_recent_date, ")")
 
       if (file_is_sf) {
-        return(sfarrow::st_read_parquet(most_recent_file))
+        return(restore_difftime_units(sfarrow::st_read_parquet(most_recent_file)))
       } else {
-        return(arrow::read_parquet(most_recent_file))
+        return(restore_difftime_units(arrow::read_parquet(most_recent_file)))
       }
     } else {
       message("No cached files found for '", file_name, "'. Writing new file.")
@@ -211,9 +235,9 @@ cache_it <- function(object,
       message("Reading cached file: ", read)
 
       if (file_is_sf) {
-        return(sfarrow::st_read_parquet(specific_path))
+        return(restore_difftime_units(sfarrow::st_read_parquet(specific_path)))
       } else {
-        return(arrow::read_parquet(specific_path))
+        return(restore_difftime_units(arrow::read_parquet(specific_path)))
       }
     } else {
       stop("Specified file does not exist: ", specific_path)
@@ -228,10 +252,21 @@ cache_it <- function(object,
     stop("No cached file found and no object provided to write. Please provide an object or check the file_name/path.")
   }
 
+  # Record the units of any difftime columns so they can be restored on read; arrow
+  # otherwise converts these columns to seconds
+  object_to_write <- object
+  difftime_columns <- names(object_to_write)[
+    purrr::map_lgl(object_to_write, \(column) inherits(column, "difftime"))]
+
+  for (column_name in difftime_columns) {
+    attr(object_to_write[[column_name]], "climateapi_difftime_units") <-
+      units(object_to_write[[column_name]])
+  }
+
   if (is_sf) {
-    sfarrow::st_write_parquet(obj = object, dsn = full_path)
+    sfarrow::st_write_parquet(obj = object_to_write, dsn = full_path)
   } else {
-    arrow::write_parquet(object, full_path, compression = "snappy")
+    arrow::write_parquet(object_to_write, full_path, compression = "snappy")
   }
   message("Cached to: ", basename(full_path))
 

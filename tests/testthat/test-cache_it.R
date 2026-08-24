@@ -96,3 +96,66 @@ test_that("cache_it errors when reading non-existent specific file", {
     "does not exist"
   )
 })
+
+test_that("cache_it preserves the units of difftime columns", {
+  temp_dir <- tempdir()
+
+  for (difftime_units in c("days", "hours", "mins", "weeks", "secs")) {
+    test_data <- tibble::tibble(
+      duration = as.difftime(c(1, 2, NA), units = difftime_units))
+
+    cache_it(test_data, file_name = "test_difftime", path = temp_dir, read = FALSE)
+    result <- cache_it(file_name = "test_difftime", path = temp_dir, read = TRUE)
+
+    expect_equal(units(result$duration), difftime_units)
+    expect_equal(result$duration, test_data$duration)
+
+    files <- list.files(temp_dir, pattern = "^test_difftime")
+    unlink(file.path(temp_dir, files))
+  }
+})
+
+test_that("cache_it preserves difftime units when reading a specific file", {
+  temp_dir <- tempdir()
+  test_data <- tibble::tibble(duration = as.difftime(c(1, 2), units = "days"))
+
+  cache_it(test_data, file_name = "test_difftime_specific", path = temp_dir, read = FALSE)
+  files <- list.files(
+    temp_dir, pattern = "^test_difftime_specific_\\d{4}_\\d{2}_\\d{2}\\.parquet$")
+
+  result <- cache_it(file_name = "test_difftime_specific", path = temp_dir, read = files[1])
+
+  expect_equal(units(result$duration), "days")
+  expect_equal(result$duration, test_data$duration)
+
+  unlink(file.path(temp_dir, files))
+})
+
+test_that("cache_it does not leave a units attribute on returned columns", {
+  temp_dir <- tempdir()
+  test_data <- tibble::tibble(
+    duration = as.difftime(c(1, 2), units = "days"),
+    x = 1:2)
+
+  cache_it(test_data, file_name = "test_difftime_attr", path = temp_dir, read = FALSE)
+  result <- cache_it(file_name = "test_difftime_attr", path = temp_dir, read = TRUE)
+
+  expect_null(attr(result$duration, "climateapi_difftime_units"))
+  expect_equal(result$x, test_data$x)
+
+  files <- list.files(temp_dir, pattern = "^test_difftime_attr")
+  unlink(file.path(temp_dir, files))
+})
+
+test_that("cache_it leaves frames without difftime columns unchanged", {
+  temp_dir <- tempdir()
+  test_data <- tibble::tibble(x = 1:3, y = letters[1:3])
+
+  cache_it(test_data, file_name = "test_no_difftime", path = temp_dir, read = FALSE)
+  result <- cache_it(file_name = "test_no_difftime", path = temp_dir, read = TRUE)
+
+  expect_equal(result, test_data)
+
+  files <- list.files(temp_dir, pattern = "^test_no_difftime")
+  unlink(file.path(temp_dir, files))
+})

@@ -41,9 +41,14 @@
 #'
 #' @details Site metadata (name, county, coordinates, drainage area) is attached
 #'   to every reading. Data are from the USGS Water Data APIs; see
-#'   \url{https://api.waterdata.usgs.gov/}. USGS asks that heavy users register
-#'   a free API key (see `dataRetrieval::setAccess()` documentation); unkeyed
-#'   access is rate-limited but sufficient for modest pulls.
+#'   \url{https://api.waterdata.usgs.gov/}. Unkeyed access is rate-limited per
+#'   IP address and hour-long lockouts follow when the limit is hit, so
+#'   anything beyond a modest pull (especially `statistic = "daily_max"`, or
+#'   many counties) needs a free API key: request one at
+#'   \url{https://api.waterdata.usgs.gov/signup/}, add
+#'   `API_USGS_PAT = "your_key"` to your `.Renviron` file (e.g. via
+#'   `usethis::edit_r_environ()`), and restart R. `dataRetrieval` then sends
+#'   the key automatically.
 #'
 #' @returns A tibble with one row per gage-day. Columns include:
 #'   \describe{
@@ -157,17 +162,25 @@ get_usgs_gage = function(
   ## daily_max must be computed from the continuous ("Instantaneous") record.
   ## Each series' period-of-record start is retained: the continuous endpoint
   ## needs explicit time bounds (see below)
-  ## request the inventory in batches of ten sites. dataRetrieval 2.7.25 splits
-  ## long site lists into several requests itself, but if any one request
-  ## matches no series it types that batch's begin_utc/end_utc columns as
-  ## character rather than datetime and fails when combining batches ("Corrupt
-  ## POSIXct" from vctrs). Ten site IDs always fit in a single request, and
-  ## keeping only the columns used here avoids the mistyped ones
-  site_inventory = site_metadata$monitoring_location_id %>%
-    split(ceiling(seq_along(.) / 10)) %>%
+  ## the inventory is requested once per state rather than by site ID. Passing
+  ## the full site list makes dataRetrieval 2.7.25 split it into many requests,
+  ## which both trips the USGS rate limiter for statewide site lists and
+  ## crashes when any one request matches no series (its begin_utc/end_utc
+  ## columns come back as character rather than datetime, and combining
+  ## batches then fails with an internal "Corrupt POSIXct" error from vctrs).
+  ## The endpoint filters by full state name, mapped here from the county FIPS
+  ## codes; results are then narrowed to the counties' sites. Only the columns
+  ## used below are kept, which also avoids the mistyped ones
+  state_names = tigris::fips_codes %>%
+    tibble::as_tibble() %>%
+    dplyr::distinct(state_code, state_name) %>%
+    dplyr::filter(state_code %in% stringr::str_sub(county_geoids, 1, 2)) %>%
+    dplyr::pull(state_name)
+
+  site_inventory = state_names %>%
     purrr::map(
       ~ dataRetrieval::read_waterdata_ts_meta(
-        monitoring_location_id = .x,
+        state_name = .x,
         parameter_code = parameter_code,
         computation_identifier = dplyr::if_else(
           statistic == "daily_mean", "Mean", "Instantaneous"),
@@ -177,6 +190,7 @@ get_usgs_gage = function(
         tibble::as_tibble() %>%
         dplyr::select(monitoring_location_id, begin)) %>%
     purrr::list_rbind() %>%
+    dplyr::filter(monitoring_location_id %in% site_metadata$monitoring_location_id) %>%
     ## a site can have several series (e.g. sublocations); keep the earliest
     dplyr::summarize(
       record_begin_date = as.Date(min(begin, na.rm = TRUE)),

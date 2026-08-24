@@ -26,6 +26,13 @@ APIs via the `dataRetrieval` package. Here we ask a concrete question: at the
 stream gages in Upshur and Lewis Counties, West Virginia, how do daily maximum
 water levels in 2026 compare against each gage's own history?
 
+The USGS Water Data APIs limit how many requests one IP address can make per
+hour, and pulls of the continuous record (as here) can exceed that limit.
+Before a large pull, request a free API key at
+<https://api.waterdata.usgs.gov/signup/>, add `API_USGS_PAT = "your_key"` to
+your `.Renviron` file (`usethis::edit_r_environ()` opens it), and restart R;
+`dataRetrieval` sends the key automatically.
+
 ```{r setup}
 library(climateapi)
 library(dplyr)
