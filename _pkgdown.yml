@@ -23,7 +23,6 @@ reference:
   - get_sba_loans
   - get_disaster_dollar_database
   - get_sheldus
-  - get_preliminary_damage_assessments
 - title: Disaster-relevant domains
   contents: 
   - get_lodes
@@ -56,5 +55,4 @@ reference:
   - get_naics_codes
   - get_hud_api_key
   - register_hud_api_key
-  - scrape_pda_pdfs
 
