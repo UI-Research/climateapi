@@ -157,15 +157,26 @@ get_usgs_gage = function(
   ## daily_max must be computed from the continuous ("Instantaneous") record.
   ## Each series' period-of-record start is retained: the continuous endpoint
   ## needs explicit time bounds (see below)
-  site_inventory = dataRetrieval::read_waterdata_ts_meta(
-      monitoring_location_id = site_metadata$monitoring_location_id,
-      parameter_code = parameter_code,
-      computation_identifier = dplyr::if_else(
-        statistic == "daily_mean", "Mean", "Instantaneous"),
-      computation_period_identifier = dplyr::if_else(
-        statistic == "daily_mean", "Daily", "Points"),
-      skipGeometry = TRUE) %>%
-    tibble::as_tibble() %>%
+  ## request the inventory in batches of ten sites. dataRetrieval 2.7.25 splits
+  ## long site lists into several requests itself, but if any one request
+  ## matches no series it types that batch's begin_utc/end_utc columns as
+  ## character rather than datetime and fails when combining batches ("Corrupt
+  ## POSIXct" from vctrs). Ten site IDs always fit in a single request, and
+  ## keeping only the columns used here avoids the mistyped ones
+  site_inventory = site_metadata$monitoring_location_id %>%
+    split(ceiling(seq_along(.) / 10)) %>%
+    purrr::map(
+      ~ dataRetrieval::read_waterdata_ts_meta(
+        monitoring_location_id = .x,
+        parameter_code = parameter_code,
+        computation_identifier = dplyr::if_else(
+          statistic == "daily_mean", "Mean", "Instantaneous"),
+        computation_period_identifier = dplyr::if_else(
+          statistic == "daily_mean", "Daily", "Points"),
+        skipGeometry = TRUE) %>%
+        tibble::as_tibble() %>%
+        dplyr::select(monitoring_location_id, begin)) %>%
+    purrr::list_rbind() %>%
     ## a site can have several series (e.g. sublocations); keep the earliest
     dplyr::summarize(
       record_begin_date = as.Date(min(begin, na.rm = TRUE)),
