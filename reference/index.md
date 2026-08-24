@@ -4,6 +4,10 @@
 
 - [`get_fema_disaster_declarations()`](https://ui-research.github.io/climateapi/reference/get_fema_disaster_declarations.md)
   : Get major disaster declarations by county
+- [`get_fema_floodplain()`](https://ui-research.github.io/climateapi/reference/get_fema_floodplain.md)
+  : Acquire FEMA floodplain boundaries
+- [`get_usgs_gage()`](https://ui-research.github.io/climateapi/reference/get_usgs_gage.md)
+  : Acquire daily stream-gage readings from USGS gages
 - [`get_current_fire_perimeters()`](https://ui-research.github.io/climateapi/reference/get_current_fire_perimeters.md)
   : Acquire current wildfire perimeters
 - [`get_wildfire_burn_zones()`](https://ui-research.github.io/climateapi/reference/get_wildfire_burn_zones.md)
@@ -99,3 +103,5 @@
   : Retrieve the stored HUD API key
 - [`register_hud_api_key()`](https://ui-research.github.io/climateapi/reference/register_hud_api_key.md)
   : Register a HUD API key
+- [`scrape_pda_pdfs()`](https://ui-research.github.io/climateapi/reference/scrape_pda_pdfs.md)
+  : Download Preliminary Damage Assessment (PDA) Reports to Disk

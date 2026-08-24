@@ -304,6 +304,10 @@ lodes %>%
 
 - [`get_fema_disaster_declarations()`](https://ui-research.github.io/climateapi/reference/get_fema_disaster_declarations.md)
   : Get major disaster declarations by county
+- [`get_fema_floodplain()`](https://ui-research.github.io/climateapi/reference/get_fema_floodplain.md)
+  : Acquire FEMA floodplain boundaries
+- [`get_usgs_gage()`](https://ui-research.github.io/climateapi/reference/get_usgs_gage.md)
+  : Acquire daily stream-gage readings from USGS gages
 - [`get_current_fire_perimeters()`](https://ui-research.github.io/climateapi/reference/get_current_fire_perimeters.md)
   : Acquire current wildfire perimeters
 - [`get_wildfire_burn_zones()`](https://ui-research.github.io/climateapi/reference/get_wildfire_burn_zones.md)
@@ -399,6 +403,8 @@ lodes %>%
   : Retrieve the stored HUD API key
 - [`register_hud_api_key()`](https://ui-research.github.io/climateapi/reference/register_hud_api_key.md)
   : Register a HUD API key
+- [`scrape_pda_pdfs()`](https://ui-research.github.io/climateapi/reference/scrape_pda_pdfs.md)
+  : Download Preliminary Damage Assessment (PDA) Reports to Disk
 
 # Articles
 
@@ -408,10 +414,14 @@ lodes %>%
   Disaster](https://ui-research.github.io/climateapi/articles/economic_recovery_factsheet.md):
 - [Housing Affordability
   (CHAS)](https://ui-research.github.io/climateapi/articles/get_chas_housing_affordability.md):
+- [FEMA
+  Floodplains](https://ui-research.github.io/climateapi/articles/get_fema_floodplain.md):
 - [SHELDUS Hazard
   Data](https://ui-research.github.io/climateapi/articles/get_sheldus.md):
 - [USA Structures
   Data](https://ui-research.github.io/climateapi/articles/get_structures.md):
+- [USGS Stream-Gage
+  Histories](https://ui-research.github.io/climateapi/articles/get_usgs_gage.md):
 - [Wildfire Burn
   Zones](https://ui-research.github.io/climateapi/articles/get_wildfire_burn_zones.md):
 - [Annual NLCD Land
