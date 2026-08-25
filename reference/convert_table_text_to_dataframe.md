@@ -27,8 +27,7 @@ convert_table_text_to_dataframe(
 - text:
 
   The table-as-text input. Each page of input should be its own vector
-  or list item, as is the default when using
-  [`pdftools::pdf_text()`](https://docs.ropensci.org/pdftools//reference/pdftools.html).
+  or list item, as is the default when using `pdftools::pdf_text()`.
   Non-table text in the input `text` should be minimized.
 
 - column_types:
