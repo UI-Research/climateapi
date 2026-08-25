@@ -206,3 +206,5 @@ get_hrrr_smoke = function(
 
   terra::crop(smoke_stack, area_of_interest)
 }
+
+utils::globalVariables(c("hour"))

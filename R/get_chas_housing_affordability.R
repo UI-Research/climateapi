@@ -214,7 +214,12 @@ get_chas_api = function(end_year, geography, state_code = NULL, entity_code = NU
 #'
 #' ## county-level data from the HUD API (requires a registered key)
 #' register_hud_api_key("your-hud-api-key")
-#' get_chas_housing_affordability(geography = "county", end_year = 2021, state_code = "01", entity_code = "001", api = TRUE)
+#' get_chas_housing_affordability(
+#'     geography = "county", 
+#'     end_year = 2021, 
+#'     state_code = "01", 
+#'     entity_code = "001", 
+#'     api = TRUE)
 #' }
 get_chas_housing_affordability = function(
     geography,
@@ -227,7 +232,7 @@ get_chas_housing_affordability = function(
       "comprehensive-housing-affordability-strategies"),
     columns = NULL) {
 
-  warning("This function has not been fully QCed.")
+  message("This function has not been fully QCed.")
 
   api_geographies = c("nation", "state", "county", "mcd", "place")
   valid_geographies = c(api_geographies, "tract")

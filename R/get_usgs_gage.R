@@ -190,11 +190,33 @@ get_usgs_gage = function(
         tibble::as_tibble() %>%
         dplyr::select(monitoring_location_id, begin)) %>%
     purrr::list_rbind() %>%
-    dplyr::filter(monitoring_location_id %in% site_metadata$monitoring_location_id) %>%
+    dplyr::filter(monitoring_location_id %in% site_metadata$monitoring_location_id)
+
+  ## a series with no period-of-record start has been registered at the site
+  ## (parameter, units and thresholds are all configured) but has never
+  ## published any values, so there is nothing to retrieve. Dropping these
+  ## series here keeps them from becoming a missing start date further down
+  unstarted_series = site_inventory %>%
+    dplyr::filter(is.na(begin)) %>%
+    dplyr::distinct(monitoring_location_id)
+
+  site_inventory = site_inventory %>%
+    dplyr::filter(!is.na(begin)) %>%
     ## a site can have several series (e.g. sublocations); keep the earliest
     dplyr::summarize(
-      record_begin_date = as.Date(min(begin, na.rm = TRUE)),
+      record_begin_date = as.Date(min(begin)),
       .by = monitoring_location_id)
+
+  skipped_sites = setdiff(
+    unstarted_series$monitoring_location_id, site_inventory$monitoring_location_id)
+
+  if (length(skipped_sites) > 0) {
+    message(
+      "Skipping ", length(skipped_sites), " of ",
+      length(skipped_sites) + nrow(site_inventory),
+      " gages with no published period of record: ",
+      stringr::str_c(
+        stringr::str_remove(skipped_sites, "^USGS-"), collapse = ", ")) }
 
   site_metadata = site_metadata %>%
     dplyr::filter(monitoring_location_id %in% site_inventory$monitoring_location_id)
@@ -269,13 +291,26 @@ get_usgs_gage = function(
       dplyr::filter(monitoring_location_id %in% uncached_ids)
 
     for (site_id in uncached_ids) {
-      site_start = dplyr::if_else(
-        start_date == "",
-        site_record_begins$record_begin_date[
-          site_record_begins$monitoring_location_id == site_id],
-        as.Date(start_date))
+      site_record_begin_date = site_record_begins$record_begin_date[
+        site_record_begins$monitoring_location_id == site_id]
+      site_start = if (start_date != "") {
+        as.Date(start_date)
+      } else if (length(site_record_begin_date) == 1) {
+        site_record_begin_date
+      } else {
+        as.Date(NA) }
       site_end = dplyr::if_else(
         end_date == "", Sys.Date() + 1, as.Date(end_date))
+
+      ## sites without a period-of-record start are filtered out above; this
+      ## guards against one reaching the chunked request anyway (for instance
+      ## from a cache written before that filter existed), where a missing
+      ## start date would fail inside seq() with an unhelpful message
+      if (is.na(site_start)) {
+        warning(
+          "Skipping site ", stringr::str_remove(site_id, "^USGS-"),
+          ": no period-of-record start date is available.")
+        next }
 
       chunk_starts = seq(site_start, site_end, by = "2 years")
       chunk_ends = c(utils::tail(chunk_starts, -1), site_end)
@@ -296,7 +331,12 @@ get_usgs_gage = function(
           dplyr::mutate(
             date = as.Date(lubridate::with_tz(time, "America/New_York"))) %>%
           dplyr::summarize(
-            value = max(value),
+            ## when a site returns no readings at all there are no groups, but
+            ## dplyr still evaluates this once on an empty vector to work out
+            ## the column type, and a bare max() would warn and give -Inf.
+            ## Every real group has at least one non-missing reading, so this
+            ## branch is only ever taken by that type-determining call
+            value = if (length(value) == 0) NA_real_ else max(value),
             approval_status = dplyr::if_else(
               all(approval_status == "Approved"), "approved", "provisional"),
             .by = c(monitoring_location_id, date)),
@@ -321,9 +361,9 @@ get_usgs_gage = function(
 
   gage_history = daily_readings %>%
     dplyr::filter(!is.na(value)) %>%
-    tidylog::left_join(
+    dplyr::left_join(
       site_metadata, by = "monitoring_location_id", relationship = "many-to-one") %>%
-    tidylog::left_join(county_names, by = "county_geoid", relationship = "many-to-one") %>%
+    dplyr::left_join(county_names, by = "county_geoid", relationship = "many-to-one") %>%
     dplyr::select(
       site_number, gage_name, county_geoid, county_name, state_abbreviation,
       latitude, longitude, drainage_area_sqmi, date, value, approval_status)
